@@ -1,0 +1,4 @@
+worker_threads = 4
+ca_cert_path = "test/UmpyreAuth.crt"
+tls_cert_path = "test/Rolodex.crt"
+tls_key_path = "test/Rolodex.key"
