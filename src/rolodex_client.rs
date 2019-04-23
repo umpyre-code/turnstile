@@ -45,11 +45,14 @@ pub fn run() {
             Rolodex::new(conn)
         })
         .and_then(|mut client| {
-            use rolodex_grpc::proto::NewUser;
+            use rolodex_grpc::proto::NewUserRequest;
 
             client
-                .add_user(Request::new(NewUser {
-                    name: "What is in a name?".to_string(),
+                .add_user(Request::new(NewUserRequest {
+                    full_name: "What is in a name?".to_string(),
+                    email: "hey poo".to_string(),
+                    password_hash: "123".to_string(),
+                    phone_number: "123".to_string(),
                 }))
                 .map_err(|e| panic!("gRPC request failed; err={:?}", e))
         })
