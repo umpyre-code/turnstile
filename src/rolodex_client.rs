@@ -26,13 +26,13 @@ use tower_h2::client;
 
 struct Dst;
 
-pub fn run() {
-    let uri: http::Uri = format!("https://localhost:10011").parse().unwrap();
+pub fn run(host: &str, port: i32) {
+    let uri: http::Uri = format!("https://{}:{}", host, port).parse().unwrap();
 
     let h2_settings = Default::default();
     let mut make_client = client::Connect::new(Dst {}, h2_settings, DefaultExecutor::current());
 
-    let say_hello = make_client
+    let rolodex_client = make_client
         .make_service(())
         .map(move |conn| {
             use rolodex_grpc::proto::client::Rolodex;
@@ -45,14 +45,16 @@ pub fn run() {
             Rolodex::new(conn)
         })
         .and_then(|mut client| {
-            use rolodex_grpc::proto::NewUserRequest;
-
+            use rolodex_grpc::proto::{NewUserRequest, PhoneNumber};
             client
                 .add_user(Request::new(NewUserRequest {
                     full_name: "What is in a name?".to_string(),
                     email: "hey poo".to_string(),
                     password_hash: "123".to_string(),
-                    phone_number: "123".to_string(),
+                    phone_number: Some(PhoneNumber {
+                        country: "US".into(),
+                        number: "123".into(),
+                    }),
                 }))
                 .map_err(|e| panic!("gRPC request failed; err={:?}", e))
         })
@@ -64,13 +66,14 @@ pub fn run() {
             error!("ERR = {:?}", e);
         });
 
-    tokio::run(say_hello);
+    tokio::run(rolodex_client);
 }
 
 impl Service<()> for Dst {
     type Response = TlsStream<TcpStream, ClientSession>;
     type Error = ::std::io::Error;
     type Future = Box<Future<Item = Self::Response, Error = ::std::io::Error> + Send>;
+
     fn poll_ready(&mut self) -> Poll<(), Self::Error> {
         Ok(().into())
     }

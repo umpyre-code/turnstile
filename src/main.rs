@@ -40,24 +40,9 @@ pub struct ResponseNone {
 
 #[get("/")]
 fn hello() -> Result<content::Json<String>, ResponseError> {
-    rolodex_client::run();
+    rolodex_client::run(&config::CONFIG.rolodex.host, config::CONFIG.rolodex.port);
     Ok(content::Json(json!({"hey":"hey"}).to_string()))
 }
-
-// #[get("/meals")] // GET /v1/meals
-// fn list(conn: DbConn) -> Result<content::Json<String>, ResponseError> {
-//     use diesel::prelude::*;
-//     use schema::meals::dsl::*;
-
-//     let query_result = meals.load::<Meal>(&*conn);
-
-//     match query_result {
-//         Ok(results) => Ok(content::Json(json!(results).to_string())),
-//         Err(error) => Err(ResponseError {
-//             response: content::Json(json!({ "error": error.to_string() }).to_string()),
-//         }),
-//     }
-// }
 
 #[catch(404)]
 fn not_found() -> JsonValue {
