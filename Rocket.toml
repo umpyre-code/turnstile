@@ -1,23 +1,25 @@
-[development]
-address = "localhost"
+[global]
 port = 8000
 workers = 4
 keep_alive = 5
-log = "normal"
 limits = { forms = 32768 }
+
+[global.databases.redis_reader]
+url = "redis://127.0.0.1:6379"
+pool_size = 4
+
+[global.databases.redis_writer]
+url = "redis://127.0.0.1:6379"
+pool_size = 4
+
+[development]
+address = "localhost"
+log = "normal"
+secret_key = "4adWbqpCHO3vGZUzAXIYBALTS9uGAo5FtfHuLb2Pi6Y="
 
 [staging]
 address = "0.0.0.0"
-port = 8000
-workers = 4
-keep_alive = 5
 log = "normal"
-limits = { forms = 32768 }
 
 [production]
 address = "0.0.0.0"
-port = 8000
-workers = 4
-keep_alive = 5
-log = "critical"
-limits = { forms = 32768 }

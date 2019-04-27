@@ -7,3 +7,18 @@ tls_key_path = "test/Rolodex.key"
 ca_cert_path = "test/UmpyreAuth.crt"
 host = "localhost"
 port = 10011
+
+[jwt]
+iss = "Umpyre"
+exp = 10000000000
+jwt_secret = "secretsecretsecret"
+
+# To generate:
+#   $ openssl rand -hex 32
+encryption_secret = "bbdce5ceeb770e2b8cfba68b57170da6864d81fff671353448f1956413c5f8c3"
+
+[redis.reader]
+address = "127.0.0.1:6379"
+
+[redis.writer]
+address = "127.0.0.1:6379"

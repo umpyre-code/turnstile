@@ -10,6 +10,8 @@ pub struct Config {
     pub site_uri: String,
     pub worker_threads: usize,
     pub rolodex: Rolodex,
+    pub jwt: Jwt,
+    pub redis: Redises,
 }
 
 #[derive(Debug, Deserialize)]
@@ -19,6 +21,25 @@ pub struct Rolodex {
     pub ca_cert_path: String,
     pub tls_cert_path: String,
     pub tls_key_path: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct Jwt {
+    pub iss: String,
+    pub exp: usize,
+    pub jwt_secret: String,
+    pub encryption_secret: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct Redises {
+    pub reader: Redis,
+    pub writer: Redis,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct Redis {
+    pub address: String,
 }
 
 fn get_turnstile_toml_path() -> String {
