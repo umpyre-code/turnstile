@@ -108,18 +108,18 @@ fn unprocessable_entity() -> JsonValue {
 }
 
 fn main() -> Result<(), std::io::Error> {
-    use rocket_cors::{AllowedHeaders, AllowedOrigins};
-use rocket_contrib::compression::Compression;
+    use rocket::http::uri::Uri;
+    use rocket_contrib::compression::Compression;
+    use rocket_contrib::helmet::{Frame, Hsts, Referrer, SpaceHelmet, XssFilter};
+    use rocket_cors::{AllowedHeaders, AllowedMethods, AllowedOrigins};
+    use std::str::FromStr;
 
     config::load_config();
 
-    use std::str::FromStr;
-    use rocket_cors::AllowedMethods;
-
-let allowed_methods: AllowedMethods = ["Get", "Post", "Put", "Delete"]
-   .iter()
-   .map(|s| FromStr::from_str(s).unwrap())
-   .collect();
+    let allowed_methods: AllowedMethods = ["Get", "Post", "Put", "Delete"]
+        .iter()
+        .map(|s| FromStr::from_str(s).unwrap())
+        .collect();
 
     let cors = rocket_cors::CorsOptions {
         allowed_origins: AllowedOrigins::all(),
@@ -131,19 +131,16 @@ let allowed_methods: AllowedMethods = ["Get", "Post", "Put", "Delete"]
     .to_cors()
     .unwrap();
 
-    // use rocket::http::uri::Uri;
-    // use rocket_contrib::helmet::{Frame, Hsts, NoSniff, SpaceHelmet, XssFilter};
-
-    // let site_uri = Uri::parse("https://mysite.example.com").unwrap();
-    // let report_uri = Uri::parse("https://report.example.com").unwrap();
-    // let helmet = SpaceHelmet::default()
-    //     .enable(Hsts::default())
-    //     .enable(Frame::AllowFrom(site_uri))
-    //     .enable(XssFilter::EnableReport(report_uri))
-    //     .disable::<NoSniff>();
+    let site_uri = Uri::parse(&config::CONFIG.site_uri).unwrap();
+    let report_uri = Uri::parse(&config::CONFIG.site_uri).unwrap();
+    let helmet = SpaceHelmet::default()
+        .enable(Hsts::default())
+        .enable(Frame::AllowFrom(site_uri))
+        .enable(XssFilter::EnableReport(report_uri))
+        .enable(Referrer::NoReferrer);
 
     rocket::ignite()
-        // .attach(helmet)
+        .attach(helmet)
         .attach(cors)
         .attach(Compression::fairing())
         .register(catchers![not_found, unprocessable_entity])

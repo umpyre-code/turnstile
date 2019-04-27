@@ -1,3 +1,4 @@
+site_uri = "http://localhost:8000"
 worker_threads = 4
 
 [rolodex]

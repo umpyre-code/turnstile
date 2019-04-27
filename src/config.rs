@@ -7,6 +7,7 @@ use yansi::Paint;
 
 #[derive(Debug, Deserialize)]
 pub struct Config {
+    pub site_uri: String,
     pub worker_threads: usize,
     pub rolodex: Rolodex,
 }
