@@ -4,7 +4,6 @@ extern crate tokio_connect;
 extern crate tokio_rustls;
 extern crate tower;
 extern crate tower_h2;
-extern crate tower_reconnect;
 extern crate tower_request_modifier;
 extern crate webpki;
 
@@ -13,23 +12,22 @@ use crate::certs::{load_certs, load_private_key};
 use futures::{Future, Poll};
 
 use crate::config;
-use rustls::ClientSession;
+use instrumented::instrument;
 use std::fs;
 use std::io::BufReader;
 use std::sync::Arc;
 use tokio::executor::DefaultExecutor;
 use tokio::net::tcp::TcpStream;
-use tokio_rustls::TlsStream;
-use tokio_rustls::{rustls::ClientConfig, TlsConnector};
+use tokio_rustls::{rustls::ClientConfig, rustls::ClientSession, TlsConnector, TlsStream};
 use tower::MakeService;
 use tower::Service;
 use tower_buffer::Buffer;
-use tower_grpc::{BoxBody, Code, Request, Response, Status};
+use tower_grpc::{BoxBody, Request};
 use tower_h2::client;
-use tower_h2::client::{Connect, ConnectError, Connection};
-use tower_reconnect::Reconnect;
+use tower_h2::client::{ConnectError, Connection};
 use tower_request_modifier::{Builder, RequestModifier};
 
+#[derive(Clone)]
 struct Dst;
 
 pub type Buf = Buffer<
@@ -41,74 +39,121 @@ pub type Buf = Buffer<
 >;
 pub type RpcClient = rolodex_grpc::proto::client::Rolodex<Buf>;
 
-pub fn make_client(
-    config: &config::Config,
-) -> impl Future<Item = RpcClient, Error = ConnectError<std::io::Error>> + Send {
-    let uri: http::Uri = format!("https://{}:{}", config.rolodex.host, config.rolodex.port)
-        .parse()
-        .unwrap();
-
-    let h2_settings = Default::default();
-    let service = Dst {};
-    let mut make_client = client::Connect::new(service, h2_settings, DefaultExecutor::current());
-
-    let rolodex_client = make_client.make_service(()).map(move |conn| {
-        use rolodex_grpc::proto::client::Rolodex;
-
-        let uri = uri;
-        let connection = Builder::new().set_origin(uri).build(conn).unwrap();
-        let buffer = Buffer::new(connection, 128);
-
-        Rolodex::new(buffer)
-    });
-
-    rolodex_client
+#[derive(Debug, Fail)]
+pub enum RolodexError {
+    #[fail(display = "Rolodex client failure")]
+    ClientFailure,
 }
 
-pub struct Error;
+pub struct Client {
+    uri: http::Uri,
+    service: Dst,
+}
 
-pub fn add_user(
-    config: &config::Config,
-    new_user_request: rolodex_grpc::proto::NewUserRequest,
-) -> Result<rolodex_grpc::proto::NewUserResponse, Error> {
-    use rolodex_grpc::proto::*;
-    use std::cell::RefCell;
-    use std::sync::Mutex;
-    let result: Arc<Mutex<Option<NewUserResponse>>> = Arc::new(Mutex::new(None));
-    let result_inner = result.clone();
+impl Client {
+    pub fn new(config: &config::Config) -> Self {
+        Client {
+            service: Dst {},
+            uri: format!("https://{}:{}", config.rolodex.host, config.rolodex.port)
+                .parse()
+                .unwrap(),
+        }
+    }
 
-    let future = make_client(config)
-        .and_then(|mut client: RpcClient| {
-            client
-                .add_user(Request::new(NewUserRequest {
-                    full_name: "What is in a name?".to_string(),
-                    email: "hey poo".to_string(),
-                    password_hash: "123".to_string(),
-                    phone_number: Some(PhoneNumber {
-                        country: "US".into(),
-                        number: "123".into(),
-                    }),
-                }))
-                .map_err(|e| panic!("gRPC request failed; err={:?}", e))
+    fn make_service(
+        &self,
+    ) -> impl Future<Item = RpcClient, Error = ConnectError<std::io::Error>> + Send {
+        let uri = self.uri.clone();
+        client::Connect::new(
+            self.service.clone(),
+            Default::default(),
+            DefaultExecutor::current(),
+        )
+        .make_service(())
+        .map(move |conn| {
+            use rolodex_grpc::proto::client::Rolodex;
+
+            let connection = Builder::new().set_origin(uri).build(conn).unwrap();
+            let buffer = Buffer::new(connection, 128);
+
+            Rolodex::new(buffer)
         })
-        .and_then(move |response| {
-            error!("RESPONSE = {:?}", response);
-            result_inner
-                .lock()
-                .unwrap()
-                .replace(response.get_ref().clone());
-            Ok(())
-        })
-        .map_err(|e| {
-            error!("ERR = {:?}", e);
-        });
+    }
 
-    tokio::run(future);
+    #[instrument(INFO)]
+    pub fn add_user(
+        &self,
+        new_user_request: rolodex_grpc::proto::NewUserRequest,
+    ) -> Result<rolodex_grpc::proto::NewUserResponse, RolodexError> {
+        use rolodex_grpc::proto::*;
+        use std::sync::Mutex;
+        let result: Arc<Mutex<Option<NewUserResponse>>> = Arc::new(Mutex::new(None));
+        let result_inner = result.clone();
 
-    let guard = result.lock().unwrap();
-    match *guard {
-        Some(ref res) => Ok(res.clone()),
-        None => Err(Error),
+        let future = self
+            .make_service()
+            .and_then(move |mut client: RpcClient| {
+                client
+                    .add_user(Request::new(new_user_request))
+                    .map_err(|e| panic!("gRPC request failed; err={:?}", e))
+            })
+            .and_then(move |response| {
+                info!("add_user RESPONSE = {:?}", response);
+                result_inner
+                    .lock()
+                    .unwrap()
+                    .replace(response.get_ref().clone());
+                Ok(())
+            })
+            .map_err(|e| {
+                error!("add_user ERR = {:?}", e);
+            });
+
+        tokio::run(future);
+
+        let guard = result.lock().unwrap();
+        match *guard {
+            Some(ref res) => Ok(res.clone()),
+            None => Err(RolodexError::ClientFailure),
+        }
+    }
+
+    #[instrument(INFO)]
+    pub fn authenticate(
+        &self,
+        auth_request: rolodex_grpc::proto::AuthRequest,
+    ) -> Result<rolodex_grpc::proto::AuthResponse, RolodexError> {
+        use rolodex_grpc::proto::*;
+        use std::sync::Mutex;
+        let result: Arc<Mutex<Option<AuthResponse>>> = Arc::new(Mutex::new(None));
+        let result_inner = result.clone();
+
+        let future = self
+            .make_service()
+            .and_then(move |mut client: RpcClient| {
+                client
+                    .authenticate(Request::new(auth_request))
+                    .map_err(|e| panic!("gRPC request failed; err={:?}", e))
+            })
+            .and_then(move |response| {
+                info!("authenticate RESPONSE = {:?}", response);
+                result_inner
+                    .lock()
+                    .unwrap()
+                    .replace(response.get_ref().clone());
+                Ok(())
+            })
+            .map_err(|e| {
+                error!("ERR = {:?}", e);
+            });
+
+        tokio::run(future);
+
+        let guard = result.lock().unwrap();
+        match *guard {
+            Some(ref res) => Ok(res.clone()),
+            None => Err(RolodexError::ClientFailure),
+        }
     }
 }
 

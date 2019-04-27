@@ -10,9 +10,12 @@ extern crate serde_derive;
 extern crate lazy_static;
 extern crate env_logger;
 extern crate http;
+extern crate instrumented;
 extern crate yansi;
 #[macro_use]
 extern crate log;
+#[macro_use]
+extern crate failure;
 
 use rocket::response::content;
 use rocket_contrib::json::JsonValue;
@@ -38,22 +41,54 @@ pub struct ResponseNone {
     response: content::Json<String>,
 }
 
+#[derive(Debug, Responder)]
+#[response(status = 400, content_type = "json")]
+pub struct ResponseBadRequest {
+    response: content::Json<String>,
+}
+
 #[get("/")]
 fn hello() -> Result<content::Json<String>, ResponseError> {
     use rolodex_grpc::proto::*;
-    let rolodex_client = rolodex_client::add_user(
-        &config::CONFIG,
-        NewUserRequest {
-            full_name: "What is in a name?".to_string(),
-            email: "hey poo".to_string(),
-            password_hash: "123".to_string(),
-            phone_number: Some(PhoneNumber {
-                country: "US".into(),
-                number: "123".into(),
+    let rolodex_client = rolodex_client::Client::new(&config::CONFIG);
+    let result = rolodex_client.add_user(NewUserRequest {
+        full_name: "What is in a name?".to_string(),
+        email: "hey poo".to_string(),
+        password_hash: "123".to_string(),
+        phone_number: Some(PhoneNumber {
+            country: "US".into(),
+            number: "123".into(),
+        }),
+    });
+    match result {
+        Ok(resp) => match resp.result {
+            Some(result) => match result {
+                new_user_response::Result::UserId(user_id) => Ok(content::Json(
+                    json!({
+                        "user_id":user_id.clone(),
+                    })
+                    .to_string(),
+                )),
+                new_user_response::Result::Error(err) => Ok(content::Json(
+                    json!({
+                        "error":err,
+                    })
+                    .to_string(),
+                )),
+            },
+            None => Err(ResponseError {
+                response: content::Json(
+                    json!({
+                        "error": "Unauthorized"
+                    })
+                    .to_string(),
+                ),
             }),
         },
-    );
-    Ok(content::Json(json!({"hey":"hey"}).to_string()))
+        Err(err) => Err(ResponseError {
+            response: content::Json(json!({ "error": err.to_string() }).to_string()),
+        }),
+    }
 }
 
 #[catch(404)]
