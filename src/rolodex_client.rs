@@ -4,6 +4,7 @@ extern crate tokio_connect;
 extern crate tokio_rustls;
 extern crate tower;
 extern crate tower_h2;
+extern crate tower_reconnect;
 extern crate tower_request_modifier;
 extern crate webpki;
 
@@ -11,6 +12,7 @@ use crate::certs::{load_certs, load_private_key};
 
 use futures::{Future, Poll};
 
+use crate::config;
 use rustls::ClientSession;
 use std::fs;
 use std::io::BufReader;
@@ -21,31 +23,62 @@ use tokio_rustls::TlsStream;
 use tokio_rustls::{rustls::ClientConfig, TlsConnector};
 use tower::MakeService;
 use tower::Service;
-use tower_grpc::Request;
+use tower_buffer::Buffer;
+use tower_grpc::{BoxBody, Code, Request, Response, Status};
 use tower_h2::client;
+use tower_h2::client::{Connect, ConnectError, Connection};
+use tower_reconnect::Reconnect;
+use tower_request_modifier::{Builder, RequestModifier};
 
 struct Dst;
 
-pub fn run(host: &str, port: i32) {
-    let uri: http::Uri = format!("https://{}:{}", host, port).parse().unwrap();
+pub type Buf = Buffer<
+    RequestModifier<
+        Connection<TlsStream<TcpStream, ClientSession>, DefaultExecutor, BoxBody>,
+        BoxBody,
+    >,
+    http::Request<BoxBody>,
+>;
+pub type RpcClient = rolodex_grpc::proto::client::Rolodex<Buf>;
+
+pub fn make_client(
+    config: &config::Config,
+) -> impl Future<Item = RpcClient, Error = ConnectError<std::io::Error>> + Send {
+    let uri: http::Uri = format!("https://{}:{}", config.rolodex.host, config.rolodex.port)
+        .parse()
+        .unwrap();
 
     let h2_settings = Default::default();
-    let mut make_client = client::Connect::new(Dst {}, h2_settings, DefaultExecutor::current());
+    let service = Dst {};
+    let mut make_client = client::Connect::new(service, h2_settings, DefaultExecutor::current());
 
-    let rolodex_client = make_client
-        .make_service(())
-        .map(move |conn| {
-            use rolodex_grpc::proto::client::Rolodex;
+    let rolodex_client = make_client.make_service(()).map(move |conn| {
+        use rolodex_grpc::proto::client::Rolodex;
 
-            let conn = tower_request_modifier::Builder::new()
-                .set_origin(uri)
-                .build(conn)
-                .unwrap();
+        let uri = uri;
+        let connection = Builder::new().set_origin(uri).build(conn).unwrap();
+        let buffer = Buffer::new(connection, 128);
 
-            Rolodex::new(conn)
-        })
-        .and_then(|mut client| {
-            use rolodex_grpc::proto::{NewUserRequest, PhoneNumber};
+        Rolodex::new(buffer)
+    });
+
+    rolodex_client
+}
+
+pub struct Error;
+
+pub fn add_user(
+    config: &config::Config,
+    new_user_request: rolodex_grpc::proto::NewUserRequest,
+) -> Result<rolodex_grpc::proto::NewUserResponse, Error> {
+    use rolodex_grpc::proto::*;
+    use std::cell::RefCell;
+    use std::sync::Mutex;
+    let result: Arc<Mutex<Option<NewUserResponse>>> = Arc::new(Mutex::new(None));
+    let result_inner = result.clone();
+
+    let future = make_client(config)
+        .and_then(|mut client: RpcClient| {
             client
                 .add_user(Request::new(NewUserRequest {
                     full_name: "What is in a name?".to_string(),
@@ -58,15 +91,25 @@ pub fn run(host: &str, port: i32) {
                 }))
                 .map_err(|e| panic!("gRPC request failed; err={:?}", e))
         })
-        .and_then(|response| {
+        .and_then(move |response| {
             error!("RESPONSE = {:?}", response);
+            result_inner
+                .lock()
+                .unwrap()
+                .replace(response.get_ref().clone());
             Ok(())
         })
         .map_err(|e| {
             error!("ERR = {:?}", e);
         });
 
-    tokio::run(rolodex_client);
+    tokio::run(future);
+
+    let guard = result.lock().unwrap();
+    match *guard {
+        Some(ref res) => Ok(res.clone()),
+        None => Err(Error),
+    }
 }
 
 impl Service<()> for Dst {

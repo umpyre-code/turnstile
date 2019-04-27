@@ -40,7 +40,19 @@ pub struct ResponseNone {
 
 #[get("/")]
 fn hello() -> Result<content::Json<String>, ResponseError> {
-    rolodex_client::run(&config::CONFIG.rolodex.host, config::CONFIG.rolodex.port);
+    use rolodex_grpc::proto::*;
+    let rolodex_client = rolodex_client::add_user(
+        &config::CONFIG,
+        NewUserRequest {
+            full_name: "What is in a name?".to_string(),
+            email: "hey poo".to_string(),
+            password_hash: "123".to_string(),
+            phone_number: Some(PhoneNumber {
+                country: "US".into(),
+                number: "123".into(),
+            }),
+        },
+    );
     Ok(content::Json(json!({"hey":"hey"}).to_string()))
 }
 
