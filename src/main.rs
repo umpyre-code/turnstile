@@ -126,18 +126,19 @@ impl<'a, 'r> rocket::request::FromRequest<'a, 'r> for User {
 
     fn from_request(
         request: &'a rocket::request::Request<'r>,
-    ) -> rocket::request::Outcome<User, ()> {
+    ) -> rocket::request::Outcome<User, Self::Error> {
+        use rocket::http::Status;
         use rocket::outcome::IntoOutcome;
         use rocket_contrib::databases::redis::Commands;
-        let redis_reader = request.guard::<RedisReader>()?;
+
+        let redis_reader = request.guard::<RedisReader>().unwrap();
         let redis = &*redis_reader;
         request
             .cookies()
             .get("X-UMPYRE-APIKEY")
-            .and_then(|cookie| cookie.value().parse().ok())
-            // .or_else(||
-            //     request.headers().get_one("X-UMPYRE-APIKEY")
-            // )
+            .and_then(|cookie| Some(cookie.value()))
+            .or_else(|| request.headers().get_one("X-UMPYRE-APIKEY"))
+            .map(std::string::ToString::to_string)
             .and_then(|token: String| match token::decode_into_sub(&token) {
                 Ok(user_id) => Some((token, user_id)),
                 Err(_) => None,
@@ -152,14 +153,14 @@ impl<'a, 'r> rocket::request::FromRequest<'a, 'r> for User {
                     None
                 }
             })
-            .or_forward(())
+            .into_outcome((Status::Unauthorized, ()))
     }
 }
 
 #[get("/hello", format = "json")]
-fn hello() -> Result<Json<Hello>, ResponseError> {
+fn hello(user: User) -> Result<Json<Hello>, ResponseError> {
     Ok(Json(Hello {
-        hi: "hi".to_string(),
+        hi: user.user_id.clone(),
     }))
 }
 
@@ -176,6 +177,14 @@ fn unprocessable_entity() -> JsonValue {
     json!({
         "status": "error",
         "reason": "Unprocessable Entity. The request was well-formed but was unable to be followed due to semantic errors."
+    })
+}
+
+#[catch(401)]
+fn unauthorized() -> JsonValue {
+    json!({
+        "status": "error",
+        "reason": "Unauthorized."
     })
 }
 
@@ -223,7 +232,7 @@ fn main() -> Result<(), std::io::Error> {
         .attach(helmet)
         .attach(cors)
         .attach(Compression::fairing())
-        .register(catchers![not_found, unprocessable_entity])
+        .register(catchers![not_found, unprocessable_entity, unauthorized])
         .mount("/", routes![authenticate, hello])
         .launch();
 
