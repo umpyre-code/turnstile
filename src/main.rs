@@ -164,6 +164,11 @@ fn hello(user: User) -> Result<Json<Hello>, ResponseError> {
     }))
 }
 
+#[get("/ping")]
+fn ping() -> String {
+    "pong".into()
+}
+
 #[catch(404)]
 fn not_found() -> JsonValue {
     json!({
@@ -233,7 +238,7 @@ fn main() -> Result<(), std::io::Error> {
         .attach(cors)
         .attach(Compression::fairing())
         .register(catchers![not_found, unprocessable_entity, unauthorized])
-        .mount("/", routes![authenticate, hello])
+        .mount("/", routes![authenticate, hello, ping])
         .launch();
 
     Ok(())

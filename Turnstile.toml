@@ -2,9 +2,9 @@ site_uri = "http://localhost:8000"
 worker_threads = 4
 
 [rolodex]
-tls_cert_path = "test/Rolodex.crt"
-tls_key_path = "test/Rolodex.key"
-ca_cert_path = "test/UmpyreAuth.crt"
+tls_cert_path = "tests/certs/Rolodex.crt"
+tls_key_path = "tests/certs/Rolodex.key"
+ca_cert_path = "tests/certs/UmpyreAuth.crt"
 host = "localhost"
 port = 10011
 

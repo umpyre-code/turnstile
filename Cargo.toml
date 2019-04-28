@@ -46,3 +46,8 @@ rocket = { git = "https://github.com/SergioBenitez/Rocket.git" }
 git = "https://github.com/SergioBenitez/Rocket.git"
 default-features = false
 features = ["json", "compression","serve", "helmet", "redis_pool"]
+
+[dev-dependencies]
+assert_cmd = "0.11"
+nix = "0.13"
+reqwest = { version = "0.9", default-features = false, features = ["rustls"] }
