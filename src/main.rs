@@ -39,6 +39,8 @@ fn main() -> Result<(), std::io::Error> {
 
     config::load_config();
 
+    instrumented::init(&config::CONFIG.metrics.bind_to_address);
+
     let allowed_methods: AllowedMethods = ["Get", "Post", "Put", "Delete"]
         .iter()
         .map(|s| FromStr::from_str(s).unwrap())
@@ -54,8 +56,8 @@ fn main() -> Result<(), std::io::Error> {
     .to_cors()
     .unwrap();
 
-    let site_uri = Uri::parse(&config::CONFIG.site_uri).unwrap();
-    let report_uri = Uri::parse(&config::CONFIG.site_uri).unwrap();
+    let site_uri = Uri::parse(&config::CONFIG.service.site_uri).unwrap();
+    let report_uri = Uri::parse(&config::CONFIG.service.site_uri).unwrap();
     let helmet = SpaceHelmet::default()
         .enable(Hsts::default())
         .enable(Frame::AllowFrom(site_uri))
@@ -63,6 +65,8 @@ fn main() -> Result<(), std::io::Error> {
         .enable(Referrer::NoReferrer);
 
     rocket::ignite()
+        .attach(fairings::RequestTimer)
+        .attach(fairings::Counter)
         .attach(fairings::RedisReader::fairing())
         .attach(fairings::RedisWriter::fairing())
         .attach(Compression::fairing())

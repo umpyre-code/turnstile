@@ -1,5 +1,5 @@
+[service]
 site_uri = "http://localhost:8000"
-worker_threads = 4
 
 [rolodex]
 tls_cert_path = "tests/certs/Rolodex.crt"
@@ -22,3 +22,6 @@ address = "127.0.0.1:6379"
 
 [redis.writer]
 address = "127.0.0.1:6379"
+
+[metrics]
+bind_to_address = "127.0.0.1:5000"

@@ -7,11 +7,16 @@ use yansi::Paint;
 
 #[derive(Debug, Deserialize)]
 pub struct Config {
-    pub site_uri: String,
-    pub worker_threads: usize,
+    pub service: Service,
     pub rolodex: Rolodex,
     pub jwt: Jwt,
     pub redis: Redises,
+    pub metrics: Metrics,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct Service {
+    pub site_uri: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -40,6 +45,11 @@ pub struct Redises {
 #[derive(Debug, Deserialize)]
 pub struct Redis {
     pub address: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct Metrics {
+    pub bind_to_address: String,
 }
 
 fn get_turnstile_toml_path() -> String {

@@ -61,8 +61,6 @@ pub enum TokenError {
     DecodingError,
     #[fail(display = "invalid token")]
     InvalidToken,
-    #[fail(display = "base64 decode failure")]
-    Base64Decoding,
     #[fail(display = "utf8 decode failure")]
     Utf8Decoding,
 }
