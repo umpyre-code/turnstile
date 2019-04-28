@@ -57,7 +57,7 @@ impl Fairing for RequestTimer {
     fn on_response(&self, request: &Request, response: &mut Response) {
         let start_time = request.local_cache(|| TimerStart(None));
         if let Some(duration) = start_time.0.map(|s| s.elapsed()) {
-            let us = duration.as_secs() * 1_000_000 + duration.subsec_micros() as u64;
+            let us = duration.as_secs() * 1_000_000 + u64::from(duration.subsec_micros());
             let s = (us as f64) / 1_000_000.0;
             HANDLER_TIMER
                 .with_label_values(&[
