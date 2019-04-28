@@ -10,7 +10,6 @@ impl Drop for Turnstile {
     }
 }
 
-
 impl Turnstile {
     fn new() -> Self {
         use assert_cmd::prelude::*;
@@ -35,7 +34,6 @@ impl Turnstile {
 
         self
     }
-
 
     fn stop(&mut self) {
         use nix::libc::pid_t;
