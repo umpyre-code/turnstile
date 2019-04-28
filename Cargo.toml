@@ -13,7 +13,7 @@ instrumented = { git = "ssh://git@github.com/umpyre-code/instrumented.git" }
 jsonwebtoken = "6"
 lazy_static = "1.3"
 log = "0.4"
-rocket = { git = "https://github.com/SergioBenitez/Rocket.git" }
+rocket = { git = "https://github.com/SergioBenitez/Rocket.git", default-features = false}
 rocket_cors = { git = "https://github.com/lawliet89/rocket_cors"  }
 rolodex-grpc = { git = "ssh://git@github.com/umpyre-code/rolodex.git" }
 rustls = "0.15"
