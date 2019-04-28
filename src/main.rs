@@ -138,7 +138,7 @@ impl<'a, 'r> rocket::request::FromRequest<'a, 'r> for User {
             // .or_else(||
             //     request.headers().get_one("X-UMPYRE-APIKEY")
             // )
-            .and_then(|token: String| match token::decode_into_user_id(&token) {
+            .and_then(|token: String| match token::decode_into_sub(&token) {
                 Ok(user_id) => Some((token, user_id)),
                 Err(_) => None,
             })

@@ -2,7 +2,7 @@ extern crate data_encoding;
 extern crate jsonwebtoken;
 
 use crate::config;
-use data_encoding::HEXLOWER;
+use data_encoding::BASE64_NOPAD;
 use jsonwebtoken::errors::ErrorKind;
 use jsonwebtoken::{encode, Header, Validation};
 use sodiumoxide::crypto::secretbox;
@@ -16,9 +16,11 @@ struct Claims {
 }
 
 lazy_static! {
+    // Load this value into a static var so we don't have to decode it every
+    // time.
     static ref SECRET_KEY: Key = {
         Key::from_slice(
-            &HEXLOWER
+            &BASE64_NOPAD
                 .decode(config::CONFIG.jwt.encryption_secret.as_bytes())
                 .unwrap(),
         )
@@ -26,27 +28,27 @@ lazy_static! {
     };
 }
 
-pub fn generate(user_id: &str) -> String {
+pub fn generate(sub: &str) -> String {
+    generate_inner(&config::CONFIG.jwt, &SECRET_KEY, sub)
+}
+
+fn generate_inner(jwt_config: &config::Jwt, key: &Key, sub: &str) -> String {
     let claims = Claims {
-        sub: user_id.to_string(),
-        iss: config::CONFIG.jwt.iss.clone(),
-        exp: config::CONFIG.jwt.exp,
+        sub: sub.to_string(),
+        iss: jwt_config.iss.clone(),
+        exp: jwt_config.exp,
     };
 
-    match encode(
-        &Header::default(),
-        &claims,
-        config::CONFIG.jwt.jwt_secret.as_ref(),
-    ) {
+    match encode(&Header::default(), &claims, jwt_config.jwt_secret.as_ref()) {
         Ok(token) => {
             let nonce = secretbox::gen_nonce();
-            let ciphertext = secretbox::seal(token.as_bytes(), &nonce, &SECRET_KEY);
-            // Nonce is first 24 bytes, or 48 chars
+            let ciphertext = secretbox::seal(token.as_bytes(), &nonce, key);
+            // Nonce is first 24 bytes, or 32 chars
             // Remaining bytes are ciphertext.
             format!(
                 "{}{}",
-                HEXLOWER.encode(nonce.as_ref()).to_string(),
-                HEXLOWER.encode(&ciphertext).to_string(),
+                BASE64_NOPAD.encode(nonce.as_ref()).to_string(),
+                BASE64_NOPAD.encode(&ciphertext).to_string(),
             )
         }
         Err(err) => panic!("error generating jwt: {:?}", err),
@@ -59,6 +61,10 @@ pub enum TokenError {
     DecodingError,
     #[fail(display = "invalid token")]
     InvalidToken,
+    #[fail(display = "base64 decode failure")]
+    Base64Decoding,
+    #[fail(display = "utf8 decode failure")]
+    Utf8Decoding,
 }
 
 impl From<data_encoding::DecodeError> for TokenError {
@@ -69,7 +75,7 @@ impl From<data_encoding::DecodeError> for TokenError {
 
 impl From<std::string::FromUtf8Error> for TokenError {
     fn from(_error: std::string::FromUtf8Error) -> Self {
-        TokenError::DecodingError
+        TokenError::Utf8Decoding
     }
 }
 
@@ -79,20 +85,28 @@ impl From<()> for TokenError {
     }
 }
 
+pub fn decode_into_sub(token: &str) -> Result<String, TokenError> {
+    decode_into_sub_inner(&config::CONFIG.jwt, &SECRET_KEY, token)
+}
 
-pub fn decode_into_user_id(token: &str) -> Result<String, TokenError> {
-    let ciphertext = HEXLOWER.decode(token[48..].as_bytes())?;
-    let nonce = Nonce::from_slice(&HEXLOWER.decode(token[..48].as_bytes())?).unwrap();
-    let jwt = String::from_utf8(secretbox::open(&ciphertext, &nonce, &SECRET_KEY)?)?;
+fn decode_into_sub_inner(
+    jwt_config: &config::Jwt,
+    key: &Key,
+    token: &str,
+) -> Result<String, TokenError> {
+    // First 24 bytes (32 chars) are the nonce.
+    let nonce = Nonce::from_slice(&BASE64_NOPAD.decode(token[..32].as_bytes())?).unwrap();
+    // Remaining bytes are the ciphertext.
+    let ciphertext = BASE64_NOPAD.decode(token[32..].as_bytes())?;
+    let jwt = String::from_utf8(secretbox::open(&ciphertext, &nonce, key)?)?;
 
     let validation = Validation {
-        iss: Some(config::CONFIG.jwt.iss.clone()),
+        iss: Some(jwt_config.iss.clone()),
         leeway: 60,
         ..Default::default()
     };
 
-    match jsonwebtoken::decode::<Claims>(&jwt, config::CONFIG.jwt.jwt_secret.as_ref(), &validation)
-    {
+    match jsonwebtoken::decode::<Claims>(&jwt, jwt_config.jwt_secret.as_ref(), &validation) {
         Ok(c) => Ok(c.claims.sub),
         Err(err) => {
             match *err.kind() {
@@ -101,6 +115,29 @@ pub fn decode_into_user_id(token: &str) -> Result<String, TokenError> {
                 _ => panic!("Some other errors"),
             };
             Err(TokenError::InvalidToken)
+        }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    #[test]
+    fn token_test() {
+        let key = secretbox::gen_key();
+        let jwt_config = config::Jwt {
+            iss: "test iss".into(),
+            exp: 10_000_000_000,
+            jwt_secret: "secret".into(),
+            encryption_secret: "secret".into(),
+        };
+
+        // run 10 times
+        for _ in 0..10 {
+            let sub = "test string";
+            let token = generate_inner(&jwt_config, &key, &sub);
+            let result = decode_into_sub_inner(&jwt_config, &key, &token);
+            assert_eq!(result.unwrap(), sub);
         }
     }
 }

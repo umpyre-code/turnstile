@@ -14,8 +14,8 @@ exp = 10000000000
 jwt_secret = "secretsecretsecret"
 
 # To generate:
-#   $ openssl rand -hex 32
-encryption_secret = "bbdce5ceeb770e2b8cfba68b57170da6864d81fff671353448f1956413c5f8c3"
+#   $ openssl rand -base64 32
+encryption_secret = "pqbn4Xh+jr6XFkuGVdsbTSusDzNe+zOEwhYnisZcWiY"
 
 [redis.reader]
 address = "127.0.0.1:6379"
