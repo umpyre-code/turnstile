@@ -80,12 +80,13 @@ fn main() -> Result<(), std::io::Error> {
         .attach(get_cors())
         .register(catchers![
             catchers::not_found,
+            catchers::too_many_requests,
+            catchers::unauthorized,
             catchers::unprocessable_entity,
-            catchers::unauthorized
         ])
         .mount(
             "/",
-            routes![routes::authenticate, routes::hello, routes::ping],
+            routes![routes::authenticate, routes::ping, routes::hello,],
         )
         .launch();
 

@@ -12,7 +12,7 @@ pub fn not_found() -> JsonValue {
 pub fn unprocessable_entity() -> JsonValue {
     json!({
         "status": "error",
-        "reason": "Unprocessable Entity. The request was well-formed but was unable to be followed due to semantic errors."
+        "reason": "Unprocessable entity. The request was well-formed but was unable to be followed due to semantic errors."
     })
 }
 
@@ -21,5 +21,13 @@ pub fn unauthorized() -> JsonValue {
     json!({
         "status": "error",
         "reason": "Unauthorized."
+    })
+}
+
+#[catch(429)]
+pub fn too_many_requests() -> JsonValue {
+    json!({
+        "status": "error",
+        "reason": "Too many requests."
     })
 }
