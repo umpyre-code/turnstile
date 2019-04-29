@@ -12,6 +12,7 @@ pub struct Config {
     pub jwt: Jwt,
     pub redis: Redises,
     pub metrics: Metrics,
+    pub rate_limits: RateLimits,
 }
 
 #[derive(Debug, Deserialize)]
@@ -50,6 +51,19 @@ pub struct Redis {
 #[derive(Debug, Deserialize)]
 pub struct Metrics {
     pub bind_to_address: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct RateLimits {
+    pub public: RateLimit,  // for public endpoints
+    pub private: RateLimit, // for authenticated or private endpoints
+}
+
+#[derive(Debug, Deserialize)]
+pub struct RateLimit {
+    pub max_burst: i32,
+    pub tokens: i32, // number of requests
+    pub period: i32, // requests / period
 }
 
 fn get_turnstile_toml_path() -> String {

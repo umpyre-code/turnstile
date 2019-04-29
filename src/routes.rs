@@ -52,7 +52,7 @@ pub fn authenticate(
 
                 // store token in Redis
                 let redis = &*redis_writer;
-                let _c: i32 = redis.sadd(&format!("tokens:{}", user_id), &token).unwrap();
+                let _c: i32 = redis.sadd(&format!("token:{}", user_id), &token).unwrap();
 
                 let cookie = Cookie::build("X-UMPYRE-APIKEY", token.clone())
                     .path("/")
@@ -92,13 +92,16 @@ pub struct Hello {
 }
 
 #[get("/hello", format = "json")]
-pub fn hello(user: guards::User) -> Result<Json<Hello>, ResponseError> {
+pub fn hello(
+    user: guards::User,
+    _ratelimited: guards::RateLimitedPrivate,
+) -> Result<Json<Hello>, ResponseError> {
     Ok(Json(Hello {
         hi: user.user_id.clone(),
     }))
 }
 
 #[get("/ping")]
-pub fn ping() -> String {
+pub fn ping(_ratelimited: guards::RateLimitedPublic) -> String {
     "pong".into()
 }

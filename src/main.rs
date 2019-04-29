@@ -30,23 +30,16 @@ mod rolodex_client;
 mod routes;
 mod token;
 
-fn main() -> Result<(), std::io::Error> {
-    use rocket::http::uri::Uri;
-    use rocket_contrib::compression::Compression;
-    use rocket_contrib::helmet::{Frame, Hsts, Referrer, SpaceHelmet, XssFilter};
+fn get_cors() -> rocket_cors::Cors {
     use rocket_cors::{AllowedHeaders, AllowedMethods, AllowedOrigins};
     use std::str::FromStr;
-
-    config::load_config();
-
-    instrumented::init(&config::CONFIG.metrics.bind_to_address);
 
     let allowed_methods: AllowedMethods = ["Get", "Post", "Put", "Delete"]
         .iter()
         .map(|s| FromStr::from_str(s).unwrap())
         .collect();
 
-    let cors = rocket_cors::CorsOptions {
+    rocket_cors::CorsOptions {
         allowed_origins: AllowedOrigins::all(),
         allowed_methods,
         allowed_headers: AllowedHeaders::all(),
@@ -54,24 +47,37 @@ fn main() -> Result<(), std::io::Error> {
         ..Default::default()
     }
     .to_cors()
-    .unwrap();
+    .unwrap()
+}
 
+fn get_helmet() -> rocket_contrib::helmet::SpaceHelmet {
+    use rocket::http::uri::Uri;
+    use rocket_contrib::helmet::{Frame, Hsts, Referrer, SpaceHelmet, XssFilter};
     let site_uri = Uri::parse(&config::CONFIG.service.site_uri).unwrap();
     let report_uri = Uri::parse(&config::CONFIG.service.site_uri).unwrap();
-    let helmet = SpaceHelmet::default()
+    SpaceHelmet::default()
         .enable(Hsts::default())
         .enable(Frame::AllowFrom(site_uri))
         .enable(XssFilter::EnableReport(report_uri))
-        .enable(Referrer::NoReferrer);
+        .enable(Referrer::NoReferrer)
+}
+
+fn main() -> Result<(), std::io::Error> {
+    use rocket_contrib::compression::Compression;
+
+    config::load_config();
+
+    instrumented::init(&config::CONFIG.metrics.bind_to_address);
 
     rocket::ignite()
         .attach(fairings::RequestTimer)
         .attach(fairings::Counter)
+        .attach(fairings::RateLimitHeaders)
         .attach(fairings::RedisReader::fairing())
         .attach(fairings::RedisWriter::fairing())
         .attach(Compression::fairing())
-        .attach(helmet)
-        .attach(cors)
+        .attach(get_helmet())
+        .attach(get_cors())
         .register(catchers![
             catchers::not_found,
             catchers::unprocessable_entity,

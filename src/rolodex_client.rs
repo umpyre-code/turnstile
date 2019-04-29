@@ -167,12 +167,12 @@ impl Service<()> for Dst {
     }
 
     fn call(&mut self, _: ()) -> Self::Future {
-        let mut pem = BufReader::new(fs::File::open("test/UmpyreAuth.crt").unwrap());
+        let mut pem = BufReader::new(fs::File::open(&config::CONFIG.rolodex.ca_cert_path).unwrap());
         let mut config = ClientConfig::new();
         config.root_store.add_pem_file(&mut pem).unwrap();
         config.set_single_client_cert(
-            load_certs("test/Frontend.crt"),
-            load_private_key("test/Frontend.key"),
+            load_certs(&config::CONFIG.rolodex.tls_cert_path),
+            load_private_key(&config::CONFIG.rolodex.tls_key_path),
         );
         config.alpn_protocols.push(b"h2".to_vec());
         let config = Arc::new(config);
