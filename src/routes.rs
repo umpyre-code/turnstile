@@ -31,7 +31,7 @@ impl From<rolodex_client::RolodexError> for ResponseError {
 }
 
 #[post("/user/authenticate", data = "<auth_request>", format = "json")]
-pub fn authenticate(
+pub fn post_user_authenticate(
     _ratelimited: guards::RateLimitedPublic,
     mut cookies: Cookies,
     redis_writer: fairings::RedisWriter,
@@ -88,7 +88,7 @@ pub fn authenticate(
 }
 
 #[post("/user", data = "<new_user_request>", format = "json")]
-pub fn add_user(
+pub fn post_user(
     _ratelimited: guards::RateLimitedPublic,
     mut cookies: Cookies,
     redis_writer: fairings::RedisWriter,
@@ -150,6 +150,6 @@ pub fn add_user(
 }
 
 #[get("/ping")]
-pub fn ping(_ratelimited: guards::RateLimitedPublic) -> String {
+pub fn get_ping(_ratelimited: guards::RateLimitedPublic) -> String {
     "pong".into()
 }

@@ -85,7 +85,11 @@ fn main() -> Result<(), std::io::Error> {
         ])
         .mount(
             "/",
-            routes![routes::add_user, routes::authenticate, routes::ping,],
+            routes![
+                routes::post_user,
+                routes::post_user_authenticate,
+                routes::get_ping,
+            ],
         )
         .launch();
 
