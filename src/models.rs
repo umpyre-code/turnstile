@@ -1,16 +1,33 @@
-use validator::Validate;
-
-#[derive(Debug, Validate, Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct AuthRequest {
-    #[validate(length(equal = "32"))]
     pub user_id: String,
-    #[validate(length(equal = "64"))]
     pub password_hash: String,
 }
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub struct AuthResponse {
+    pub user_id: String,
+    pub token: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct PhoneNumber {
+    pub country: String, // two letter country code
+    pub number: String, // national number
+}
+
+#[derive(Debug, Deserialize)]
+pub struct NewUserRequest {
+    pub full_name: String,
+    pub password_hash: String,
+    pub email: String,
+    pub phone_number: PhoneNumber,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub struct NewUserResponse {
     pub user_id: String,
     pub token: String,
 }

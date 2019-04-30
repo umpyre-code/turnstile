@@ -1,6 +1,6 @@
 openapi: 3.0.2
 servers:
-  - url: 'https://api.umpyre.io/'
+  - url: "https://api.umpyre.io/"
 info:
   description: >-
     Umpyre API 👀
@@ -16,24 +16,24 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/LoginRequest'
+              $ref: "#/components/schemas/LoginRequest"
       security: []
       operationId: authenticate
       responses:
-        '200':
+        "200":
           description: >
             Successfully authenticated.
-            
+
             The token is returned in a secure cookie named
             `X-UMPYRE-APIKEY`. You need to include this cookie in subsequent
             requests, or pass the token with the `X-UMPYRE-APIKEY` header.
-          headers: 
+          headers:
             Set-Cookie:
-              schema: 
+              schema:
                 type: string
                 example: X-UMPYRE-APIKEY=token; Path=/; HttpOnly
-        '401':
-           $ref: "#/components/responses/UnauthorizedError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
   /user/{user_id}:
     get:
       summary: >-
@@ -44,28 +44,28 @@ paths:
       parameters:
         - name: user_id
           in: path
-          description: 'User ID.'
+          description: "User ID."
           required: true
           example: "aca0da3ee24b41d0a98d9a4f6256aa78"
           schema:
             type: string
       responses:
-        '200':
+        "200":
           description: >-
             The user exists and is available.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/User'
-        '404':
+                $ref: "#/components/schemas/User"
+        "404":
           description: >-
             The user does not exist.
           content:
             application/json:
               schema:
-                $ref: '#/components/responses/Error'
-        '401':
-           $ref: "#/components/responses/UnauthorizedError"
+                $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
     put:
       summary: >-
         Update user info
@@ -73,22 +73,22 @@ paths:
         Updates the underlying user model for the provided user ID.
       operationId: update-user
       responses:
-        '200':
+        "200":
           description: >-
             The user exists and is available.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/User'
-        '404':
+                $ref: "#/components/schemas/User"
+        "404":
           description: >-
             The user does not exist.
           content:
             application/json:
               schema:
-                $ref: '#/components/responses/Error'
-        '401':
-           $ref: "#/components/responses/UnauthorizedError"
+                $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
   /user:
     post:
       summary: >-
@@ -104,24 +104,24 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/NewUser'
+              $ref: "#/components/schemas/NewUser"
       responses:
-        '200':
+        "200":
           description: >-
             The user was created successfully.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/User'
-        '400':
+                $ref: "#/components/schemas/User"
+        "400":
           description: >-
             The user could not be created.
           content:
             application/json:
               schema:
-                $ref: '#/components/responses/Error'
-        '401':
-           $ref: "#/components/responses/UnauthorizedError"
+                $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
   /messages:
     get:
       summary: >-
@@ -130,27 +130,27 @@ paths:
         Returns all of the messages in a user's inbox stored on the server.
       operationId: get-messages
       responses:
-        '200':
+        "200":
           description: >-
             The user exists and is available.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Messages'
-        '404':
+                $ref: "#/components/schemas/Messages"
+        "404":
           description: >-
             The specified user does not exist.
           content:
             application/json:
               schema:
-                $ref: '#/components/responses/Error'
-        '401':
-           $ref: "#/components/responses/UnauthorizedError"
+                $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
     post:
       summary: >-
         Send a message
       description: >-
-        Send a message from the calling user's account to another user. 
+        Send a message from the calling user's account to another user.
       operationId: send-message
       requestBody:
         description: Message to send.
@@ -158,24 +158,24 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Message'
+              $ref: "#/components/schemas/Message"
       responses:
-        '200':
+        "200":
           description: >-
             The user exists and is available.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Messages'
-        '404':
+                $ref: "#/components/schemas/Messages"
+        "404":
           description: >-
             The user does not exist.
           content:
             application/json:
               schema:
-                $ref: '#/components/responses/Error'
-        '401':
-           $ref: "#/components/responses/UnauthorizedError"
+                $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
 components:
   schemas:
     User:
@@ -210,9 +210,9 @@ components:
             A SHA256 hash of the user's password. Do not send the plain-text
             password to the server.
       required:
-      - name
-      - public_key
-      - password_hash
+        - name
+        - public_key
+        - password_hash
     Message:
       type: object
       properties:
@@ -229,16 +229,16 @@ components:
           description: >-
             Text body of message, encrypted using a libsodium Box.
       required:
-      - from
-      - to
-      - text
+        - from
+        - to
+        - text
     Messages:
       type: object
       properties:
         messages:
           type: array
           items:
-            $ref: '#/components/schemas/Message'
+            $ref: "#/components/schemas/Message"
     LoginRequest:
       type: object
       properties:
@@ -252,8 +252,8 @@ components:
             A SHA256 hash of the user's password. Do not send the plain-text
             password to the server.
       required:
-      - user
-      - password_hash
+        - user
+        - password_hash
   responses:
     UnauthorizedError:
       description: Credentials missing or invalid.

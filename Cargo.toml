@@ -6,6 +6,7 @@ edition = "2018"
 
 [dependencies]
 env_logger = { version = "0.5", default-features = false }
+color-backtrace = "0.1"
 failure = "0.1"
 futures = "0.1"
 http = "0.1"
@@ -33,8 +34,6 @@ tower-grpc = { git = "https://github.com/tower-rs/tower-grpc" }
 tower-h2 = { git = "https://github.com/tower-rs/tower-h2" }
 tower-http = { git = "https://github.com/tower-rs/tower-http" }
 tower-request-modifier = { git = "https://github.com/tower-rs/tower-http" }
-validator = "0.8"
-validator_derive = "0.8"
 webpki = "0.19"
 yansi = "0.5"
 
@@ -49,5 +48,7 @@ features = ["json", "compression","serve", "helmet", "redis_pool"]
 
 [dev-dependencies]
 assert_cmd = "0.11"
+data-encoding = "2"
 nix = "0.13"
 reqwest = { version = "0.9", default-features = false, features = ["rustls"] }
+sha2 = "0.8"

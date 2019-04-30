@@ -98,7 +98,7 @@ impl Client {
                     .map_err(|e| panic!("gRPC request failed; err={:?}", e))
             })
             .and_then(move |response| {
-                info!("add_user RESPONSE = {:?}", response);
+                info!("authenticate RESPONSE = {:?}", response);
                 result_inner
                     .lock()
                     .unwrap()
@@ -106,7 +106,7 @@ impl Client {
                 Ok(())
             })
             .map_err(|e| {
-                error!("add_user ERR = {:?}", e);
+                error!("ERR = {:?}", e);
             });
 
         tokio::run(future);

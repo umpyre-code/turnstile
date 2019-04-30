@@ -30,8 +30,9 @@ impl From<rolodex_client::RolodexError> for ResponseError {
     }
 }
 
-#[post("/authenticate", data = "<auth_request>", format = "json")]
+#[post("/user/authenticate", data = "<auth_request>", format = "json")]
 pub fn authenticate(
+    _ratelimited: guards::RateLimitedPublic,
     mut cookies: Cookies,
     redis_writer: fairings::RedisWriter,
     auth_request: Json<models::AuthRequest>,
@@ -86,19 +87,66 @@ pub fn authenticate(
     }
 }
 
-#[derive(Serialize)]
-pub struct Hello {
-    hi: String,
-}
+#[post("/user", data = "<new_user_request>", format = "json")]
+pub fn add_user(
+    _ratelimited: guards::RateLimitedPublic,
+    mut cookies: Cookies,
+    redis_writer: fairings::RedisWriter,
+    new_user_request: Json<models::NewUserRequest>,
+) -> Result<Json<models::NewUserResponse>, ResponseError> {
+    let rolodex_client = rolodex_client::Client::new(&config::CONFIG);
+    let response = rolodex_client.add_user(rolodex_grpc::proto::NewUserRequest {
+        full_name: new_user_request.full_name.clone(),
+        password_hash: new_user_request.password_hash.clone(),
+        email: new_user_request.email.clone(),
+        phone_number: Some(rolodex_grpc::proto::PhoneNumber {
+            country: new_user_request.phone_number.country.clone(),
+            number: new_user_request.phone_number.number.clone(),
+        }),
+    })?;
 
-#[get("/hello", format = "json")]
-pub fn hello(
-    user: guards::User,
-    _ratelimited: guards::RateLimitedPrivate,
-) -> Result<Json<Hello>, ResponseError> {
-    Ok(Json(Hello {
-        hi: user.user_id.clone(),
-    }))
+    match response.result {
+        Some(result) => match result {
+            rolodex_grpc::proto::new_user_response::Result::UserId(user_id) => {
+                use rocket_contrib::databases::redis::Commands;
+
+                // generate token (JWT)
+                let token = token::generate(&user_id);
+
+                // store token in Redis
+                let redis = &*redis_writer;
+                let _c: i32 = redis.sadd(&format!("token:{}", user_id), &token).unwrap();
+
+                let cookie = Cookie::build("X-UMPYRE-APIKEY", token.clone())
+                    .path("/")
+                    .secure(true)
+                    .permanent()
+                    .finish();
+                cookies.add(cookie);
+
+                Ok(Json(models::NewUserResponse { user_id, token }))
+            }
+            rolodex_grpc::proto::new_user_response::Result::Error(error) => {
+                Err(ResponseError::BadRequest {
+                    response: content::Json(
+                        json!({
+                            "code": error,
+                            "error": "unable to create new user".to_string(),
+                        })
+                        .to_string(),
+                    ),
+                })
+            }
+        },
+        None => Err(ResponseError::Unauthorized {
+            response: content::Json(
+                json!({
+                    "error": "invalid credentials".to_string(),
+                })
+                .to_string(),
+            ),
+        }),
+    }
 }
 
 #[get("/ping")]

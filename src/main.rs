@@ -16,9 +16,6 @@ extern crate yansi;
 extern crate log;
 #[macro_use]
 extern crate failure;
-#[macro_use]
-extern crate validator_derive;
-extern crate validator;
 
 mod catchers;
 mod certs;
@@ -65,6 +62,8 @@ fn get_helmet() -> rocket_contrib::helmet::SpaceHelmet {
 fn main() -> Result<(), std::io::Error> {
     use rocket_contrib::compression::Compression;
 
+    color_backtrace::install();
+
     config::load_config();
 
     instrumented::init(&config::CONFIG.metrics.bind_to_address);
@@ -86,7 +85,7 @@ fn main() -> Result<(), std::io::Error> {
         ])
         .mount(
             "/",
-            routes![routes::authenticate, routes::ping, routes::hello,],
+            routes![routes::add_user, routes::authenticate, routes::ping,],
         )
         .launch();
 
