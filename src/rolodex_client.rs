@@ -122,7 +122,7 @@ impl Client {
         )
     }
 
-        #[instrument(INFO)]
+    #[instrument(INFO)]
     pub fn get_user(
         &self,
         get_user_request: rolodex_grpc::proto::GetUserRequest,
