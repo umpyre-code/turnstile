@@ -31,3 +31,10 @@ pub struct NewUserResponse {
     pub user_id: String,
     pub token: String,
 }
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub struct GetUserResponse {
+    pub user_id: String,
+    pub full_name: String,
+}

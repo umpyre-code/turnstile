@@ -13,8 +13,6 @@ use rocket_contrib::json::Json;
 pub enum ResponseError {
     #[response(status = 400, content_type = "json")]
     BadRequest { response: content::Json<String> },
-    #[response(status = 403, content_type = "json")]
-    Unauthorized { response: content::Json<String> },
 }
 
 impl From<rolodex_client::RolodexError> for ResponseError {
@@ -44,10 +42,34 @@ impl From<rolodex_client::RolodexError> for ResponseError {
     }
 }
 
+fn handle_auth_token(
+    mut cookies: Cookies,
+    redis_writer: fairings::RedisWriter,
+    user_id: &str,
+) -> String {
+    use rocket_contrib::databases::redis::Commands;
+
+    // generate token (JWT)
+    let token = token::generate(&user_id);
+
+    // store token in Redis
+    let redis = &*redis_writer;
+    let _c: i32 = redis.sadd(&format!("token:{}", user_id), &token).unwrap();
+
+    let cookie = Cookie::build("X-UMPYRE-APIKEY", token.clone())
+        .path("/")
+        .secure(true)
+        .permanent()
+        .finish();
+    cookies.add(cookie);
+
+    token
+}
+
 #[post("/user/authenticate", data = "<auth_request>", format = "json")]
 pub fn post_user_authenticate(
     _ratelimited: guards::RateLimitedPublic,
-    mut cookies: Cookies,
+    cookies: Cookies,
     redis_writer: fairings::RedisWriter,
     auth_request: Json<models::AuthRequest>,
 ) -> Result<Json<models::AuthResponse>, ResponseError> {
@@ -57,58 +79,23 @@ pub fn post_user_authenticate(
         password_hash: auth_request.password_hash.clone(),
     })?;
 
-    match response.result {
-        Some(result) => match result {
-            rolodex_grpc::proto::auth_response::Result::UserId(user_id) => {
-                use rocket_contrib::databases::redis::Commands;
+    let token = handle_auth_token(cookies, redis_writer, &response.user_id);
 
-                // generate token (JWT)
-                let token = token::generate(&user_id);
-
-                // store token in Redis
-                let redis = &*redis_writer;
-                let _c: i32 = redis.sadd(&format!("token:{}", user_id), &token).unwrap();
-
-                let cookie = Cookie::build("X-UMPYRE-APIKEY", token.clone())
-                    .path("/")
-                    .secure(true)
-                    .permanent()
-                    .finish();
-                cookies.add(cookie);
-
-                Ok(Json(models::AuthResponse { user_id, token }))
-            }
-            rolodex_grpc::proto::auth_response::Result::Error(error) => {
-                Err(ResponseError::Unauthorized {
-                    response: content::Json(
-                        json!({
-                            "code": error,
-                            "error": "invalid credentials".to_string(),
-                        })
-                        .to_string(),
-                    ),
-                })
-            }
-        },
-        None => Err(ResponseError::Unauthorized {
-            response: content::Json(
-                json!({
-                    "error": "invalid credentials".to_string(),
-                })
-                .to_string(),
-            ),
-        }),
-    }
+    Ok(Json(models::AuthResponse {
+        user_id: response.user_id,
+        token,
+    }))
 }
 
 #[post("/user", data = "<new_user_request>", format = "json")]
 pub fn post_user(
     _ratelimited: guards::RateLimitedPublic,
-    mut cookies: Cookies,
+    cookies: Cookies,
     redis_writer: fairings::RedisWriter,
     new_user_request: Json<models::NewUserRequest>,
 ) -> Result<Json<models::NewUserResponse>, ResponseError> {
     let rolodex_client = rolodex_client::Client::new(&config::CONFIG);
+
     let response = rolodex_client.add_user(rolodex_grpc::proto::NewUserRequest {
         full_name: new_user_request.full_name.clone(),
         password_hash: new_user_request.password_hash.clone(),
@@ -119,48 +106,37 @@ pub fn post_user(
         }),
     })?;
 
-    match response.result {
-        Some(result) => match result {
-            rolodex_grpc::proto::new_user_response::Result::UserId(user_id) => {
-                use rocket_contrib::databases::redis::Commands;
+    let token = handle_auth_token(cookies, redis_writer, &response.user_id);
 
-                // generate token (JWT)
-                let token = token::generate(&user_id);
+    Ok(Json(models::NewUserResponse {
+        user_id: response.user_id,
+        token,
+    }))
+}
 
-                // store token in Redis
-                let redis = &*redis_writer;
-                let _c: i32 = redis.sadd(&format!("token:{}", user_id), &token).unwrap();
-
-                let cookie = Cookie::build("X-UMPYRE-APIKEY", token.clone())
-                    .path("/")
-                    .secure(true)
-                    .permanent()
-                    .finish();
-                cookies.add(cookie);
-
-                Ok(Json(models::NewUserResponse { user_id, token }))
-            }
-            rolodex_grpc::proto::new_user_response::Result::Error(error) => {
-                Err(ResponseError::BadRequest {
-                    response: content::Json(
-                        json!({
-                            "code": error,
-                            "error": "unable to create new user".to_string(),
-                        })
-                        .to_string(),
-                    ),
-                })
-            }
-        },
-        None => Err(ResponseError::Unauthorized {
-            response: content::Json(
-                json!({
-                    "error": "invalid credentials".to_string(),
-                })
-                .to_string(),
-            ),
-        }),
+impl From<rolodex_grpc::proto::GetUserResponse> for models::GetUserResponse {
+    fn from(response: rolodex_grpc::proto::GetUserResponse) -> Self {
+        models::GetUserResponse {
+            user_id: response.user_id,
+            full_name: response.full_name,
+        }
     }
+}
+
+#[get("/user/<user_id>")]
+pub fn get_user(
+    user_id: String,
+    calling_user: guards::User,
+    _ratelimited: guards::RateLimitedPrivate,
+) -> Result<Json<models::GetUserResponse>, ResponseError> {
+    let rolodex_client = rolodex_client::Client::new(&config::CONFIG);
+
+    let response = rolodex_client.get_user(rolodex_grpc::proto::GetUserRequest {
+        user_id,
+        calling_user_id: calling_user.user_id,
+    })?;
+
+    Ok(Json(response.into()))
 }
 
 #[get("/ping")]

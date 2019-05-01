@@ -2,7 +2,7 @@ extern crate data_encoding;
 extern crate jsonwebtoken;
 
 use crate::config;
-use data_encoding::BASE64_NOPAD;
+use data_encoding::BASE64URL_NOPAD;
 use jsonwebtoken::errors::ErrorKind;
 use jsonwebtoken::{encode, Header, Validation};
 use sodiumoxide::crypto::secretbox;
@@ -20,7 +20,7 @@ lazy_static! {
     // time.
     static ref SECRET_KEY: Key = {
         Key::from_slice(
-            &BASE64_NOPAD
+            &BASE64URL_NOPAD
                 .decode(config::CONFIG.jwt.encryption_secret.as_bytes())
                 .unwrap(),
         )
@@ -47,8 +47,8 @@ fn generate_inner(jwt_config: &config::Jwt, key: &Key, sub: &str) -> String {
             // Remaining bytes are ciphertext.
             format!(
                 "{}{}",
-                BASE64_NOPAD.encode(nonce.as_ref()).to_string(),
-                BASE64_NOPAD.encode(&ciphertext).to_string(),
+                BASE64URL_NOPAD.encode(nonce.as_ref()).to_string(),
+                BASE64URL_NOPAD.encode(&ciphertext).to_string(),
             )
         }
         Err(err) => panic!("error generating jwt: {:?}", err),
@@ -93,9 +93,9 @@ fn decode_into_sub_inner(
     token: &str,
 ) -> Result<String, TokenError> {
     // First 24 bytes (32 chars) are the nonce.
-    let nonce = Nonce::from_slice(&BASE64_NOPAD.decode(token[..32].as_bytes())?).unwrap();
+    let nonce = Nonce::from_slice(&BASE64URL_NOPAD.decode(token[..32].as_bytes())?).unwrap();
     // Remaining bytes are the ciphertext.
-    let ciphertext = BASE64_NOPAD.decode(token[32..].as_bytes())?;
+    let ciphertext = BASE64URL_NOPAD.decode(token[32..].as_bytes())?;
     let jwt = String::from_utf8(secretbox::open(&ciphertext, &nonce, key)?)?;
 
     let validation = Validation {

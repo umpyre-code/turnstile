@@ -61,12 +61,16 @@ fn get_helmet() -> rocket_contrib::helmet::SpaceHelmet {
 
 fn main() -> Result<(), std::io::Error> {
     use rocket_contrib::compression::Compression;
+    use std::env;
 
     color_backtrace::install();
 
     config::load_config();
 
-    instrumented::init(&config::CONFIG.metrics.bind_to_address);
+    // Allow disablement of metrics reporting for testing
+    if env::var_os("DISABLE_INSTRUMENTED").is_none() {
+        instrumented::init(&config::CONFIG.metrics.bind_to_address);
+    }
 
     rocket::ignite()
         .attach(fairings::RequestTimer)
@@ -86,9 +90,10 @@ fn main() -> Result<(), std::io::Error> {
         .mount(
             "/",
             routes![
-                routes::post_user,
-                routes::post_user_authenticate,
                 routes::get_ping,
+                routes::get_user,
+                routes::post_user_authenticate,
+                routes::post_user,
             ],
         )
         .launch();

@@ -122,6 +122,24 @@ impl Client {
         )
     }
 
+        #[instrument(INFO)]
+    pub fn get_user(
+        &self,
+        get_user_request: rolodex_grpc::proto::GetUserRequest,
+    ) -> Result<rolodex_grpc::proto::GetUserResponse, RolodexError> {
+        let mut runtime = tokio::runtime::Runtime::new().expect("Unable to create a runtime");
+
+        runtime.block_on(
+            self.make_service()
+                .and_then(move |mut client: RpcClient| {
+                    client
+                        .get_user(Request::new(get_user_request))
+                        .map_err(RolodexError::from)
+                })
+                .map(|response| response.get_ref().clone()),
+        )
+    }
+
     #[instrument(INFO)]
     pub fn authenticate(
         &self,
