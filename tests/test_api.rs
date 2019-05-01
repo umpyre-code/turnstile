@@ -62,7 +62,6 @@ fn test_ping() {
 
 #[test]
 fn test_add_user() {
-
     use data_encoding::HEXLOWER;
     use sha2::{Digest, Sha256};
     let _turnstile_process = Turnstile::new().wait_for_ping();

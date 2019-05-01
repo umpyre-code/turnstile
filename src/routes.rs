@@ -19,13 +19,27 @@ pub enum ResponseError {
 
 impl From<rolodex_client::RolodexError> for ResponseError {
     fn from(err: rolodex_client::RolodexError) -> Self {
-        ResponseError::BadRequest {
-            response: content::Json(
-                json!({
-                    "error": err.to_string(),
-                })
-                .to_string(),
-            ),
+        match err {
+            rolodex_client::RolodexError::RequestFailure { code, message } => {
+                ResponseError::BadRequest {
+                    response: content::Json(
+                        json!({
+                            "error": "Rolodex client request failed",
+                            "code": format!("{:?}", code),
+                            "message": message,
+                        })
+                        .to_string(),
+                    ),
+                }
+            }
+            _ => ResponseError::BadRequest {
+                response: content::Json(
+                    json!({
+                        "error": err.to_string(),
+                    })
+                    .to_string(),
+                ),
+            },
         }
     }
 }
