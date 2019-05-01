@@ -24,7 +24,7 @@ use tower::Service;
 use tower_buffer::Buffer;
 use tower_grpc::{BoxBody, Request};
 use tower_h2::client;
-use tower_h2::client::{ConnectError, Connection};
+use tower_h2::client::Connection;
 use tower_request_modifier::{Builder, RequestModifier};
 
 #[derive(Clone)]
