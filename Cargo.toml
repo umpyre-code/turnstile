@@ -14,8 +14,8 @@ instrumented = { git = "ssh://git@github.com/umpyre-code/instrumented.git" }
 jsonwebtoken = "6"
 lazy_static = "1.3"
 log = "0.4"
-rocket = { git = "https://github.com/SergioBenitez/Rocket.git", default-features = false }
-rocket_cors = { git = "https://github.com/lawliet89/rocket_cors"  }
+rocket = { git = "https://github.com/brndnmtthws/Rocket.git" }
+rocket_cors = { git = "https://github.com/lawliet89/rocket_cors.git"  }
 rolodex-grpc = { git = "ssh://git@github.com/umpyre-code/rolodex.git" }
 rustls = "0.15"
 data-encoding = "2"
@@ -38,11 +38,12 @@ webpki = "0.19"
 yansi = "0.5"
 
 [patch.crates-io]
-cookie = { git = "https://github.com/alexcrichton/cookie-rs.git"}
-rocket = { git = "https://github.com/SergioBenitez/Rocket.git" }
+rocket = { git = "https://github.com/brndnmtthws/Rocket.git"  }
+rocket_http = { git = "https://github.com/brndnmtthws/Rocket.git" }
+cookie = { git = "https://github.com/SergioBenitez/cookie-rs.git" }
 
 [dependencies.rocket_contrib]
-git = "https://github.com/SergioBenitez/Rocket.git"
+git = "https://github.com/brndnmtthws/Rocket.git"
 default-features = false
 features = ["json", "compression","serve", "helmet", "redis_pool"]
 
@@ -51,5 +52,5 @@ assert_cmd = "0.11"
 data-encoding = "2"
 nix = "0.13"
 rand = "0.6"
-reqwest = { version = "0.9", default-features = false, features = ["rustls"] }
+# reqwest = { version = "0.9", default-features = false, features = ["rustls"] }
 sha2 = "0.8"
