@@ -16,12 +16,6 @@ jwt_secret = "secretsecretsecret"
 #   $ openssl rand -base64 32
 encryption_secret = "pqbn4Xh-jr6XFkuGVdsbTSusDzNe-zOEwhYnisZcWiY"
 
-[redis.reader]
-address = "127.0.0.1:6379"
-
-[redis.writer]
-address = "127.0.0.1:6379"
-
 [metrics]
 bind_to_address = "127.0.0.1:5000"
 

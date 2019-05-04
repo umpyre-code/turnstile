@@ -10,7 +10,6 @@ pub struct Config {
     pub service: Service,
     pub rolodex: Rolodex,
     pub jwt: Jwt,
-    pub redis: Redises,
     pub metrics: Metrics,
     pub rate_limits: RateLimits,
 }
@@ -35,17 +34,6 @@ pub struct Jwt {
     pub exp: usize,
     pub jwt_secret: String,
     pub encryption_secret: String,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct Redises {
-    pub reader: Redis,
-    pub writer: Redis,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct Redis {
-    pub address: String,
 }
 
 #[derive(Debug, Deserialize)]
