@@ -15,10 +15,17 @@ ENV SCCACHE_GCS_RW_MODE=READ_WRITE
 ENV SCCACHE_GCS_KEY_PATH=/root/sccache.json
 ENV RUSTC_WRAPPER=sccache
 
+ADD https://github.com/a8m/envsubst/releases/download/v1.1.0/envsubst-Linux-x86_64 /usr/bin/envsubst
+RUN chmod +x /usr/bin/envsubst
+
+RUN GRPC_HEALTH_PROBE_VERSION=v0.2.0 && \
+  wget -qO/bin/grpc_health_probe https://github.com/grpc-ecosystem/grpc-health-probe/releases/download/${GRPC_HEALTH_PROBE_VERSION}/grpc_health_probe-linux-amd64 && \
+  chmod +x /bin/grpc_health_probe
+
 WORKDIR /app
 
 COPY . /app/src
-COPY Turnstile.toml /app
+COPY entrypoint.sh /app
 
 RUN mkdir -p $HOME/.ssh \
   && chmod 0700 $HOME/.ssh \
@@ -41,4 +48,4 @@ RUN rm -rf /root/.ssh/
 
 ENV RUST_LOG=turnstile=info
 
-ENTRYPOINT [ "turnstile" ]
+ENTRYPOINT [ "/app/entrypoint.sh" ]
