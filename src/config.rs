@@ -55,13 +55,13 @@ pub struct RateLimit {
 }
 
 fn get_turnstile_toml_path() -> String {
-    env::var("TURNSTILE_TOML").unwrap_or_else(|_| "turnstile.toml".to_string())
+    env::var("TURNSTILE_TOML").unwrap_or_else(|_| "Turnstile.toml".to_string())
 }
 
 lazy_static! {
     pub static ref CONFIG: Config = {
-        let api_frontend_toml_path = get_turnstile_toml_path();
-        let config: Config = toml::from_str(&read_file_to_string(&api_frontend_toml_path)).unwrap();
+        let turnstile_toml_path = get_turnstile_toml_path();
+        let config: Config = toml::from_str(&read_file_to_string(&turnstile_toml_path)).unwrap();
         config
     };
 }
