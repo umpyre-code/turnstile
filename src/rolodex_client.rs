@@ -22,7 +22,7 @@ use tokio_rustls::{rustls::ClientConfig, rustls::ClientSession, TlsConnector, Tl
 use tower::MakeService;
 use tower::Service;
 use tower_buffer::Buffer;
-use tower_grpc::{BoxBody, Request};
+use rolodex_grpc::tower_grpc::{BoxBody, Request};
 use tower_h2::client;
 use tower_h2::client::Connection;
 use tower_request_modifier::{Builder, RequestModifier};
@@ -48,7 +48,7 @@ pub enum RolodexError {
         code, message
     )]
     RequestFailure {
-        code: tower_grpc::Code,
+        code: rolodex_grpc::tower_grpc::Code,
         message: String,
     },
 }
@@ -61,8 +61,8 @@ impl From<tower_h2::client::ConnectError<std::io::Error>> for RolodexError {
     }
 }
 
-impl From<tower_grpc::Status> for RolodexError {
-    fn from(err: tower_grpc::Status) -> Self {
+impl From<rolodex_grpc::tower_grpc::Status> for RolodexError {
+    fn from(err: rolodex_grpc::tower_grpc::Status) -> Self {
         RolodexError::RequestFailure {
             code: err.code(),
             message: err.message().to_string(),
