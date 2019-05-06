@@ -82,6 +82,7 @@ fn main() -> Result<(), std::io::Error> {
         .attach(get_helmet())
         .attach(get_cors())
         .register(catchers![
+            catchers::bad_request,
             catchers::not_found,
             catchers::too_many_requests,
             catchers::unauthorized,

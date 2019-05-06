@@ -31,3 +31,11 @@ pub fn too_many_requests() -> JsonValue {
         "reason": "Too many requests."
     })
 }
+
+#[catch(400)]
+pub fn bad_request() -> JsonValue {
+    json!({
+        "status": "error",
+        "reason": "Bad request."
+    })
+}
