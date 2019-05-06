@@ -52,6 +52,7 @@ fn get_helmet() -> rocket_contrib::helmet::SpaceHelmet {
     use rocket_contrib::helmet::{Frame, Hsts, Referrer, SpaceHelmet, XssFilter};
     let site_uri = Uri::parse(&config::CONFIG.service.site_uri).unwrap();
     let report_uri = Uri::parse(&config::CONFIG.service.site_uri).unwrap();
+
     SpaceHelmet::default()
         .enable(Hsts::default())
         .enable(Frame::AllowFrom(site_uri))
@@ -60,6 +61,7 @@ fn get_helmet() -> rocket_contrib::helmet::SpaceHelmet {
 }
 
 fn main() -> Result<(), std::io::Error> {
+    env_logger::init();
     use rocket_contrib::compression::Compression;
     use std::env;
 
