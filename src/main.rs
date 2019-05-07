@@ -61,11 +61,10 @@ fn get_helmet() -> rocket_contrib::helmet::SpaceHelmet {
 }
 
 fn main() -> Result<(), std::io::Error> {
-    env_logger::init();
     use rocket_contrib::compression::Compression;
     use std::env;
-
-    color_backtrace::install();
+    
+    ::env_logger::init();
 
     config::load_config();
 
