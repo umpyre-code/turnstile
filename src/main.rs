@@ -14,6 +14,7 @@ extern crate instrumented;
 extern crate yansi;
 #[macro_use]
 extern crate log;
+extern crate log_panics;
 #[macro_use]
 extern crate failure;
 
@@ -62,6 +63,8 @@ fn get_helmet() -> rocket_contrib::helmet::SpaceHelmet {
 
 fn main() -> Result<(), std::io::Error> {
     env_logger::init();
+    log_panics::init();
+
     use rocket_contrib::compression::Compression;
     use std::env;
 
