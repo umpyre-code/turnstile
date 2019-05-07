@@ -13,6 +13,7 @@ use futures::{Future, Poll};
 
 use crate::config;
 use instrumented::instrument;
+use rolodex_grpc::tower_grpc::{BoxBody, Request};
 use std::fs;
 use std::io::BufReader;
 use std::sync::Arc;
@@ -22,13 +23,14 @@ use tokio_rustls::{rustls::ClientConfig, rustls::ClientSession, TlsConnector, Tl
 use tower::MakeService;
 use tower::Service;
 use tower_buffer::Buffer;
-use rolodex_grpc::tower_grpc::{BoxBody, Request};
 use tower_h2::client;
 use tower_h2::client::Connection;
 use tower_request_modifier::{Builder, RequestModifier};
 
 #[derive(Clone)]
-struct Dst;
+struct Dst {
+    address: std::net::SocketAddr,
+}
 
 pub type Buf = Buffer<
     RequestModifier<
@@ -78,7 +80,11 @@ pub struct Client {
 impl Client {
     pub fn new(config: &config::Config) -> Self {
         Client {
-            service: Dst {},
+            service: Dst {
+                address: format!("{}:{}", config.rolodex.host, config.rolodex.port)
+                    .parse()
+                    .unwrap(),
+            },
             uri: format!("https://{}:{}", config.rolodex.host, config.rolodex.port)
                 .parse()
                 .unwrap(),
@@ -181,8 +187,7 @@ impl Service<()> for Dst {
         let tls_connector = TlsConnector::from(config);
 
         let domain = webpki::DNSNameRef::try_from_ascii_str("localhost").unwrap();
-
-        let stream = TcpStream::connect(&([127, 0, 0, 1], 10011).into()).and_then(move |sock| {
+        let stream = TcpStream::connect(&self.address).and_then(move |sock| {
             sock.set_nodelay(true).unwrap();
             tls_connector.connect(domain, sock)
         });
