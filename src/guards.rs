@@ -95,6 +95,8 @@ fn ratelimit_from_request<'a, 'r>(
             let key = if key.len() == 1 {
                 format!("throttle:{}", key.first().unwrap())
             } else {
+                // Take the second from last value of X-Forwarded-For, as per the docs at:
+                // https://cloud.google.com/load-balancing/docs/https/
                 format!("throttle:{}", key[key.len() - 2])
             };
 
