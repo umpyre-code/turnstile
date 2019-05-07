@@ -196,10 +196,12 @@ impl Service<()> for Dst {
             .to_socket_addrs()
             .expect("Couldn't resolve rolodex host");
 
-        let address = addresses.find(|a| match a {
-            std::net::SocketAddr::V4 {.. } => true,
-            _ => false,
-        }).expect("No IPV4 address found");
+        let address = addresses
+            .find(|a| match a {
+                std::net::SocketAddr::V4 { .. } => true,
+                _ => false,
+            })
+            .expect("No IPV4 address found");
 
         let stream = TcpStream::connect(&address).and_then(move |sock| {
             sock.set_nodelay(true).unwrap();

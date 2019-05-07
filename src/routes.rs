@@ -13,6 +13,8 @@ use rocket_contrib::json::Json;
 pub enum ResponseError {
     #[response(status = 400, content_type = "json")]
     BadRequest { response: content::Json<String> },
+    #[response(status = 503, content_type = "json")]
+    DatabaseError { response: content::Json<String> },
 }
 
 impl From<rolodex_client::RolodexError> for ResponseError {
@@ -22,7 +24,8 @@ impl From<rolodex_client::RolodexError> for ResponseError {
                 ResponseError::BadRequest {
                     response: content::Json(
                         json!({
-                            "error": "Rolodex client request failed",
+                            "status":"error",
+                            "reason": "Rolodex client request failed",
                             "code": format!("{:?}", code),
                             "message": message,
                         })
@@ -33,7 +36,8 @@ impl From<rolodex_client::RolodexError> for ResponseError {
             _ => ResponseError::BadRequest {
                 response: content::Json(
                     json!({
-                        "error": err.to_string(),
+                        "status": "error",
+                        "reason:": err.to_string(),
                     })
                     .to_string(),
                 ),
@@ -42,11 +46,25 @@ impl From<rolodex_client::RolodexError> for ResponseError {
     }
 }
 
+impl From<rocket_contrib::databases::redis::RedisError> for ResponseError {
+    fn from(err: rocket_contrib::databases::redis::RedisError) -> Self {
+        ResponseError::BadRequest {
+            response: content::Json(
+                json!({
+                    "status": "error",
+                    "reason:": err.to_string(),
+                })
+                .to_string(),
+            ),
+        }
+    }
+}
+
 fn handle_auth_token(
     mut cookies: Cookies,
     redis_writer: fairings::RedisWriter,
     user_id: &str,
-) -> String {
+) -> Result<String, ResponseError> {
     use rocket_contrib::databases::redis::Commands;
 
     // generate token (JWT)
@@ -54,7 +72,7 @@ fn handle_auth_token(
 
     // store token in Redis
     let redis = &*redis_writer;
-    let _c: i32 = redis.sadd(&format!("token:{}", user_id), &token).unwrap();
+    let _c: i32 = redis.sadd(&format!("token:{}", user_id), &token)?;
 
     let cookie = Cookie::build("X-UMPYRE-APIKEY", token.clone())
         .path("/")
@@ -63,7 +81,7 @@ fn handle_auth_token(
         .finish();
     cookies.add(cookie);
 
-    token
+    Ok(token)
 }
 
 #[post("/user/authenticate", data = "<auth_request>", format = "json")]
@@ -79,7 +97,7 @@ pub fn post_user_authenticate(
         password_hash: auth_request.password_hash.clone(),
     })?;
 
-    let token = handle_auth_token(cookies, redis_writer, &response.user_id);
+    let token = handle_auth_token(cookies, redis_writer, &response.user_id)?;
 
     Ok(Json(models::AuthResponse {
         user_id: response.user_id,
@@ -106,7 +124,7 @@ pub fn post_user(
         }),
     })?;
 
-    let token = handle_auth_token(cookies, redis_writer, &response.user_id);
+    let token = handle_auth_token(cookies, redis_writer, &response.user_id)?;
 
     Ok(Json(models::NewUserResponse {
         user_id: response.user_id,
