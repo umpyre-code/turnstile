@@ -175,6 +175,8 @@ impl Service<()> for Dst {
     }
 
     fn call(&mut self, _: ()) -> Self::Future {
+        use std::net::ToSocketAddrs;
+
         let mut pem = BufReader::new(fs::File::open(&config::CONFIG.rolodex.ca_cert_path).unwrap());
         let mut config = ClientConfig::new();
         config.root_store.add_pem_file(&mut pem).unwrap();
@@ -186,8 +188,19 @@ impl Service<()> for Dst {
         let config = Arc::new(config);
         let tls_connector = TlsConnector::from(config);
 
-        let domain = webpki::DNSNameRef::try_from_ascii_str(&self.host).unwrap().to_owned();
-        let address = format!("{}:{}", self.host, self.port).parse().unwrap();
+        let domain = webpki::DNSNameRef::try_from_ascii_str(&self.host)
+            .unwrap()
+            .to_owned();
+
+        let mut addresses = format!("{}:{}", self.host, self.port)
+            .to_socket_addrs()
+            .expect("Couldn't resolve rolodex host");
+
+        let address = addresses.find(|a| match a {
+            std::net::SocketAddr::V4 {.. } => true,
+            _ => false,
+        }).expect("No IPV4 address found");
+
         let stream = TcpStream::connect(&address).and_then(move |sock| {
             sock.set_nodelay(true).unwrap();
             tls_connector.connect(domain.as_ref(), sock)

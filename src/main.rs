@@ -63,7 +63,7 @@ fn get_helmet() -> rocket_contrib::helmet::SpaceHelmet {
 fn main() -> Result<(), std::io::Error> {
     use rocket_contrib::compression::Compression;
     use std::env;
-    
+
     ::env_logger::init();
 
     config::load_config();
