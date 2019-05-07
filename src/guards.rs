@@ -85,11 +85,17 @@ fn ratelimit_from_request<'a, 'r>(
                 None => request
                     .headers()
                     .get_one("X-Forwarded-For")
-                    .map(|s| s.to_string())
+                    .map(|s| {
+                        info!("X-Forwarded-For: {:?}", s);
+                        s.to_string()
+                    })
                     .unwrap_or_else(|| {
                         request
                             .client_ip()
-                            .map(|s| s.to_string())
+                            .map(|s| {
+                                info!("client_ip: {:?}", s);
+                                s.to_string()
+                            })
                             .unwrap_or_else(|| "0.0.0.0".to_string())
                     })
                     .split(',')
