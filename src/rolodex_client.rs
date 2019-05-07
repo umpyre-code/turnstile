@@ -29,7 +29,8 @@ use tower_request_modifier::{Builder, RequestModifier};
 
 #[derive(Clone)]
 struct Dst {
-    address: std::net::SocketAddr,
+    host: String,
+    port: i32,
 }
 
 pub type Buf = Buffer<
@@ -81,9 +82,8 @@ impl Client {
     pub fn new(config: &config::Config) -> Self {
         Client {
             service: Dst {
-                address: format!("{}:{}", config.rolodex.host, config.rolodex.port)
-                    .parse()
-                    .unwrap(),
+                host: config.rolodex.host.clone(),
+                port: config.rolodex.port,
             },
             uri: format!("https://{}:{}", config.rolodex.host, config.rolodex.port)
                 .parse()
@@ -186,10 +186,11 @@ impl Service<()> for Dst {
         let config = Arc::new(config);
         let tls_connector = TlsConnector::from(config);
 
-        let domain = webpki::DNSNameRef::try_from_ascii_str("localhost").unwrap();
-        let stream = TcpStream::connect(&self.address).and_then(move |sock| {
+        let domain = webpki::DNSNameRef::try_from_ascii_str(&self.host).unwrap().to_owned();
+        let address = format!("{}:{}", self.host, self.port).parse().unwrap();
+        let stream = TcpStream::connect(&address).and_then(move |sock| {
             sock.set_nodelay(true).unwrap();
-            tls_connector.connect(domain, sock)
+            tls_connector.connect(domain.as_ref(), sock)
         });
 
         Box::new(stream)
