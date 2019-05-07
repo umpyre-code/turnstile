@@ -83,10 +83,13 @@ fn ratelimit_from_request<'a, 'r>(
             let key = match request.guard::<User>().succeeded() {
                 Some(user) => user.user_id,
                 None => request
-                    .client_ip()
-                    .unwrap_or_else(|| "0.0.0.0".parse().unwrap())
+                    .headers()
+                    .get_one("X-Forwarded-For")
+                    .unwrap_or_else(|| "0.0.0.0")
                     .to_string(),
             };
+
+            let key = format!("throttle:{}", key);
 
             let (limited, limit, remaining, retry_after, reset): (i32, i32, i32, i32, i32) =
                 redis::cmd("CL.THROTTLE")

@@ -2,7 +2,7 @@ extern crate data_encoding;
 extern crate jsonwebtoken;
 
 use crate::config;
-use data_encoding::{BASE64_NOPAD, BASE64URL_NOPAD};
+use data_encoding::{BASE64URL_NOPAD, BASE64_NOPAD};
 use jsonwebtoken::errors::ErrorKind;
 use jsonwebtoken::{encode, Header, Validation};
 use sodiumoxide::crypto::secretbox;
