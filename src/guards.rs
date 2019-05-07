@@ -81,15 +81,22 @@ fn ratelimit_from_request<'a, 'r>(
             let redis = &*redis_writer;
 
             let key = match request.guard::<User>().succeeded() {
-                Some(user) => user.user_id,
+                Some(user) => vec![user.user_id],
                 None => request
                     .headers()
                     .get_one("X-Forwarded-For")
                     .unwrap_or_else(|| "0.0.0.0")
-                    .to_string(),
+                    .to_string()
+                    .split(',')
+                    .map(|s| s.trim().to_string())
+                    .collect(),
             };
 
-            let key = format!("throttle:{}", key);
+            let key = if key.len() == 1 {
+                format!("throttle:{}", key.first().unwrap())
+            } else {
+                format!("throttle:{}", key[key.len() - 2])
+            };
 
             let (limited, limit, remaining, retry_after, reset): (i32, i32, i32, i32, i32) =
                 redis::cmd("CL.THROTTLE")
