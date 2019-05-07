@@ -48,4 +48,4 @@ RUN rm -rf /root/.ssh/ && rm $SCCACHE_GCS_KEY_PATH
 
 ENV RUST_LOG=turnstile=info
 
-
+ENTRYPOINT [ "/app/entrypoint.sh" ]
