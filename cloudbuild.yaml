@@ -15,17 +15,6 @@ steps:
   entrypoint: 'bash'
   args: ['-c', 'docker build --build-arg SSH_KEY="$$SSH_KEY" --build-arg SCCACHE_KEY="$$SCCACHE_KEY"  -t gcr.io/$PROJECT_ID/github.com/umpyre-code/turnstile:latest -t gcr.io/$PROJECT_ID/github.com/umpyre-code/turnstile:$REVISION_ID --cache-from gcr.io/$PROJECT_ID/github.com/umpyre-code/turnstile:latest --cache-from rustlang/rust:nightly .']
   secretEnv: ['SSH_KEY', 'SCCACHE_KEY']
-- name: 'gcr.io/cloud-builders/kubectl'
-  args:
-  - set
-  - image
-  - deployment
-  - turnstile-staging
-  - turnstile=gcr.io/$PROJECT_ID/github.com/umpyre-code/turnstile:$REVISION_ID
-  - --namespace=staging
-  env:
-  - 'CLOUDSDK_COMPUTE_REGION=us-central1'
-  - 'CLOUDSDK_CONTAINER_CLUSTER=k8s-us-1'
 images: [
    'gcr.io/$PROJECT_ID/github.com/umpyre-code/turnstile:latest','gcr.io/$PROJECT_ID/github.com/umpyre-code/turnstile:$REVISION_ID',
 ]
