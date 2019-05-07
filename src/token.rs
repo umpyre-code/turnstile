@@ -2,7 +2,7 @@ extern crate data_encoding;
 extern crate jsonwebtoken;
 
 use crate::config;
-use data_encoding::BASE64URL_NOPAD;
+use data_encoding::{BASE64_NOPAD, BASE64URL_NOPAD};
 use jsonwebtoken::errors::ErrorKind;
 use jsonwebtoken::{encode, Header, Validation};
 use sodiumoxide::crypto::secretbox;
@@ -20,11 +20,11 @@ lazy_static! {
     // time.
     static ref SECRET_KEY: Key = {
         Key::from_slice(
-            &BASE64URL_NOPAD
+            &BASE64_NOPAD
                 .decode(config::CONFIG.jwt.encryption_secret.as_bytes())
-                .unwrap(),
+                .expect("Couldn't decode JWT encryption secret"),
         )
-        .unwrap()
+        .expect("Couldn't read into JWT key")
     };
 }
 
