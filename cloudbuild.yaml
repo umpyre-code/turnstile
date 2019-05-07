@@ -21,7 +21,7 @@ steps:
   - image
   - deployment
   - turnstile-staging
-  - gcr.io/$PROJECT_ID/github.com/umpyre-code/turnstile:$REVISION_ID
+  - turnstile=gcr.io/$PROJECT_ID/github.com/umpyre-code/turnstile:$REVISION_ID
   - --namespace=staging
   env:
   - 'CLOUDSDK_COMPUTE_REGION=us-central1'
