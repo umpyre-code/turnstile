@@ -18,7 +18,6 @@ extern crate log;
 extern crate failure;
 
 mod catchers;
-mod certs;
 mod config;
 mod fairings;
 mod guards;

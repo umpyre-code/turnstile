@@ -1665,12 +1665,12 @@ dependencies = [
 [[package]]
 name = "rolodex-grpc"
 version = "0.1.0"
-source = "git+ssh://git@github.com/umpyre-code/rolodex.git?rev=64585f5d4512a39e0a30e9b6dc62e07ac91748a9#64585f5d4512a39e0a30e9b6dc62e07ac91748a9"
+source = "git+ssh://git@github.com/umpyre-code/rolodex.git#80bdaf5bf019997f88e836dca96e873e6c3e9947"
 dependencies = [
  "bytes 0.4.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "prost 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "tower-grpc 0.1.0 (git+https://github.com/tower-rs/tower-grpc?rev=46857f0c9f760e5187603decf8d488a3c19eb994)",
- "tower-grpc-build 0.1.0 (git+https://github.com/tower-rs/tower-grpc?rev=46857f0c9f760e5187603decf8d488a3c19eb994)",
+ "tower-grpc 0.1.0 (git+https://github.com/tower-rs/tower-grpc)",
+ "tower-grpc-build 0.1.0 (git+https://github.com/tower-rs/tower-grpc)",
 ]
 
 [[package]]
@@ -2062,17 +2062,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "tokio-rustls"
-version = "0.9.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-dependencies = [
- "futures 0.1.26 (registry+https://github.com/rust-lang/crates.io-index)",
- "rustls 0.15.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "tokio-io 0.1.12 (registry+https://github.com/rust-lang/crates.io-index)",
- "webpki 0.19.1 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
 name = "tokio-sync"
 version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2229,7 +2218,7 @@ dependencies = [
 [[package]]
 name = "tower-grpc"
 version = "0.1.0"
-source = "git+https://github.com/tower-rs/tower-grpc?rev=46857f0c9f760e5187603decf8d488a3c19eb994#46857f0c9f760e5187603decf8d488a3c19eb994"
+source = "git+https://github.com/tower-rs/tower-grpc#62be26fd6cd6757d1ea0a2edc48d93c0937b36d5"
 dependencies = [
  "base64 0.10.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "bytes 0.4.12 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2239,8 +2228,8 @@ dependencies = [
  "log 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "percent-encoding 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "prost 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "tower-h2 0.1.0 (git+https://github.com/tower-rs/tower-h2)",
  "tower-http 0.1.0 (git+https://github.com/tower-rs/tower-http)",
+ "tower-hyper 0.1.0 (git+http://github.com/tower-rs/tower-hyper)",
  "tower-service 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "tower-util 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -2248,28 +2237,11 @@ dependencies = [
 [[package]]
 name = "tower-grpc-build"
 version = "0.1.0"
-source = "git+https://github.com/tower-rs/tower-grpc?rev=46857f0c9f760e5187603decf8d488a3c19eb994#46857f0c9f760e5187603decf8d488a3c19eb994"
+source = "git+https://github.com/tower-rs/tower-grpc#62be26fd6cd6757d1ea0a2edc48d93c0937b36d5"
 dependencies = [
  "codegen 0.1.1 (git+https://github.com/carllerche/codegen)",
  "heck 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "prost-build 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "tower-h2"
-version = "0.1.0"
-source = "git+https://github.com/tower-rs/tower-h2#0865040d699697bbaf1c3b77b3f256b72f98cdf4"
-dependencies = [
- "bytes 0.4.12 (registry+https://github.com/rust-lang/crates.io-index)",
- "futures 0.1.26 (registry+https://github.com/rust-lang/crates.io-index)",
- "h2 0.1.18 (registry+https://github.com/rust-lang/crates.io-index)",
- "http 0.1.17 (registry+https://github.com/rust-lang/crates.io-index)",
- "log 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
- "tokio-connect 0.1.0 (git+https://github.com/carllerche/tokio-connect)",
- "tokio-io 0.1.12 (registry+https://github.com/rust-lang/crates.io-index)",
- "tower 0.1.0 (git+https://github.com/tower-rs/tower)",
- "tower-http 0.1.0 (git+https://github.com/tower-rs/tower-http)",
- "tower-service 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -2293,6 +2265,25 @@ dependencies = [
  "tokio-buf 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "tokio-io 0.1.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "tower-service 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "tower-hyper"
+version = "0.1.0"
+source = "git+http://github.com/tower-rs/tower-hyper#8ff1ad044a4dd321e8027fe861020b90f0b3ae5d"
+dependencies = [
+ "futures 0.1.26 (registry+https://github.com/rust-lang/crates.io-index)",
+ "http 0.1.17 (registry+https://github.com/rust-lang/crates.io-index)",
+ "http-body 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "http-connection 0.1.0 (git+https://github.com/hyperium/http-connection)",
+ "hyper 0.12.28 (registry+https://github.com/rust-lang/crates.io-index)",
+ "log 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "tokio-buf 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "tokio-executor 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)",
+ "tokio-io 0.1.12 (registry+https://github.com/rust-lang/crates.io-index)",
+ "tower-http-util 0.1.0 (git+https://github.com/tower-rs/tower-http)",
+ "tower-service 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "tower-util 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -2410,6 +2401,7 @@ dependencies = [
  "failure 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures 0.1.26 (registry+https://github.com/rust-lang/crates.io-index)",
  "http 0.1.17 (registry+https://github.com/rust-lang/crates.io-index)",
+ "hyper 0.12.28 (registry+https://github.com/rust-lang/crates.io-index)",
  "instrumented 0.1.0 (git+ssh://git@github.com/umpyre-code/instrumented.git)",
  "jsonwebtoken 6.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "lazy_static 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2420,8 +2412,7 @@ dependencies = [
  "rocket 0.4.0 (git+https://github.com/brndnmtthws/Rocket.git)",
  "rocket_contrib 0.4.0 (git+https://github.com/brndnmtthws/Rocket.git)",
  "rocket_cors 0.5.0-beta-2 (git+https://github.com/lawliet89/rocket_cors.git)",
- "rolodex-grpc 0.1.0 (git+ssh://git@github.com/umpyre-code/rolodex.git?rev=64585f5d4512a39e0a30e9b6dc62e07ac91748a9)",
- "rustls 0.15.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rolodex-grpc 0.1.0 (git+ssh://git@github.com/umpyre-code/rolodex.git)",
  "serde 1.0.91 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_derive 1.0.91 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_json 1.0.39 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2430,12 +2421,11 @@ dependencies = [
  "syn 0.15.34 (registry+https://github.com/rust-lang/crates.io-index)",
  "tokio 0.1.19 (registry+https://github.com/rust-lang/crates.io-index)",
  "tokio-connect 0.1.0 (git+https://github.com/carllerche/tokio-connect)",
- "tokio-rustls 0.9.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "toml 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "tower 0.1.0 (git+https://github.com/tower-rs/tower)",
  "tower-buffer 0.1.0 (git+https://github.com/tower-rs/tower)",
- "tower-h2 0.1.0 (git+https://github.com/tower-rs/tower-h2)",
  "tower-http 0.1.0 (git+https://github.com/tower-rs/tower-http)",
+ "tower-hyper 0.1.0 (git+http://github.com/tower-rs/tower-hyper)",
  "tower-request-modifier 0.1.0 (git+https://github.com/tower-rs/tower-http)",
  "webpki 0.19.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "yansi 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2872,7 +2862,7 @@ dependencies = [
 "checksum rocket_contrib_codegen 0.4.0 (git+https://github.com/brndnmtthws/Rocket.git)" = "<none>"
 "checksum rocket_cors 0.5.0-beta-2 (git+https://github.com/lawliet89/rocket_cors.git)" = "<none>"
 "checksum rocket_http 0.4.0 (git+https://github.com/brndnmtthws/Rocket.git)" = "<none>"
-"checksum rolodex-grpc 0.1.0 (git+ssh://git@github.com/umpyre-code/rolodex.git?rev=64585f5d4512a39e0a30e9b6dc62e07ac91748a9)" = "<none>"
+"checksum rolodex-grpc 0.1.0 (git+ssh://git@github.com/umpyre-code/rolodex.git)" = "<none>"
 "checksum rustc-demangle 0.1.14 (registry+https://github.com/rust-lang/crates.io-index)" = "ccc78bfd5acd7bf3e89cffcf899e5cb1a52d6fafa8dec2739ad70c9577a57288"
 "checksum rustc_version 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)" = "c5f5376ea5e30ce23c03eb77cbe4962b988deead10910c372b226388b594c084"
 "checksum rustc_version 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)" = "138e3e0acb6c9fb258b19b67cb8abd63c00679d2851805ea151465464fe9030a"
@@ -2918,7 +2908,6 @@ dependencies = [
 "checksum tokio-fs 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)" = "3fe6dc22b08d6993916647d108a1a7d15b9cd29c4f4496c62b92c45b5041b7af"
 "checksum tokio-io 0.1.12 (registry+https://github.com/rust-lang/crates.io-index)" = "5090db468dad16e1a7a54c8c67280c5e4b544f3d3e018f0b913b400261f85926"
 "checksum tokio-reactor 0.1.9 (registry+https://github.com/rust-lang/crates.io-index)" = "6af16bfac7e112bea8b0442542161bfc41cbfa4466b580bdda7d18cb88b911ce"
-"checksum tokio-rustls 0.9.2 (registry+https://github.com/rust-lang/crates.io-index)" = "c2d884c693406aba65fdd9fe7645b50e4dd0d24b36bc5e66ec8209d2482da99d"
 "checksum tokio-sync 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)" = "5b2f843ffdf8d6e1f90bddd48da43f99ab071660cd92b7ec560ef3cdfd7a409a"
 "checksum tokio-tcp 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)" = "1d14b10654be682ac43efee27401d792507e30fd8d26389e1da3b185de2e4119"
 "checksum tokio-threadpool 0.1.14 (registry+https://github.com/rust-lang/crates.io-index)" = "72558af20be886ea124595ea0f806dd5703b8958e4705429dd58b3d8231f72f2"
@@ -2932,11 +2921,11 @@ dependencies = [
 "checksum tower-buffer 0.1.0 (git+https://github.com/tower-rs/tower)" = "<none>"
 "checksum tower-buffer 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "5c98a7784e6c8ba106bc98d44ed1dbb9c018a8e0322e5e894d365f9020967128"
 "checksum tower-discover 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "73a7632286f78164d65d18fd0e570307acde9362489aa5c8c53e6315cc2bde47"
-"checksum tower-grpc 0.1.0 (git+https://github.com/tower-rs/tower-grpc?rev=46857f0c9f760e5187603decf8d488a3c19eb994)" = "<none>"
-"checksum tower-grpc-build 0.1.0 (git+https://github.com/tower-rs/tower-grpc?rev=46857f0c9f760e5187603decf8d488a3c19eb994)" = "<none>"
-"checksum tower-h2 0.1.0 (git+https://github.com/tower-rs/tower-h2)" = "<none>"
+"checksum tower-grpc 0.1.0 (git+https://github.com/tower-rs/tower-grpc)" = "<none>"
+"checksum tower-grpc-build 0.1.0 (git+https://github.com/tower-rs/tower-grpc)" = "<none>"
 "checksum tower-http 0.1.0 (git+https://github.com/tower-rs/tower-http)" = "<none>"
 "checksum tower-http-util 0.1.0 (git+https://github.com/tower-rs/tower-http)" = "<none>"
+"checksum tower-hyper 0.1.0 (git+http://github.com/tower-rs/tower-hyper)" = "<none>"
 "checksum tower-layer 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "0ddf07e10c07dcc8f41da6de036dc66def1a85b70eb8a385159e3908bb258328"
 "checksum tower-limit 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "09d3d0fe82c2373225025d50881794e0792e544df9752dec66288b644b40fbfe"
 "checksum tower-load-shed 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "04fbaf5bfb63d84204db87b9b2aeec61549613f2bbb8706dcc36f5f3ea8cd769"

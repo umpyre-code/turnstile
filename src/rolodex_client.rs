@@ -1,17 +1,16 @@
 extern crate futures;
+extern crate hyper;
 extern crate rolodex_grpc;
 extern crate tokio_connect;
-extern crate tokio_rustls;
 extern crate tower;
-extern crate tower_h2;
+extern crate tower_hyper;
 extern crate tower_request_modifier;
 extern crate webpki;
-
-use crate::certs::{load_certs, load_private_key};
 
 use futures::{Future, Poll};
 
 use crate::config;
+use hyper::client::connect::{Destination, HttpConnector};
 use instrumented::instrument;
 use rolodex_grpc::tower_grpc::{BoxBody, Request};
 use std::fs;
@@ -19,12 +18,10 @@ use std::io::BufReader;
 use std::sync::Arc;
 use tokio::executor::DefaultExecutor;
 use tokio::net::tcp::TcpStream;
-use tokio_rustls::{rustls::ClientConfig, rustls::ClientSession, TlsConnector, TlsStream};
 use tower::MakeService;
 use tower::Service;
 use tower_buffer::Buffer;
-use tower_h2::client;
-use tower_h2::client::Connection;
+use tower_hyper::{client, util};
 use tower_request_modifier::{Builder, RequestModifier};
 
 #[derive(Clone)]
@@ -33,13 +30,7 @@ struct Dst {
     port: i32,
 }
 
-pub type Buf = Buffer<
-    RequestModifier<
-        Connection<TlsStream<TcpStream, ClientSession>, DefaultExecutor, BoxBody>,
-        BoxBody,
-    >,
-    http::Request<BoxBody>,
->;
+pub type Buf = Buffer<RequestModifier<tower_hyper::Connection<BoxBody>, BoxBody>, http::Request<BoxBody>>;
 pub type RpcClient = rolodex_grpc::proto::client::Rolodex<Buf>;
 
 #[derive(Debug, Fail)]
@@ -56,8 +47,8 @@ pub enum RolodexError {
     },
 }
 
-impl From<tower_h2::client::ConnectError<std::io::Error>> for RolodexError {
-    fn from(err: tower_h2::client::ConnectError<std::io::Error>) -> Self {
+impl From<tower_hyper::client::ConnectError<std::io::Error>> for RolodexError {
+    fn from(err: tower_hyper::client::ConnectError<std::io::Error>) -> Self {
         RolodexError::ConnectionFailure {
             err: err.to_string(),
         }
@@ -75,17 +66,12 @@ impl From<rolodex_grpc::tower_grpc::Status> for RolodexError {
 
 pub struct Client {
     uri: http::Uri,
-    service: Dst,
 }
 
 impl Client {
     pub fn new(config: &config::Config) -> Self {
         Client {
-            service: Dst {
-                host: config.rolodex.host.clone(),
-                port: config.rolodex.port,
-            },
-            uri: format!("https://{}:{}", config.rolodex.host, config.rolodex.port)
+            uri: format!("http://{}:{}", config.rolodex.host, config.rolodex.port)
                 .parse()
                 .unwrap(),
         }
@@ -93,21 +79,22 @@ impl Client {
 
     fn make_service(&self) -> impl Future<Item = RpcClient, Error = RolodexError> + Send {
         let uri = self.uri.clone();
-        client::Connect::new(
-            self.service.clone(),
-            Default::default(),
-            DefaultExecutor::current(),
-        )
-        .make_service(())
-        .map(move |conn| {
-            use rolodex_grpc::proto::client::Rolodex;
+        let dst = Destination::try_from_uri(self.uri.clone()).unwrap();
+        let connector = util::Connector::new(HttpConnector::new(4));
+        let settings = client::Builder::new().http2_only(true).clone();
+        let mut make_client = client::Connect::with_builder(connector, settings);
 
-            let connection = Builder::new().set_origin(uri).build(conn).unwrap();
-            let buffer = Buffer::new(connection, 128);
+        make_client
+            .make_service(dst)
+            .map(move |conn| {
+                use rolodex_grpc::proto::client::Rolodex;
 
-            Rolodex::new(buffer)
-        })
-        .map_err(RolodexError::from)
+                let connection = Builder::new().set_origin(uri).build(conn).unwrap();
+                let buffer = Buffer::new(connection, 128);
+
+                Rolodex::new(buffer)
+            })
+            .map_err(RolodexError::from)
     }
 
     #[instrument(INFO)]
@@ -165,49 +152,49 @@ impl Client {
     }
 }
 
-impl Service<()> for Dst {
-    type Response = TlsStream<TcpStream, ClientSession>;
-    type Error = ::std::io::Error;
-    type Future = Box<Future<Item = Self::Response, Error = ::std::io::Error> + Send>;
+// impl Service<()> for Dst {
+//     type Response = TlsStream<TcpStream, ClientSession>;
+//     type Error = ::std::io::Error;
+//     type Future = Box<Future<Item = Self::Response, Error = ::std::io::Error> + Send>;
 
-    fn poll_ready(&mut self) -> Poll<(), Self::Error> {
-        Ok(().into())
-    }
+//     fn poll_ready(&mut self) -> Poll<(), Self::Error> {
+//         Ok(().into())
+//     }
 
-    fn call(&mut self, _: ()) -> Self::Future {
-        use std::net::ToSocketAddrs;
+//     fn call(&mut self, _: ()) -> Self::Future {
+//         use std::net::ToSocketAddrs;
 
-        let mut pem = BufReader::new(fs::File::open(&config::CONFIG.rolodex.ca_cert_path).unwrap());
-        let mut config = ClientConfig::new();
-        config.root_store.add_pem_file(&mut pem).unwrap();
-        config.set_single_client_cert(
-            load_certs(&config::CONFIG.rolodex.tls_cert_path),
-            load_private_key(&config::CONFIG.rolodex.tls_key_path),
-        );
-        config.alpn_protocols.push(b"h2".to_vec());
-        let config = Arc::new(config);
-        let tls_connector = TlsConnector::from(config);
+//         let mut pem = BufReader::new(fs::File::open(&config::CONFIG.rolodex.ca_cert_path).unwrap());
+//         let mut config = ClientConfig::new();
+//         config.root_store.add_pem_file(&mut pem).unwrap();
+//         config.set_single_client_cert(
+//             load_certs(&config::CONFIG.rolodex.tls_cert_path),
+//             load_private_key(&config::CONFIG.rolodex.tls_key_path),
+//         );
+//         config.alpn_protocols.push(b"h2".to_vec());
+//         let config = Arc::new(config);
+//         let tls_connector = TlsConnector::from(config);
 
-        let domain = webpki::DNSNameRef::try_from_ascii_str(&self.host)
-            .unwrap()
-            .to_owned();
+//         let domain = webpki::DNSNameRef::try_from_ascii_str(&self.host)
+//             .unwrap()
+//             .to_owned();
 
-        let mut addresses = format!("{}:{}", self.host, self.port)
-            .to_socket_addrs()
-            .expect("Couldn't resolve rolodex host");
+//         let mut addresses = format!("{}:{}", self.host, self.port)
+//             .to_socket_addrs()
+//             .expect("Couldn't resolve rolodex host");
 
-        let address = addresses
-            .find(|a| match a {
-                std::net::SocketAddr::V4 { .. } => true,
-                _ => false,
-            })
-            .expect("No IPV4 address found");
+//         let address = addresses
+//             .find(|a| match a {
+//                 std::net::SocketAddr::V4 { .. } => true,
+//                 _ => false,
+//             })
+//             .expect("No IPV4 address found");
 
-        let stream = TcpStream::connect(&address).and_then(move |sock| {
-            sock.set_nodelay(true).unwrap();
-            tls_connector.connect(domain.as_ref(), sock)
-        });
+//         let stream = TcpStream::connect(&address).and_then(move |sock| {
+//             sock.set_nodelay(true).unwrap();
+//             tls_connector.connect(domain.as_ref(), sock)
+//         });
 
-        Box::new(stream)
-    }
-}
+//         Box::new(stream)
+//     }
+// }
