@@ -7,19 +7,13 @@ extern crate tower_hyper;
 extern crate tower_request_modifier;
 extern crate webpki;
 
-use futures::{Future, Poll};
+use futures::Future;
 
 use crate::config;
 use hyper::client::connect::{Destination, HttpConnector};
 use instrumented::instrument;
 use rolodex_grpc::tower_grpc::{BoxBody, Request};
-use std::fs;
-use std::io::BufReader;
-use std::sync::Arc;
-use tokio::executor::DefaultExecutor;
-use tokio::net::tcp::TcpStream;
 use tower::MakeService;
-use tower::Service;
 use tower_buffer::Buffer;
 use tower_hyper::{client, util};
 use tower_request_modifier::{Builder, RequestModifier};
@@ -30,7 +24,8 @@ struct Dst {
     port: i32,
 }
 
-pub type Buf = Buffer<RequestModifier<tower_hyper::Connection<BoxBody>, BoxBody>, http::Request<BoxBody>>;
+pub type Buf =
+    Buffer<RequestModifier<tower_hyper::Connection<BoxBody>, BoxBody>, http::Request<BoxBody>>;
 pub type RpcClient = rolodex_grpc::proto::client::Rolodex<Buf>;
 
 #[derive(Debug, Fail)]

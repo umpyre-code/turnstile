@@ -80,28 +80,26 @@ fn ratelimit_from_request<'a, 'r>(
             let redis_writer = request.guard::<RedisWriter>().unwrap();
             let redis = &*redis_writer;
 
+            // Prefer:
+            // 1. User ID
+            // 2. X-Forwarded-For
+            // 3. Client IP from request
             let key = match request.guard::<User>().succeeded() {
                 Some(user) => vec![user.user_id],
                 None => request
                     .headers()
-                    .get_one("X-Forwarded-For")
-                    .map(|s| {
-                        info!("X-Forwarded-For: {:?}", s);
-                        s.to_string()
-                    })
-                    .unwrap_or_else(|| {
-                        request
-                            .client_ip()
-                            .map(|s| {
-                                info!("client_ip: {:?}", s);
-                                s.to_string()
-                            })
-                            .unwrap_or_else(|| "0.0.0.0".to_string())
-                    })
-                    .split(',')
-                    .map(|s| s.trim().to_string())
+                    .get("X-Forwarded-For")
+                    .map(std::string::ToString::to_string)
                     .collect(),
             };
+
+            let key = if key.is_empty() {
+                vec![request.client_ip().unwrap().to_string()]
+            } else {
+                key
+            };
+
+            info!("key={:?}", key);
 
             let key = if key.len() == 1 {
                 format!("throttle:{}", key.first().unwrap())
