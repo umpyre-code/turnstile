@@ -7,14 +7,14 @@ use rocket::{Data, Request, Response};
 lazy_static! {
     static ref REQUEST_COUNTER: prometheus::IntCounterVec = {
         let counter_opts = prometheus::Opts::new("http_requests", "HTTP Request counter");
-        let counter = prometheus::IntCounterVec::new(counter_opts, &["path", "method"]).unwrap();
+        let counter = prometheus::IntCounterVec::new(counter_opts, &["route", "method"]).unwrap();
         register(Box::new(counter.clone())).unwrap();
         counter
     };
     static ref RESPONSE_COUNTER: prometheus::IntCounterVec = {
         let counter_opts = prometheus::Opts::new("http_responses", "HTTP Request counter");
         let counter =
-            prometheus::IntCounterVec::new(counter_opts, &["path", "method", "code"]).unwrap();
+            prometheus::IntCounterVec::new(counter_opts, &["route", "method", "code"]).unwrap();
         register(Box::new(counter.clone())).unwrap();
         counter
     };
@@ -24,7 +24,7 @@ lazy_static! {
             "Histogram of handler call times observed in seconds",
         );
         let histogram =
-            prometheus::HistogramVec::new(histogram_opts, &["path", "method", "code"]).unwrap();
+            prometheus::HistogramVec::new(histogram_opts, &["route", "method", "code"]).unwrap();
 
         register(Box::new(histogram.clone())).unwrap();
 
@@ -61,7 +61,7 @@ impl Fairing for RequestTimer {
             let s = (us as f64) / 1_000_000.0;
             HANDLER_TIMER
                 .with_label_values(&[
-                    request.uri().path(),
+                    &request.route().unwrap().uri.path(),
                     request.method().as_str(),
                     &format!("{}", response.status().code),
                 ])
@@ -83,14 +83,17 @@ impl Fairing for Counter {
 
     fn on_request(&self, request: &mut Request, _: &Data) {
         REQUEST_COUNTER
-            .with_label_values(&[request.uri().path(), request.method().as_str()])
+            .with_label_values(&[
+                &request.route().unwrap().uri.path(),
+                request.method().as_str(),
+            ])
             .inc();
     }
 
     fn on_response(&self, request: &Request, response: &mut Response) {
         RESPONSE_COUNTER
             .with_label_values(&[
-                request.uri().path(),
+                &request.route().unwrap().uri.path(),
                 request.method().as_str(),
                 &format!("{}", response.status().code),
             ])
