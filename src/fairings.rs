@@ -59,9 +59,14 @@ impl Fairing for RequestTimer {
         if let Some(duration) = start_time.0.map(|s| s.elapsed()) {
             let us = duration.as_secs() * 1_000_000 + u64::from(duration.subsec_micros());
             let s = (us as f64) / 1_000_000.0;
+                            let route = if let Some(route) = request.route() {
+            route.uri.path()
+        } else {
+            "none"
+        };
             HANDLER_TIMER
                 .with_label_values(&[
-                    &request.route().unwrap().uri.path(),
+                    route,
                     request.method().as_str(),
                     &format!("{}", response.status().code),
                 ])
@@ -82,18 +87,28 @@ impl Fairing for Counter {
     }
 
     fn on_request(&self, request: &mut Request, _: &Data) {
+        let route = if let Some(route) = request.route() {
+            route.uri.path()
+        } else {
+            "none"
+        };
         REQUEST_COUNTER
             .with_label_values(&[
-                &request.route().unwrap().uri.path(),
+                route,
                 request.method().as_str(),
             ])
             .inc();
     }
 
     fn on_response(&self, request: &Request, response: &mut Response) {
+                let route = if let Some(route) = request.route() {
+            route.uri.path()
+        } else {
+            "none"
+        };
         RESPONSE_COUNTER
             .with_label_values(&[
-                &request.route().unwrap().uri.path(),
+               route ,
                 request.method().as_str(),
                 &format!("{}", response.status().code),
             ])
