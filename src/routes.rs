@@ -24,9 +24,7 @@ impl From<rolodex_client::RolodexError> for ResponseError {
                 ResponseError::BadRequest {
                     response: content::Json(
                         json!({
-                            "status":"error",
-                            "reason": "Rolodex client request failed",
-                            "code": format!("{:?}", code),
+                            "code": code as i32,
                             "message": message,
                         })
                         .to_string(),
@@ -36,8 +34,7 @@ impl From<rolodex_client::RolodexError> for ResponseError {
             _ => ResponseError::BadRequest {
                 response: content::Json(
                     json!({
-                        "status": "error",
-                        "reason:": err.to_string(),
+                        "message:": err.to_string(),
                     })
                     .to_string(),
                 ),
@@ -51,8 +48,7 @@ impl From<rocket_contrib::databases::redis::RedisError> for ResponseError {
         ResponseError::BadRequest {
             response: content::Json(
                 json!({
-                    "status": "error",
-                    "reason:": err.to_string(),
+                    "message:": err.to_string(),
                 })
                 .to_string(),
             ),
