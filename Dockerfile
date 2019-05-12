@@ -39,6 +39,7 @@ RUN mkdir -p $HOME/.ssh \
   && eval `ssh-agent` \
   && ssh-add -k $HOME/.ssh/id_rsa \
   && cd src \
+  && yarn install \
   && cargo install --path . \
   && cd .. \
   && rm -rf /usr/bin/sccache \
