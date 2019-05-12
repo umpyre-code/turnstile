@@ -14,5 +14,3 @@
 
 # Ignore node files
 node_modules
-package.json
-yarn.lock

@@ -26,7 +26,7 @@ fn main() -> std::io::Result<()> {
 
         let openapi_html_mtime = openapi_html_metadata.modified().unwrap();
         let openapi_yaml_mtime = openapi_yaml_metadata.modified().unwrap();
-        if openapi_html_mtime > openapi_yaml_mtime {
+        if openapi_yaml_mtime > openapi_html_mtime {
             build_openapi_html(&out_dir)?;
         }
     } else {
