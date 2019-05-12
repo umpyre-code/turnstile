@@ -1,8 +1,9 @@
 use std::io::Cursor;
 
-use rocket::response::Responder;
+use rocket::http::hyper::header::{CacheControl, CacheDirective};
 use rocket::http::{ContentType, Status};
-use rocket::{Response, Request};
+use rocket::response::Responder;
+use rocket::{Request, Response};
 
 pub struct StaticHtml {
     body: String,
@@ -17,12 +18,13 @@ impl From<&str> for StaticHtml {
 }
 
 impl Responder<'static> for StaticHtml {
-    fn respond_to(
-        self,
-        _: &Request,
-    ) -> Result<Response<'static>, Status> {
+    fn respond_to(self, _: &Request) -> Result<Response<'static>, Status> {
         rocket::Response::build()
             .header(ContentType::HTML)
+            .header(CacheControl(vec![
+                CacheDirective::Public,
+                CacheDirective::MaxAge(3600u32),
+            ]))
             .sized_body(Cursor::new(self.body))
             .ok()
     }
