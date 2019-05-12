@@ -60,10 +60,12 @@ pub struct RateLimited {
     pub retry_after: i32,
     pub reset: i32,
 }
+
 #[derive(Debug, Clone, Default)]
 pub struct RateLimitedPublic {
     pub rate_limited: RateLimited,
 }
+
 #[derive(Debug, Clone, Default)]
 pub struct RateLimitedPrivate {
     pub rate_limited: RateLimited,

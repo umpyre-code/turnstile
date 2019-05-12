@@ -18,9 +18,12 @@ ENV RUSTC_WRAPPER=sccache
 ADD https://github.com/a8m/envsubst/releases/download/v1.1.0/envsubst-Linux-x86_64 /usr/bin/envsubst
 RUN chmod +x /usr/bin/envsubst
 
-RUN GRPC_HEALTH_PROBE_VERSION=v0.2.0 && \
-  wget -qO/bin/grpc_health_probe https://github.com/grpc-ecosystem/grpc-health-probe/releases/download/${GRPC_HEALTH_PROBE_VERSION}/grpc_health_probe-linux-amd64 && \
-  chmod +x /bin/grpc_health_probe
+# Install yarn & nodejs (ugh)
+RUN apt-get update && apt-get install -yqq apt-transport-https apt-utils \
+  && curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add - \
+  && echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list \
+  && apt-get update && apt-get install -yqq yarn \
+  && apt-get clean && rm -rf /var/lib/apt/lists
 
 WORKDIR /app
 

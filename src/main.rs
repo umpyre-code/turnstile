@@ -24,6 +24,7 @@ mod guards;
 mod models;
 mod rolodex_client;
 mod routes;
+mod static_routes;
 mod token;
 
 fn get_cors() -> rocket_cors::Cors {
@@ -91,6 +92,7 @@ fn main() -> Result<(), std::io::Error> {
         .mount(
             "/",
             routes![
+                static_routes::openapi,
                 routes::get_ping,
                 routes::get_user,
                 routes::post_user_authenticate,

@@ -59,11 +59,11 @@ impl Fairing for RequestTimer {
         if let Some(duration) = start_time.0.map(|s| s.elapsed()) {
             let us = duration.as_secs() * 1_000_000 + u64::from(duration.subsec_micros());
             let s = (us as f64) / 1_000_000.0;
-                            let route = if let Some(route) = request.route() {
-            route.uri.path()
-        } else {
-            "none"
-        };
+            let route = if let Some(route) = request.route() {
+                route.uri.path()
+            } else {
+                "none"
+            };
             HANDLER_TIMER
                 .with_label_values(&[
                     route,
@@ -93,22 +93,19 @@ impl Fairing for Counter {
             "none"
         };
         REQUEST_COUNTER
-            .with_label_values(&[
-                route,
-                request.method().as_str(),
-            ])
+            .with_label_values(&[route, request.method().as_str()])
             .inc();
     }
 
     fn on_response(&self, request: &Request, response: &mut Response) {
-                let route = if let Some(route) = request.route() {
+        let route = if let Some(route) = request.route() {
             route.uri.path()
         } else {
             "none"
         };
         RESPONSE_COUNTER
             .with_label_values(&[
-               route ,
+                route,
                 request.method().as_str(),
                 &format!("{}", response.status().code),
             ])
@@ -130,11 +127,13 @@ impl Fairing for RateLimitHeaders {
     fn on_response(&self, request: &Request, response: &mut Response) {
         use crate::guards;
         let rate_limit = request.local_cache(guards::RateLimited::default);
+        if rate_limit.limit > 0 {
         response.set_raw_header("X-RateLimit-Limit", rate_limit.limit.to_string());
         response.set_raw_header("X-RateLimit-Remaining", rate_limit.remaining.to_string());
         response.set_raw_header("X-RateLimit-Reset", rate_limit.reset.to_string());
         if rate_limit.retry_after >= 0 {
             response.set_raw_header("Retry-After", rate_limit.retry_after.to_string());
+        }
         }
     }
 }
