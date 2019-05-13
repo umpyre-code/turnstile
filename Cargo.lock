@@ -2308,6 +2308,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "tower-reconnect"
+version = "0.1.0"
+source = "git+https://github.com/tower-rs/tower#9b27863a6160e2146bcf1bc6548a0334e7ad1fb8"
+dependencies = [
+ "futures 0.1.27 (registry+https://github.com/rust-lang/crates.io-index)",
+ "log 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "tower-service 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "tower-util 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "tower-request-modifier"
 version = "0.1.0"
 source = "git+https://github.com/tower-rs/tower-http#044e0ed5ae8b2e9946233b7cc8fc24471b2d126a"
@@ -2416,6 +2427,7 @@ dependencies = [
  "tower-buffer 0.1.0 (git+https://github.com/tower-rs/tower)",
  "tower-http 0.1.0 (git+https://github.com/tower-rs/tower-http)",
  "tower-hyper 0.1.0 (git+https://github.com/tower-rs/tower-hyper)",
+ "tower-reconnect 0.1.0 (git+https://github.com/tower-rs/tower)",
  "tower-request-modifier 0.1.0 (git+https://github.com/tower-rs/tower-http)",
  "webpki 0.19.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "yansi 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2918,6 +2930,7 @@ dependencies = [
 "checksum tower-layer 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "0ddf07e10c07dcc8f41da6de036dc66def1a85b70eb8a385159e3908bb258328"
 "checksum tower-limit 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "09d3d0fe82c2373225025d50881794e0792e544df9752dec66288b644b40fbfe"
 "checksum tower-load-shed 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "04fbaf5bfb63d84204db87b9b2aeec61549613f2bbb8706dcc36f5f3ea8cd769"
+"checksum tower-reconnect 0.1.0 (git+https://github.com/tower-rs/tower)" = "<none>"
 "checksum tower-request-modifier 0.1.0 (git+https://github.com/tower-rs/tower-http)" = "<none>"
 "checksum tower-retry 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "09e80588125061f276ed2a7b0939988b411e570a2dbb2965b1382ef4f71036f7"
 "checksum tower-service 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)" = "2cc0c98637d23732f8de6dfd16494c9f1559c3b9e20b4a46462c8f9b9e827bfa"

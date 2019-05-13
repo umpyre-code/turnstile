@@ -30,6 +30,7 @@ tower = { git = "https://github.com/tower-rs/tower" }
 tower-buffer = { git = "https://github.com/tower-rs/tower" }
 tower-http = { git = "https://github.com/tower-rs/tower-http" }
 tower-hyper = { git = "https://github.com/tower-rs/tower-hyper" }
+tower-reconnect = { git = "https://github.com/tower-rs/tower" }
 tower-request-modifier = { git = "https://github.com/tower-rs/tower-http" }
 webpki = "0.19"
 yansi = "0.5"

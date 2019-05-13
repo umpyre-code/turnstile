@@ -40,6 +40,8 @@ pub enum RolodexError {
         code: rolodex_grpc::tower_grpc::Code,
         message: String,
     },
+    #[fail(display = "Rolodex IO error: {}", err)]
+    IoError { err: String },
 }
 
 impl From<tower_hyper::client::ConnectError<std::io::Error>> for RolodexError {
@@ -58,6 +60,15 @@ impl From<rolodex_grpc::tower_grpc::Status> for RolodexError {
         }
     }
 }
+
+impl From<std::io::Error> for RolodexError {
+    fn from(err: std::io::Error) -> Self {
+        RolodexError::IoError {
+            err: err.to_string(),
+        }
+    }
+}
+
 
 pub struct Client {
     uri: http::Uri,
@@ -97,7 +108,7 @@ impl Client {
         &self,
         new_user_request: rolodex_grpc::proto::NewUserRequest,
     ) -> Result<rolodex_grpc::proto::NewUserResponse, RolodexError> {
-        let mut runtime = tokio::runtime::Runtime::new().expect("Unable to create a runtime");
+        let mut runtime = tokio::runtime::Runtime::new()?;
 
         runtime.block_on(
             self.make_service()
@@ -115,7 +126,7 @@ impl Client {
         &self,
         get_user_request: rolodex_grpc::proto::GetUserRequest,
     ) -> Result<rolodex_grpc::proto::GetUserResponse, RolodexError> {
-        let mut runtime = tokio::runtime::Runtime::new().expect("Unable to create a runtime");
+        let mut runtime = tokio::runtime::Runtime::new()?;
 
         runtime.block_on(
             self.make_service()
@@ -133,7 +144,7 @@ impl Client {
         &self,
         auth_request: rolodex_grpc::proto::AuthRequest,
     ) -> Result<rolodex_grpc::proto::AuthResponse, RolodexError> {
-        let mut runtime = tokio::runtime::Runtime::new().expect("Unable to create a runtime");
+        let mut runtime = tokio::runtime::Runtime::new()?;
 
         runtime.block_on(
             self.make_service()
@@ -146,50 +157,3 @@ impl Client {
         )
     }
 }
-
-// impl Service<()> for Dst {
-//     type Response = TlsStream<TcpStream, ClientSession>;
-//     type Error = ::std::io::Error;
-//     type Future = Box<Future<Item = Self::Response, Error = ::std::io::Error> + Send>;
-
-//     fn poll_ready(&mut self) -> Poll<(), Self::Error> {
-//         Ok(().into())
-//     }
-
-//     fn call(&mut self, _: ()) -> Self::Future {
-//         use std::net::ToSocketAddrs;
-
-//         let mut pem = BufReader::new(fs::File::open(&config::CONFIG.rolodex.ca_cert_path).unwrap());
-//         let mut config = ClientConfig::new();
-//         config.root_store.add_pem_file(&mut pem).unwrap();
-//         config.set_single_client_cert(
-//             load_certs(&config::CONFIG.rolodex.tls_cert_path),
-//             load_private_key(&config::CONFIG.rolodex.tls_key_path),
-//         );
-//         config.alpn_protocols.push(b"h2".to_vec());
-//         let config = Arc::new(config);
-//         let tls_connector = TlsConnector::from(config);
-
-//         let domain = webpki::DNSNameRef::try_from_ascii_str(&self.host)
-//             .unwrap()
-//             .to_owned();
-
-//         let mut addresses = format!("{}:{}", self.host, self.port)
-//             .to_socket_addrs()
-//             .expect("Couldn't resolve rolodex host");
-
-//         let address = addresses
-//             .find(|a| match a {
-//                 std::net::SocketAddr::V4 { .. } => true,
-//                 _ => false,
-//             })
-//             .expect("No IPV4 address found");
-
-//         let stream = TcpStream::connect(&address).and_then(move |sock| {
-//             sock.set_nodelay(true).unwrap();
-//             tls_connector.connect(domain.as_ref(), sock)
-//         });
-
-//         Box::new(stream)
-//     }
-// }
