@@ -69,7 +69,6 @@ impl From<std::io::Error> for RolodexError {
     }
 }
 
-
 pub struct Client {
     uri: http::Uri,
 }

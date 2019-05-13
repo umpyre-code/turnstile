@@ -90,12 +90,17 @@ fn ratelimit_from_request<'a, 'r>(
                 Some(user) => vec![user.user_id],
                 None => request
                     .headers()
-                    .get("X-Forwarded-For")
+                    .get_one("X-Forwarded-For")
                     .map(|s| {
                         info!("X-Forwarded-For: {:?}", s);
-                        s.to_string()
+
+                        s.split(',')
+                            .map(str::trim)
+                            .map(std::string::ToString::to_string)
+                            .collect()
                     })
-                    .collect(),
+                    .or_else(|| Some(vec![]))
+                    .unwrap(),
             };
 
             let key = if key.is_empty() {
