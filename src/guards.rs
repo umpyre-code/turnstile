@@ -115,8 +115,11 @@ fn ratelimit_from_request<'a, 'r>(
             } else {
                 // Take the second from last value of X-Forwarded-For, as per the docs at:
                 // https://cloud.google.com/load-balancing/docs/https/
+                // That _should_ give us the client IP address.
                 format!("throttle:{}", key[key.len() - 2])
             };
+
+            info!("key={:?}", key);
 
             let (limited, limit, remaining, retry_after, reset): (i32, i32, i32, i32, i32) =
                 redis::cmd("CL.THROTTLE")
