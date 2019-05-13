@@ -118,6 +118,7 @@ pub fn post_user(
             country: new_user_request.phone_number.country.clone(),
             number: new_user_request.phone_number.number.clone(),
         }),
+        public_key: new_user_request.public_key.clone(),
     })?;
 
     let token = handle_auth_token(cookies, redis_writer, &response.user_id)?;
@@ -133,6 +134,7 @@ impl From<rolodex_grpc::proto::GetUserResponse> for models::GetUserResponse {
         models::GetUserResponse {
             user_id: response.user_id,
             full_name: response.full_name,
+            public_key: response.public_key,
         }
     }
 }

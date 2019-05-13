@@ -23,6 +23,7 @@ pub struct NewUserRequest {
     pub password_hash: String,
     pub email: String,
     pub phone_number: PhoneNumber,
+    pub public_key: String,
 }
 
 #[derive(Debug, Serialize)]
@@ -37,4 +38,5 @@ pub struct NewUserResponse {
 pub struct GetUserResponse {
     pub user_id: String,
     pub full_name: String,
+    pub public_key: String,
 }
