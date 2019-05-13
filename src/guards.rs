@@ -91,11 +91,18 @@ fn ratelimit_from_request<'a, 'r>(
                 None => request
                     .headers()
                     .get("X-Forwarded-For")
-                    .map(std::string::ToString::to_string)
+                    .map(|s| {
+                        info!("X-Forwarded-For: {:?}", s);
+                        s.to_string()
+                    })
                     .collect(),
             };
 
             let key = if key.is_empty() {
+                info!(
+                    "Using request.client_ip() to throttle: {:?}",
+                    request.client_ip().unwrap()
+                );
                 vec![request.client_ip().unwrap().to_string()]
             } else {
                 key
