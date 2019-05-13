@@ -81,6 +81,7 @@ fn create_user(turnstile_process: &Turnstile, client: &reqwest::Client) -> AddUs
         "password_hash":
      HEXLOWER.encode(&Sha256::digest(b"derp")),
         "phone_number":{"country":"US","number":format!("510{}", rand_num)},
+        "public_key":"derp key"
     });
 
     let mut response = client
@@ -129,6 +130,7 @@ fn test_add_user() {
         "email": format!("lol{}@aol.com", rand_num),
         "password_hash":password_hash,
         "phone_number":{"country":"US","number":format!("510{}", rand_num)},
+        "public_key":"derp key"
     });
 
     let mut response = client
@@ -174,6 +176,7 @@ fn test_authenticate() {
         "email": format!("lol{}@aol.com", rand_num),
         "password_hash":password_hash.clone(),
         "phone_number":{"country":"US","number":format!("510{}", rand_num)},
+        "public_key":"derp key"
     });
 
     let mut response = client
