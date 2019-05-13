@@ -7,7 +7,7 @@ use rocket::{Data, Request, Response};
 lazy_static! {
     static ref REQUEST_COUNTER: prometheus::IntCounterVec = {
         let counter_opts = prometheus::Opts::new("http_requests", "HTTP Request counter");
-        let counter = prometheus::IntCounterVec::new(counter_opts, &["route", "method"]).unwrap();
+        let counter = prometheus::IntCounterVec::new(counter_opts, &["method"]).unwrap();
         register(Box::new(counter.clone())).unwrap();
         counter
     };
@@ -111,13 +111,8 @@ impl Fairing for Counter {
     }
 
     fn on_request(&self, request: &mut Request, _: &Data) {
-        let route = if let Some(route) = request.route() {
-            route.uri.path()
-        } else {
-            "none"
-        };
         REQUEST_COUNTER
-            .with_label_values(&[route, request.method().as_str()])
+            .with_label_values(&[request.method().as_str()])
             .inc();
     }
 
