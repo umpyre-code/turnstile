@@ -30,6 +30,18 @@ lazy_static! {
 
         histogram
     };
+    static ref RESPONSE_LENGTH: prometheus::HistogramVec = {
+        let histogram_opts = prometheus::HistogramOpts::new(
+            "http_response_length",
+            "Histogram of response length in bytes",
+        );
+        let histogram =
+            prometheus::HistogramVec::new(histogram_opts, &["route", "method", "code"]).unwrap();
+
+        register(Box::new(histogram.clone())).unwrap();
+
+        histogram
+    };
 }
 
 /// Fairing for timing requests.
@@ -55,15 +67,17 @@ impl Fairing for RequestTimer {
     /// Adds a header to the response indicating how long the server took to
     /// process the request.
     fn on_response(&self, request: &Request, response: &mut Response) {
+        let route = if let Some(route) = request.route() {
+            route.uri.path()
+        } else {
+            "none"
+        };
+
         let start_time = request.local_cache(|| TimerStart(None));
         if let Some(duration) = start_time.0.map(|s| s.elapsed()) {
             let us = duration.as_secs() * 1_000_000 + u64::from(duration.subsec_micros());
             let s = (us as f64) / 1_000_000.0;
-            let route = if let Some(route) = request.route() {
-                route.uri.path()
-            } else {
-                "none"
-            };
+
             HANDLER_TIMER
                 .with_label_values(&[
                     route,
@@ -71,6 +85,16 @@ impl Fairing for RequestTimer {
                     &format!("{}", response.status().code),
                 ])
                 .observe(s);
+        }
+
+        if let Some(rocket::response::Body::Sized(_, size)) = response.body() {
+            RESPONSE_LENGTH
+                .with_label_values(&[
+                    route,
+                    request.method().as_str(),
+                    &format!("{}", response.status().code),
+                ])
+                .observe(size as f64);
         }
     }
 }
