@@ -1655,7 +1655,7 @@ dependencies = [
 [[package]]
 name = "rolodex-grpc"
 version = "0.1.0"
-source = "git+ssh://git@github.com/umpyre-code/rolodex.git#a555e7120091f1192a8c3adf12afaddab499e14d"
+source = "git+ssh://git@github.com/umpyre-code/rolodex.git#e0ae949c0a5e6783dbc830bfda878f8a78666df6"
 dependencies = [
  "bytes 0.4.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "prost 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2208,7 +2208,7 @@ dependencies = [
 [[package]]
 name = "tower-grpc"
 version = "0.1.0"
-source = "git+https://github.com/tower-rs/tower-grpc#62be26fd6cd6757d1ea0a2edc48d93c0937b36d5"
+source = "git+https://github.com/tower-rs/tower-grpc#0f15ae28f2a765e0cc38fe3d7e02a13aab7bdbd2"
 dependencies = [
  "base64 0.10.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "bytes 0.4.12 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2227,7 +2227,7 @@ dependencies = [
 [[package]]
 name = "tower-grpc-build"
 version = "0.1.0"
-source = "git+https://github.com/tower-rs/tower-grpc#62be26fd6cd6757d1ea0a2edc48d93c0937b36d5"
+source = "git+https://github.com/tower-rs/tower-grpc#0f15ae28f2a765e0cc38fe3d7e02a13aab7bdbd2"
 dependencies = [
  "codegen 0.1.1 (git+https://github.com/carllerche/codegen)",
  "heck 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",

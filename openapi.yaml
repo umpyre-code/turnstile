@@ -72,6 +72,13 @@ paths:
       description: >-
         Updates the underlying user model for the provided user ID.
       operationId: update-user
+      requestBody:
+        required: true
+        description: A JSON object containing the user model.
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/User"
       responses:
         "200":
           description: >-
@@ -181,11 +188,11 @@ components:
     User:
       type: object
       properties:
-        id:
+        user_id:
           type: string
           description: >-
             Unique identifier for this user.
-        name:
+        full_name:
           type: string
           description: >-
             Public display name of this user.
@@ -196,7 +203,7 @@ components:
     NewUser:
       type: object
       properties:
-        name:
+        full_name:
           type: string
           description: >-
             Public display name of this user.
@@ -206,13 +213,31 @@ components:
             Public key for this user.
         password_hash:
           type: string
+          format: password
           description: >-
             A SHA256 hash of the user's password. Do not send the plain-text
             password to the server.
+        email:
+          type: string
+          format: email
+          description: >-
+            Contact email address for this user.
+        phone_number:
+          type: object
+          properties:
+            country_code:
+              type: string
+              description: >-
+                Two-letter CLDR country code for this number.
+            national_number:
+              type: string
+              description: >-
+                The national phone number.
       required:
         - name
         - public_key
         - password_hash
+        - phone_number
     Message:
       type: object
       properties:
@@ -224,14 +249,14 @@ components:
           type: string
           description: >-
             User ID of recipient.
-        text:
+        body:
           type: string
           description: >-
             Text body of message, encrypted using a libsodium Box.
       required:
         - from
         - to
-        - text
+        - body
     Messages:
       type: object
       properties:
@@ -242,17 +267,18 @@ components:
     LoginRequest:
       type: object
       properties:
-        user:
+        user_id:
           type: string
           description: >-
             User ID for the login request.
         password_hash:
           type: string
+          format: password
           description: >-
             A SHA256 hash of the user's password. Do not send the plain-text
             password to the server.
       required:
-        - user
+        - user_id
         - password_hash
   responses:
     UnauthorizedError:

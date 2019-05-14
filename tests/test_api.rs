@@ -80,7 +80,7 @@ fn create_user(turnstile_process: &Turnstile, client: &reqwest::Client) -> AddUs
         "email": format!("test{}@aol.com", rand_num),
         "password_hash":
      HEXLOWER.encode(&Sha256::digest(b"derp")),
-        "phone_number":{"country":"US","number":format!("510{}", rand_num)},
+        "phone_number":{"country_code":"US","national_number":format!("510{}", rand_num)},
         "public_key":"derp key"
     });
 
@@ -129,7 +129,7 @@ fn test_add_user() {
         "full_name": format!("herp derp {}", rand_num),
         "email": format!("lol{}@aol.com", rand_num),
         "password_hash":password_hash,
-        "phone_number":{"country":"US","number":format!("510{}", rand_num)},
+        "phone_number":{"country_code":"US","national_number":format!("510{}", rand_num)},
         "public_key":"derp key"
     });
 
@@ -175,7 +175,7 @@ fn test_authenticate() {
         "full_name": format!("herp derp {}", rand_num),
         "email": format!("lol{}@aol.com", rand_num),
         "password_hash":password_hash.clone(),
-        "phone_number":{"country":"US","number":format!("510{}", rand_num)},
+        "phone_number":{"country_code":"US","national_number":format!("510{}", rand_num)},
         "public_key":"derp key"
     });
 

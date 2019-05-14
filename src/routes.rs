@@ -115,8 +115,8 @@ pub fn post_user(
         password_hash: new_user_request.password_hash.clone(),
         email: new_user_request.email.clone(),
         phone_number: Some(rolodex_grpc::proto::PhoneNumber {
-            country: new_user_request.phone_number.country.clone(),
-            number: new_user_request.phone_number.number.clone(),
+            country_code: new_user_request.phone_number.country_code.clone(),
+            national_number: new_user_request.phone_number.national_number.clone(),
         }),
         public_key: new_user_request.public_key.clone(),
     })?;

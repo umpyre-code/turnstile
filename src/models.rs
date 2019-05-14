@@ -13,8 +13,8 @@ pub struct AuthResponse {
 
 #[derive(Debug, Deserialize)]
 pub struct PhoneNumber {
-    pub country: String, // two letter country code
-    pub number: String,  // national number
+    pub country_code: String, // two letter country code
+    pub national_number: String,
 }
 
 #[derive(Debug, Deserialize)]
