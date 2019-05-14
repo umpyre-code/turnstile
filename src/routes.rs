@@ -104,11 +104,22 @@ pub fn post_user_authenticate(
 #[post("/user", data = "<new_user_request>", format = "json")]
 pub fn post_user(
     _ratelimited: guards::RateLimitedPublic,
+    geo_headers: Option<guards::GeoHeaders>,
     cookies: Cookies,
     redis_writer: fairings::RedisWriter,
     new_user_request: Json<models::NewUserRequest>,
 ) -> Result<Json<models::NewUserResponse>, ResponseError> {
     let rolodex_client = rolodex_client::Client::new(&config::CONFIG);
+
+    let location = if let Some(location) = geo_headers {
+        Some(rolodex_grpc::proto::Location {
+            region: location.region,
+            region_subdivision: location.region_subdivision,
+            city: location.city,
+        })
+    } else {
+        None
+    };
 
     let response = rolodex_client.add_user(rolodex_grpc::proto::NewUserRequest {
         full_name: new_user_request.full_name.clone(),
@@ -119,6 +130,7 @@ pub fn post_user(
             national_number: new_user_request.phone_number.national_number.clone(),
         }),
         public_key: new_user_request.public_key.clone(),
+        location,
     })?;
 
     let token = handle_auth_token(cookies, redis_writer, &response.user_id)?;

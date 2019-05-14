@@ -1,6 +1,8 @@
 use crate::config;
 use crate::fairings::{RedisReader, RedisWriter};
 use crate::token;
+use rocket::http::Status;
+use rocket::Outcome;
 
 #[derive(Debug, Clone)]
 pub struct User {
@@ -13,8 +15,6 @@ impl<'a, 'r> rocket::request::FromRequest<'a, 'r> for User {
     fn from_request(
         request: &'a rocket::request::Request<'r>,
     ) -> rocket::request::Outcome<User, Self::Error> {
-        use rocket::http::Status;
-        use rocket::outcome::Outcome;
         use rocket_contrib::databases::redis::Commands;
 
         // Store the user object in local request cache to avoid multiple lookups
@@ -153,8 +153,6 @@ impl<'a, 'r> rocket::request::FromRequest<'a, 'r> for RateLimitedPublic {
     fn from_request(
         request: &'a rocket::request::Request<'r>,
     ) -> rocket::request::Outcome<RateLimitedPublic, Self::Error> {
-        use rocket::http::Status;
-        use rocket::Outcome;
         let rate_limited = ratelimit_from_request(&config::CONFIG.rate_limits.public, request);
         if !rate_limited.limited {
             Outcome::Success(RateLimitedPublic { rate_limited })
@@ -170,13 +168,44 @@ impl<'a, 'r> rocket::request::FromRequest<'a, 'r> for RateLimitedPrivate {
     fn from_request(
         request: &'a rocket::request::Request<'r>,
     ) -> rocket::request::Outcome<RateLimitedPrivate, Self::Error> {
-        use rocket::http::Status;
-        use rocket::Outcome;
         let rate_limited = ratelimit_from_request(&config::CONFIG.rate_limits.private, request);
         if !rate_limited.limited {
             Outcome::Success(RateLimitedPrivate { rate_limited })
         } else {
             Outcome::Failure((Status::TooManyRequests, ()))
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct GeoHeaders {
+    pub region: String,
+    pub region_subdivision: String,
+    pub city: String,
+}
+
+impl<'a, 'r> rocket::request::FromRequest<'a, 'r> for GeoHeaders {
+    type Error = ();
+
+    fn from_request(
+        request: &'a rocket::request::Request<'r>,
+    ) -> rocket::request::Outcome<GeoHeaders, Self::Error> {
+        // Format is:
+        // "X-Client-Geo-Location: {client_region},{client_region_subdivision},{client_city}"
+        if let Some(value) = request.headers().get_one("X-Client-Geo-Location") {
+            let values: Vec<&str> = value.split(',').collect();
+            info!("X-Client-Geo-Location: {:?}", values);
+            if values.len() == 3 {
+                Outcome::Success(GeoHeaders {
+                    region: values[0].into(),
+                    region_subdivision: values[1].into(),
+                    city: values[2].into(),
+                })
+            } else {
+                Outcome::Forward(())
+            }
+        } else {
+            Outcome::Forward(())
         }
     }
 }
