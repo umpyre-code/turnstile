@@ -59,16 +59,16 @@ impl From<rocket_contrib::databases::redis::RedisError> for ResponseError {
 fn handle_auth_token(
     mut cookies: Cookies,
     redis_writer: fairings::RedisWriter,
-    user_id: &str,
+    client_id: &str,
 ) -> Result<String, ResponseError> {
     use rocket_contrib::databases::redis::Commands;
 
     // generate token (JWT)
-    let token = token::generate(&user_id);
+    let token = token::generate(&client_id);
 
     // store token in Redis
     let redis = &*redis_writer;
-    let _c: i32 = redis.sadd(&format!("token:{}", user_id), &token)?;
+    let _c: i32 = redis.sadd(&format!("token:{}", client_id), &token)?;
 
     let cookie = Cookie::build("X-UMPYRE-APIKEY", token.clone())
         .path("/")
@@ -80,8 +80,8 @@ fn handle_auth_token(
     Ok(token)
 }
 
-#[post("/user/authenticate", data = "<auth_request>", format = "json")]
-pub fn post_user_authenticate(
+#[post("/client/authenticate", data = "<auth_request>", format = "json")]
+pub fn post_client_authenticate(
     _ratelimited: guards::RateLimitedPublic,
     cookies: Cookies,
     redis_writer: fairings::RedisWriter,
@@ -89,26 +89,26 @@ pub fn post_user_authenticate(
 ) -> Result<Json<models::AuthResponse>, ResponseError> {
     let rolodex_client = rolodex_client::Client::new(&config::CONFIG);
     let response = rolodex_client.authenticate(rolodex_grpc::proto::AuthRequest {
-        user_id: auth_request.user_id.clone(),
+        client_id: auth_request.client_id.clone(),
         password_hash: auth_request.password_hash.clone(),
     })?;
 
-    let token = handle_auth_token(cookies, redis_writer, &response.user_id)?;
+    let token = handle_auth_token(cookies, redis_writer, &response.client_id)?;
 
     Ok(Json(models::AuthResponse {
-        user_id: response.user_id,
+        client_id: response.client_id,
         token,
     }))
 }
 
-#[post("/user", data = "<new_user_request>", format = "json")]
-pub fn post_user(
+#[post("/client", data = "<new_client_request>", format = "json")]
+pub fn post_client(
     _ratelimited: guards::RateLimitedPublic,
     geo_headers: Option<guards::GeoHeaders>,
     cookies: Cookies,
     redis_writer: fairings::RedisWriter,
-    new_user_request: Json<models::NewUserRequest>,
-) -> Result<Json<models::NewUserResponse>, ResponseError> {
+    new_client_request: Json<models::NewClientRequest>,
+) -> Result<Json<models::NewClientResponse>, ResponseError> {
     let rolodex_client = rolodex_client::Client::new(&config::CONFIG);
 
     let location = if let Some(location) = geo_headers {
@@ -121,47 +121,47 @@ pub fn post_user(
         None
     };
 
-    let response = rolodex_client.add_user(rolodex_grpc::proto::NewUserRequest {
-        full_name: new_user_request.full_name.clone(),
-        password_hash: new_user_request.password_hash.clone(),
-        email: new_user_request.email.clone(),
+    let response = rolodex_client.add_client(rolodex_grpc::proto::NewClientRequest {
+        full_name: new_client_request.full_name.clone(),
+        password_hash: new_client_request.password_hash.clone(),
+        email: new_client_request.email.clone(),
         phone_number: Some(rolodex_grpc::proto::PhoneNumber {
-            country_code: new_user_request.phone_number.country_code.clone(),
-            national_number: new_user_request.phone_number.national_number.clone(),
+            country_code: new_client_request.phone_number.country_code.clone(),
+            national_number: new_client_request.phone_number.national_number.clone(),
         }),
-        public_key: new_user_request.public_key.clone(),
+        public_key: new_client_request.public_key.clone(),
         location,
     })?;
 
-    let token = handle_auth_token(cookies, redis_writer, &response.user_id)?;
+    let token = handle_auth_token(cookies, redis_writer, &response.client_id)?;
 
-    Ok(Json(models::NewUserResponse {
-        user_id: response.user_id,
+    Ok(Json(models::NewClientResponse {
+        client_id: response.client_id,
         token,
     }))
 }
 
-impl From<rolodex_grpc::proto::GetUserResponse> for models::GetUserResponse {
-    fn from(response: rolodex_grpc::proto::GetUserResponse) -> Self {
-        models::GetUserResponse {
-            user_id: response.user_id,
+impl From<rolodex_grpc::proto::GetClientResponse> for models::GetClientResponse {
+    fn from(response: rolodex_grpc::proto::GetClientResponse) -> Self {
+        models::GetClientResponse {
+            client_id: response.client_id,
             full_name: response.full_name,
             public_key: response.public_key,
         }
     }
 }
 
-#[get("/user/<user_id>")]
-pub fn get_user(
-    user_id: String,
-    calling_user: guards::User,
+#[get("/client/<client_id>")]
+pub fn get_client(
+    client_id: String,
+    calling_client: guards::Client,
     _ratelimited: guards::RateLimitedPrivate,
-) -> Result<Json<models::GetUserResponse>, ResponseError> {
+) -> Result<Json<models::GetClientResponse>, ResponseError> {
     let rolodex_client = rolodex_client::Client::new(&config::CONFIG);
 
-    let response = rolodex_client.get_user(rolodex_grpc::proto::GetUserRequest {
-        user_id,
-        calling_user_id: calling_user.user_id,
+    let response = rolodex_client.get_client(rolodex_grpc::proto::GetClientRequest {
+        client_id,
+        calling_client_id: calling_client.client_id,
     })?;
 
     Ok(Json(response.into()))

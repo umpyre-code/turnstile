@@ -2,7 +2,6 @@ extern crate assert_cmd;
 extern crate data_encoding;
 extern crate rand;
 extern crate reqwest;
-extern crate sha2;
 use std::sync::atomic::{AtomicI32, Ordering};
 #[macro_use]
 extern crate serde_derive;
@@ -47,8 +46,8 @@ impl Turnstile {
     fn wait_for_ping(self) -> Self {
         use std::{thread, time};
 
-        let client = reqwest::Client::new();
-        while client.get(&format!("{}/ping", self.url)).send().is_err() {
+        let reqwest = reqwest::Client::new();
+        while reqwest.get(&format!("{}/ping", self.url)).send().is_err() {
             thread::sleep(time::Duration::from_millis(10));
         }
 
@@ -67,10 +66,18 @@ impl Turnstile {
     }
 }
 
-fn create_user(turnstile_process: &Turnstile, client: &reqwest::Client) -> AddUser {
+fn b2b_hash(s: &str, digest_size: usize) -> String {
+    use data_encoding::BASE64_NOPAD;
+    use sodiumoxide::crypto::generichash;
+    let mut hasher = generichash::State::new(digest_size, None).unwrap();
+    hasher.update(s.as_bytes());
+    let digest = hasher.finalize().unwrap();
+    BASE64_NOPAD.encode(digest.as_ref())
+}
+
+fn create_client(turnstile_process: &Turnstile, reqwest: &reqwest::Client) -> AddClient {
     use data_encoding::HEXLOWER;
     use rand::Rng;
-    use sha2::{Digest, Sha256};
 
     let mut rng = rand::thread_rng();
     let rand_num: i64 = rng.gen_range(2_000_000, 10_000_000);
@@ -79,19 +86,19 @@ fn create_user(turnstile_process: &Turnstile, client: &reqwest::Client) -> AddUs
         "full_name": format!("herp derp {}", rand_num),
         "email": format!("test{}@aol.com", rand_num),
         "password_hash":
-     HEXLOWER.encode(&Sha256::digest(b"derp")),
+     b2b_hash("derp", 64    ),
         "phone_number":{"country_code":"US","national_number":format!("510{}", rand_num)},
         "public_key":"derp key"
     });
 
-    let mut response = client
-        .post(&format!("{}/user", turnstile_process.url))
+    let mut response = reqwest
+        .post(&format!("{}/client", turnstile_process.url))
         .json(&body)
         .send()
         .unwrap();
 
-    let add_user: AddUser = response.json().unwrap();
-    add_user
+    let add_client: AddClient = response.json().unwrap();
+    add_client
 }
 
 #[test]
@@ -107,24 +114,23 @@ fn test_ping() {
 }
 
 #[derive(Deserialize, Debug)]
-struct AddUser {
-    user_id: String,
+struct AddClient {
+    client_id: String,
     token: String,
 }
 
 #[test]
-fn test_add_user() {
+fn test_add_client() {
     use data_encoding::HEXLOWER;
 
     use rand::Rng;
-    use sha2::{Digest, Sha256};
     let turnstile_process = Turnstile::new().wait_for_ping();
 
     let mut rng = rand::thread_rng();
     let rand_num: i64 = rng.gen_range(2_000_000, 10_000_000);
 
-    let client = reqwest::Client::new();
-    let password_hash = HEXLOWER.encode(&Sha256::digest(b"derp"));
+    let reqwest = reqwest::Client::new();
+    let password_hash = b2b_hash("derp", 64);
     let body = json!({
         "full_name": format!("herp derp {}", rand_num),
         "email": format!("lol{}@aol.com", rand_num),
@@ -133,28 +139,28 @@ fn test_add_user() {
         "public_key":"derp key"
     });
 
-    let mut response = client
-        .post(&format!("{}/user", turnstile_process.url))
+    let mut response = reqwest
+        .post(&format!("{}/client", turnstile_process.url))
         .json(&body)
         .send()
         .unwrap();
 
-    let add_user: AddUser = response.json().unwrap();
+    let add_client: AddClient = response.json().unwrap();
 
     assert_eq!(response.status().is_success(), true);
-    assert_eq!(add_user.user_id.len(), 32);
-    assert_eq!(!add_user.token.is_empty(), true);
+    assert_eq!(add_client.client_id.len(), 32);
+    assert_eq!(!add_client.token.is_empty(), true);
 
     let token = response
         .cookies()
         .find(|cookie| cookie.name() == "X-UMPYRE-APIKEY")
         .unwrap();
-    assert_eq!(add_user.token, token.value());
+    assert_eq!(add_client.token, token.value());
 }
 
 #[derive(Deserialize, Debug)]
 struct Authenticate {
-    user_id: String,
+    client_id: String,
     token: String,
 }
 
@@ -163,14 +169,13 @@ fn test_authenticate() {
     use data_encoding::HEXLOWER;
 
     use rand::Rng;
-    use sha2::{Digest, Sha256};
     let turnstile_process = Turnstile::new().wait_for_ping();
 
     let mut rng = rand::thread_rng();
     let rand_num: i64 = rng.gen_range(2_000_000, 10_000_000);
 
     let client = reqwest::Client::new();
-    let password_hash = HEXLOWER.encode(&Sha256::digest(b"derp"));
+    let password_hash = b2b_hash("derp", 64);
     let body = json!({
         "full_name": format!("herp derp {}", rand_num),
         "email": format!("lol{}@aol.com", rand_num),
@@ -180,30 +185,30 @@ fn test_authenticate() {
     });
 
     let mut response = client
-        .post(&format!("{}/user", turnstile_process.url))
+        .post(&format!("{}/client", turnstile_process.url))
         .json(&body)
         .send()
         .unwrap();
 
-    let add_user: AddUser = response.json().unwrap();
+    let add_client: AddClient = response.json().unwrap();
 
     assert_eq!(response.status().is_success(), true);
-    assert_eq!(add_user.user_id.len(), 32);
-    assert_eq!(!add_user.token.is_empty(), true);
+    assert_eq!(add_client.client_id.len(), 32);
+    assert_eq!(!add_client.token.is_empty(), true);
 
     let token = response
         .cookies()
         .find(|cookie| cookie.name() == "X-UMPYRE-APIKEY")
         .unwrap();
-    assert_eq!(add_user.token, token.value());
+    assert_eq!(add_client.token, token.value());
 
-    // Now we have a valid user, test auth with the existing (current) client
+    // Now we have a valid client, test auth with the existing (current) client
     let body = json!({
-        "user_id": add_user.user_id,
+        "client_id": add_client.client_id,
         "password_hash":password_hash,
     });
     let mut response = client
-        .post(&format!("{}/user/authenticate", turnstile_process.url))
+        .post(&format!("{}/client/authenticate", turnstile_process.url))
         .json(&body)
         .send()
         .unwrap();
@@ -211,46 +216,46 @@ fn test_authenticate() {
     let authenticate: Authenticate = response.json().unwrap();
 
     assert_eq!(response.status().is_success(), true);
-    assert_eq!(authenticate.user_id, add_user.user_id);
+    assert_eq!(authenticate.client_id, add_client.client_id);
     assert_eq!(!authenticate.token.is_empty(), true);
-    assert_ne!(authenticate.token, add_user.token);
+    assert_ne!(authenticate.token, add_client.token);
 }
 
 #[derive(Deserialize, Debug)]
-struct User {
-    user_id: String,
+struct Client {
+    client_id: String,
     full_name: String,
 }
 
 #[test]
-fn test_get_user() {
+fn test_get_client() {
     let turnstile_process = Turnstile::new().wait_for_ping();
-    let client = reqwest::ClientBuilder::new()
+    let reqwest = reqwest::ClientBuilder::new()
         .cookie_store(true)
         .build()
         .unwrap();
 
-    let response = client
-        .get(&format!("{}/user/{}", turnstile_process.url, "lol"))
+    let response = reqwest
+        .get(&format!("{}/client/{}", turnstile_process.url, "lol"))
         .send()
         .unwrap();
 
     assert_eq!(response.status(), reqwest::StatusCode::UNAUTHORIZED);
 
-    let this_user = create_user(&turnstile_process, &client);
+    let this_client = create_client(&turnstile_process, &reqwest);
 
-    let mut response = client
+    let mut response = reqwest
         .get(&format!(
-            "{}/user/{}",
-            turnstile_process.url, this_user.user_id
+            "{}/client/{}",
+            turnstile_process.url, this_client.client_id
         ))
-        .header("X-UMPYRE-APIKEY", this_user.token)
+        .header("X-UMPYRE-APIKEY", this_client.token)
         .send()
         .unwrap();
 
-    let user: User = response.json().unwrap();
+    let client: Client = response.json().unwrap();
 
     assert_eq!(response.status().is_success(), true);
-    assert_eq!(user.user_id, this_user.user_id);
-    assert_eq!(user.full_name.starts_with("herp derp "), true);
+    assert_eq!(client.client_id, this_client.client_id);
+    assert_eq!(client.full_name.starts_with("herp derp "), true);
 }

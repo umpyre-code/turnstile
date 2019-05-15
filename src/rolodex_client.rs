@@ -103,17 +103,17 @@ impl Client {
     }
 
     #[instrument(INFO)]
-    pub fn add_user(
+    pub fn add_client(
         &self,
-        new_user_request: rolodex_grpc::proto::NewUserRequest,
-    ) -> Result<rolodex_grpc::proto::NewUserResponse, RolodexError> {
+        new_client_request: rolodex_grpc::proto::NewClientRequest,
+    ) -> Result<rolodex_grpc::proto::NewClientResponse, RolodexError> {
         let mut runtime = tokio::runtime::Runtime::new()?;
 
         runtime.block_on(
             self.make_service()
                 .and_then(move |mut client: RpcClient| {
                     client
-                        .add_user(Request::new(new_user_request))
+                        .add_client(Request::new(new_client_request))
                         .map_err(RolodexError::from)
                 })
                 .map(|response| response.get_ref().clone()),
@@ -121,17 +121,17 @@ impl Client {
     }
 
     #[instrument(INFO)]
-    pub fn get_user(
+    pub fn get_client(
         &self,
-        get_user_request: rolodex_grpc::proto::GetUserRequest,
-    ) -> Result<rolodex_grpc::proto::GetUserResponse, RolodexError> {
+        get_client_request: rolodex_grpc::proto::GetClientRequest,
+    ) -> Result<rolodex_grpc::proto::GetClientResponse, RolodexError> {
         let mut runtime = tokio::runtime::Runtime::new()?;
 
         runtime.block_on(
             self.make_service()
                 .and_then(move |mut client: RpcClient| {
                     client
-                        .get_user(Request::new(get_user_request))
+                        .get_client(Request::new(get_client_request))
                         .map_err(RolodexError::from)
                 })
                 .map(|response| response.get_ref().clone()),

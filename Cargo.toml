@@ -51,4 +51,4 @@ data-encoding = "2"
 nix = "0.13"
 rand = "0.6"
 reqwest = { version = "0.9", default-features = false, features = ["rustls"] }
-sha2 = "0.8"
+sodiumoxide = "0.2"

@@ -94,9 +94,9 @@ fn main() -> Result<(), std::io::Error> {
             routes![
                 static_routes::openapi,
                 routes::get_ping,
-                routes::get_user,
-                routes::post_user_authenticate,
-                routes::post_user,
+                routes::get_client,
+                routes::post_client_authenticate,
+                routes::post_client,
             ],
         )
         .launch();

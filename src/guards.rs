@@ -5,20 +5,20 @@ use rocket::http::Status;
 use rocket::Outcome;
 
 #[derive(Debug, Clone)]
-pub struct User {
-    pub user_id: String,
+pub struct Client {
+    pub client_id: String,
 }
 
-impl<'a, 'r> rocket::request::FromRequest<'a, 'r> for User {
+impl<'a, 'r> rocket::request::FromRequest<'a, 'r> for Client {
     type Error = ();
 
     fn from_request(
         request: &'a rocket::request::Request<'r>,
-    ) -> rocket::request::Outcome<User, Self::Error> {
+    ) -> rocket::request::Outcome<Client, Self::Error> {
         use rocket_contrib::databases::redis::Commands;
 
-        // Store the user object in local request cache to avoid multiple lookups
-        let user = request.local_cache(|| {
+        // Store the client object in local request cache to avoid multiple lookups
+        let client = request.local_cache(|| {
             let redis_reader = request.guard::<RedisReader>().unwrap();
             let redis = &*redis_reader;
 
@@ -29,23 +29,23 @@ impl<'a, 'r> rocket::request::FromRequest<'a, 'r> for User {
                 .or_else(|| request.headers().get_one("X-UMPYRE-APIKEY")) // from headers
                 .map(std::string::ToString::to_string)
                 .and_then(|token: String| match token::decode_into_sub(&token) {
-                    Ok(user_id) => Some((token, user_id)),
+                    Ok(client_id) => Some((token, client_id)),
                     Err(_) => None,
                 })
-                .and_then(|(token, user_id)| {
+                .and_then(|(token, client_id)| {
                     let is_member: bool = redis
-                        .sismember(&format!("token:{}", user_id), token)
+                        .sismember(&format!("token:{}", client_id), token)
                         .unwrap();
                     if is_member {
-                        Some(User { user_id })
+                        Some(Client { client_id })
                     } else {
                         None
                     }
                 })
         });
 
-        match user {
-            Some(user) => Outcome::Success(user.clone()),
+        match client {
+            Some(client) => Outcome::Success(client.clone()),
             None => Outcome::Failure((Status::Unauthorized, ())),
         }
     }
@@ -83,11 +83,11 @@ fn ratelimit_from_request<'a, 'r>(
             let redis = &*redis_writer;
 
             // Prefer:
-            // 1. User ID
+            // 1. Client ID
             // 2. X-Forwarded-For
             // 3. Client IP from request
-            let key = match request.guard::<User>().succeeded() {
-                Some(user) => vec![user.user_id],
+            let key = match request.guard::<Client>().succeeded() {
+                Some(client) => vec![client.client_id],
                 None => request
                     .headers()
                     .get_one("X-Forwarded-For")
