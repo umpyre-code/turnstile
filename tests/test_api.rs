@@ -220,6 +220,7 @@ fn test_authenticate() {
 struct Client {
     client_id: String,
     full_name: String,
+    public_key: String,
 }
 
 #[test]
@@ -253,4 +254,61 @@ fn test_get_client() {
     assert_eq!(response.status().is_success(), true);
     assert_eq!(client.client_id, this_client.client_id);
     assert_eq!(client.full_name.starts_with("herp derp "), true);
+}
+
+#[test]
+fn test_update_client() {
+    let turnstile_process = Turnstile::new().wait_for_ping();
+    let reqwest = reqwest::ClientBuilder::new()
+        .cookie_store(true)
+        .build()
+        .unwrap();
+
+    let response = reqwest
+        .get(&format!("{}/client/{}", turnstile_process.url, "lol"))
+        .send()
+        .unwrap();
+
+    assert_eq!(response.status(), reqwest::StatusCode::UNAUTHORIZED);
+
+    let this_client = create_client(&turnstile_process, &reqwest);
+
+    let mut response = reqwest
+        .get(&format!(
+            "{}/client/{}",
+            turnstile_process.url, this_client.client_id
+        ))
+        .header("X-UMPYRE-APIKEY", this_client.token.clone())
+        .send()
+        .unwrap();
+
+    let client: Client = response.json().unwrap();
+
+    assert_eq!(response.status().is_success(), true);
+    assert_eq!(client.client_id, this_client.client_id);
+    assert_eq!(client.full_name.starts_with("herp derp "), true);
+
+    // Create a client update message
+    let body = json!({
+        "client_id": this_client.client_id.clone(),
+        "full_name": "arnold",
+        "public_key": "lyle",
+    });
+
+    let mut response = reqwest
+        .put(&format!(
+            "{}/client/{}",
+            turnstile_process.url, this_client.client_id
+        ))
+        .header("X-UMPYRE-APIKEY", this_client.token.clone())
+        .json(&body)
+        .send()
+        .unwrap();
+
+    let client: Client = response.json().unwrap();
+
+    assert_eq!(response.status().is_success(), true);
+    assert_eq!(client.client_id, this_client.client_id);
+    assert_eq!(client.full_name, "arnold");
+    assert_eq!(client.public_key, "lyle");
 }
