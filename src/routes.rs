@@ -83,9 +83,13 @@ fn handle_auth_token(
     client_id: &str,
 ) -> Result<String, ResponseError> {
     use rocket_contrib::databases::redis::Commands;
+    use time::Duration;
+
+    // 1 year expiry
+    let expiry = 365 * 24 * 3600;
 
     // generate token (JWT)
-    let token = token::generate(&client_id);
+    let token = token::generate(&client_id, expiry);
 
     // store token in Redis
     let redis = &*redis_writer;
@@ -94,7 +98,35 @@ fn handle_auth_token(
     let cookie = Cookie::build("X-UMPYRE-APIKEY", token.clone())
         .path("/")
         .secure(true)
-        .permanent()
+        .max_age(Duration::seconds(expiry as i64))
+        .finish();
+    cookies.add(cookie);
+
+    Ok(token)
+}
+
+fn handle_auth_temporary_token(
+    mut cookies: Cookies,
+    redis_writer: fairings::RedisWriter,
+    client_id: &str,
+) -> Result<String, ResponseError> {
+    use rocket_contrib::databases::redis::Commands;
+    use time::Duration;
+
+    // 1 hour expiry
+    let expiry = 3600;
+
+    // generate token (JWT)
+    let token = token::generate(&client_id, expiry);
+
+    // store token in Redis
+    let redis = &*redis_writer;
+    let _c: i32 = redis.sadd(&format!("token:{}", client_id), &token)?;
+
+    let cookie = Cookie::build("X-UMPYRE-APIKEY-TEMP", token.clone())
+        .path("/")
+        .secure(true)
+        .max_age(Duration::seconds(expiry as i64))
         .finish();
     cookies.add(cookie);
 
@@ -121,6 +153,37 @@ pub fn post_client_authenticate(
     })?;
 
     let token = handle_auth_token(cookies, redis_writer, &response.client_id)?;
+
+    Ok(Json(models::AuthResponse {
+        client_id: response.client_id,
+        token,
+    }))
+}
+
+#[post(
+    "/client/authenticate-temporarily",
+    data = "<auth_request>",
+    format = "json"
+)]
+pub fn post_client_authenticate_temporarily(
+    _ratelimited: guards::RateLimitedPublic,
+    client_ip: guards::ClientIP,
+    geo_headers: Option<guards::GeoHeaders>,
+    cookies: Cookies,
+    redis_writer: fairings::RedisWriter,
+    auth_request: Json<models::AuthRequest>,
+) -> Result<Json<models::AuthResponse>, ResponseError> {
+    let rolodex_client = rolodex_client::Client::new(&config::CONFIG);
+
+    let location = make_location(client_ip, geo_headers);
+
+    let response = rolodex_client.authenticate(rolodex_grpc::proto::AuthRequest {
+        client_id: auth_request.client_id.clone(),
+        password_hash: auth_request.password_hash.clone(),
+        location,
+    })?;
+
+    let token = handle_auth_temporary_token(cookies, redis_writer, &response.client_id)?;
 
     Ok(Json(models::AuthResponse {
         client_id: response.client_id,
@@ -176,6 +239,23 @@ impl From<rolodex_grpc::proto::GetClientResponse> for models::GetClientResponse 
 pub fn get_client(
     client_id: String,
     calling_client: guards::Client,
+    _ratelimited: guards::RateLimitedPrivate,
+) -> Result<Json<models::GetClientResponse>, ResponseError> {
+    let rolodex_client = rolodex_client::Client::new(&config::CONFIG);
+
+    let response = rolodex_client.get_client(rolodex_grpc::proto::GetClientRequest {
+        client_id,
+        calling_client_id: calling_client.client_id,
+    })?;
+
+    Ok(Json(response.into()))
+}
+
+#[put("/client/<client_id>")]
+pub fn put_client(
+    client_id: String,
+    calling_client: guards::Client,
+    temp_client: Option<guards::TempClient>,
     _ratelimited: guards::RateLimitedPrivate,
 ) -> Result<Json<models::GetClientResponse>, ResponseError> {
     let rolodex_client = rolodex_client::Client::new(&config::CONFIG);

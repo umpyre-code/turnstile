@@ -12,7 +12,7 @@ paths:
       summary: Authenticate client
       requestBody:
         required: true
-        description: A JSON object containing the login and password.
+        description: A JSON object containing the client ID and password hash.
         content:
           application/json:
             schema:
@@ -32,6 +32,35 @@ paths:
               schema:
                 type: string
                 example: X-UMPYRE-APIKEY=token; Path=/; HttpOnly
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+  /client/authenticate-temporarily:
+    post:
+      summary: Authenticate client temporarily
+      requestBody:
+        required: true
+        description: A JSON object containing the client ID and password hash.
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      security: []
+      operationId: authenticate-temporarily
+      responses:
+        "200":
+          description: >
+            Successfully authenticated.
+
+            The token is returned in a secure cookie named
+            `X-UMPYRE-APIKEY-TEMP`. You need to include this cookie in
+            subsequent requests, or pass the token with the
+            `X-UMPYRE-APIKEY-TEMP` header. The token is only valid for 1
+            hour.
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: X-UMPYRE-APIKEY-TEMP=token; Path=/; HttpOnly; Max-Age=3600;
         "401":
           $ref: "#/components/responses/UnauthorizedError"
   /client/{client_id}:
@@ -70,11 +99,16 @@ paths:
       summary: >-
         Update client info
       description: >-
-        Updates the underlying client model for the provided client ID.
+        Updates the underlying client model for the provided client ID. If
+        you're trying to modify the password hash, email address, or phone
+        number, you must obtain a temoporary API token.
       operationId: update-client
       requestBody:
         required: true
-        description: A JSON object containing the client model.
+        description: >-
+          A JSON object containing the client model. If you're trying to
+          modify the password hash, email address, or phone number, you must
+          obtain a temoporary API token.
         content:
           application/json:
             schema:
@@ -200,6 +234,40 @@ components:
           type: string
           description: >-
             Public key for this client.
+        password_hash:
+          type: string
+          format: password
+          description: >-
+            A base64 encoded 64-byte Blake2b hash of the client's password.
+            Do not send the plain-text password to the server. To update the
+            password hash, the client must firust obtain and then supply a
+            short-term token with the request.
+        email:
+          type: string
+          format: email
+          description: >-
+            Contact email address for this client. To update the email
+            address, the client must firust obtain and then supply a
+            short-term token with the request.
+        phone_number:
+          type: object
+          description: >-
+            An object representing a phone number. To update the phone
+            number, the client must firust obtain and then supply a
+            short-term token with the request.
+          properties:
+            country_code:
+              type: string
+              description: >-
+                Two-letter CLDR country code for this number.
+            national_number:
+              type: string
+              description: >-
+                The national phone number.
+      required:
+        - client_id
+        - full_name
+        - public_key
     NewClient:
       type: object
       properties:
@@ -215,7 +283,7 @@ components:
           type: string
           format: password
           description: >-
-            A SHA256 hash of the client's password. Do not send the plain-text
+            A base64 encoded 64-byte Blake2b hash of the client's password. Do not send the plain-text
             password to the server.
         email:
           type: string
@@ -234,9 +302,10 @@ components:
               description: >-
                 The national phone number.
       required:
-        - name
+        - full_name
         - public_key
         - password_hash
+        - email
         - phone_number
     Message:
       type: object
@@ -310,6 +379,14 @@ components:
       type: apiKey
       in: cookie
       name: X-UMPYRE-APIKEY
+    apiKeyTempHeader:
+      type: apiKey
+      in: header
+      name: X-UMPYRE-APIKEY-TEMP
+    apiKeyTempCookie:
+      type: apiKey
+      in: cookie
+      name: X-UMPYRE-APIKEY-TEMP
 security:
   - apiKeyHeader: []
   - apiKeyCookie: []

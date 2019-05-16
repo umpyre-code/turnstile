@@ -12,7 +12,7 @@ use sodiumoxide::crypto::secretbox::xsalsa20poly1305::{Key, Nonce};
 struct Claims {
     sub: String,
     iss: String,
-    exp: usize,
+    exp: u64,
 }
 
 lazy_static! {
@@ -28,15 +28,21 @@ lazy_static! {
     };
 }
 
-pub fn generate(sub: &str) -> String {
-    generate_inner(&config::CONFIG.jwt, &SECRET_KEY, sub)
+pub fn generate(sub: &str, expiry: u64) -> String {
+    generate_inner(&config::CONFIG.jwt, &SECRET_KEY, sub, expiry)
 }
 
-fn generate_inner(jwt_config: &config::Jwt, key: &Key, sub: &str) -> String {
+fn generate_inner(jwt_config: &config::Jwt, key: &Key, sub: &str, expiry: u64) -> String {
+    use std::time::SystemTime;
+
+    let timestamp = SystemTime::now()
+        .duration_since(SystemTime::UNIX_EPOCH)
+        .unwrap()
+        .as_secs();
     let claims = Claims {
         sub: sub.to_string(),
         iss: jwt_config.iss.clone(),
-        exp: jwt_config.exp,
+        exp: timestamp + expiry,
     };
 
     match encode(&Header::default(), &claims, jwt_config.jwt_secret.as_ref()) {
@@ -125,7 +131,6 @@ mod test {
         let key = secretbox::gen_key();
         let jwt_config = config::Jwt {
             iss: "test iss".into(),
-            exp: 10_000_000_000,
             jwt_secret: "secret".into(),
             encryption_secret: "secret".into(),
         };
@@ -133,7 +138,7 @@ mod test {
         // run 10 times
         for _ in 0..10 {
             let sub = "test string";
-            let token = generate_inner(&jwt_config, &key, &sub);
+            let token = generate_inner(&jwt_config, &key, &sub, 1000);
             let result = decode_into_sub_inner(&jwt_config, &key, &token);
             assert_eq!(result.unwrap(), sub);
         }

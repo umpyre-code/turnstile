@@ -31,7 +31,6 @@ pub struct Rolodex {
 #[derive(Debug, Deserialize)]
 pub struct Jwt {
     pub iss: String,
-    pub exp: usize,
     pub jwt_secret: String,
     pub encryption_secret: String,
 }

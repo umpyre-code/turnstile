@@ -16,6 +16,7 @@ extern crate yansi;
 extern crate log;
 #[macro_use]
 extern crate failure;
+extern crate time;
 
 mod catchers;
 mod config;
@@ -92,11 +93,14 @@ fn main() -> Result<(), std::io::Error> {
         .mount(
             "/",
             routes![
-                static_routes::openapi,
-                routes::get_ping,
                 routes::get_client,
+                routes::get_ping,
+                routes::post_client_authenticate_temporarily,
                 routes::post_client_authenticate,
                 routes::post_client,
+                routes::put_client,
+                static_routes::openapi_html,
+                static_routes::openapi_yaml,
             ],
         )
         .launch();

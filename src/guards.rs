@@ -4,9 +4,58 @@ use crate::token;
 use rocket::http::Status;
 use rocket::Outcome;
 
+trait MakeClient {
+    fn make_client(client_id: String) -> Self;
+}
+
+fn get_auth_client<'a, 'r, C: MakeClient + Send + Sync + Clone + 'static>(
+    token_name: &str,
+    request: &'a rocket::request::Request<'r>,
+) -> rocket::request::Outcome<C, ()> {
+    use rocket_contrib::databases::redis::Commands;
+
+    // Store the client object in local request cache to avoid multiple lookups
+    let client = request.local_cache(|| {
+        let redis_reader = request.guard::<RedisReader>().unwrap();
+        let redis = &*redis_reader;
+
+        request
+            .cookies()
+            .get(token_name)
+            .and_then(|cookie| Some(cookie.value())) // API key can come from a cookie (preferred), or
+            .or_else(|| request.headers().get_one(token_name)) // from headers
+            .map(std::string::ToString::to_string)
+            .and_then(|token: String| match token::decode_into_sub(&token) {
+                Ok(client_id) => Some((token, client_id)),
+                Err(_) => None,
+            })
+            .and_then(|(token, client_id)| {
+                let is_member: bool = redis
+                    .sismember(&format!("token:{}", client_id), token)
+                    .unwrap();
+                if is_member {
+                    Some(C::make_client(client_id))
+                } else {
+                    None
+                }
+            })
+    });
+
+    match client {
+        Some(client) => Outcome::Success(client.clone()),
+        None => Outcome::Failure((Status::Unauthorized, ())),
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct Client {
     pub client_id: String,
+}
+
+impl MakeClient for Client {
+    fn make_client(client_id: String) -> Self {
+        Client { client_id }
+    }
 }
 
 impl<'a, 'r> rocket::request::FromRequest<'a, 'r> for Client {
@@ -15,39 +64,28 @@ impl<'a, 'r> rocket::request::FromRequest<'a, 'r> for Client {
     fn from_request(
         request: &'a rocket::request::Request<'r>,
     ) -> rocket::request::Outcome<Client, Self::Error> {
-        use rocket_contrib::databases::redis::Commands;
+        get_auth_client("X-UMPYRE-APIKEY", request)
+    }
+}
 
-        // Store the client object in local request cache to avoid multiple lookups
-        let client = request.local_cache(|| {
-            let redis_reader = request.guard::<RedisReader>().unwrap();
-            let redis = &*redis_reader;
+#[derive(Debug, Clone)]
+pub struct TempClient {
+    pub client_id: String,
+}
 
-            request
-                .cookies()
-                .get("X-UMPYRE-APIKEY")
-                .and_then(|cookie| Some(cookie.value())) // API key can come from a cookie (preferred), or
-                .or_else(|| request.headers().get_one("X-UMPYRE-APIKEY")) // from headers
-                .map(std::string::ToString::to_string)
-                .and_then(|token: String| match token::decode_into_sub(&token) {
-                    Ok(client_id) => Some((token, client_id)),
-                    Err(_) => None,
-                })
-                .and_then(|(token, client_id)| {
-                    let is_member: bool = redis
-                        .sismember(&format!("token:{}", client_id), token)
-                        .unwrap();
-                    if is_member {
-                        Some(Client { client_id })
-                    } else {
-                        None
-                    }
-                })
-        });
+impl MakeClient for TempClient {
+    fn make_client(client_id: String) -> Self {
+        TempClient { client_id }
+    }
+}
 
-        match client {
-            Some(client) => Outcome::Success(client.clone()),
-            None => Outcome::Failure((Status::Unauthorized, ())),
-        }
+impl<'a, 'r> rocket::request::FromRequest<'a, 'r> for TempClient {
+    type Error = ();
+
+    fn from_request(
+        request: &'a rocket::request::Request<'r>,
+    ) -> rocket::request::Outcome<TempClient, Self::Error> {
+        get_auth_client("X-UMPYRE-APIKEY-TEMP", request)
     }
 }
 

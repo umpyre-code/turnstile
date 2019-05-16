@@ -40,3 +40,12 @@ pub struct GetClientResponse {
     pub full_name: String,
     pub public_key: String,
 }
+
+#[derive(Debug, Deserialize)]
+pub struct UpdateClientRequest {
+    pub full_name: String,
+    pub public_key: String,
+    pub password_hash: Option<String>,
+    pub email: Option<String>,
+    pub phone_number: Option<PhoneNumber>,
+}
