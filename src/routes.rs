@@ -56,6 +56,27 @@ impl From<rocket_contrib::databases::redis::RedisError> for ResponseError {
     }
 }
 
+fn make_location(
+    client_ip: guards::ClientIP,
+    geo_headers: Option<guards::GeoHeaders>,
+) -> Option<rolodex_grpc::proto::Location> {
+    if let Some(location) = geo_headers {
+        Some(rolodex_grpc::proto::Location {
+            ip_address: client_ip.0,
+            region: location.region,
+            region_subdivision: location.region_subdivision,
+            city: location.city,
+        })
+    } else {
+        Some(rolodex_grpc::proto::Location {
+            ip_address: client_ip.0,
+            region: "unknown".into(),
+            region_subdivision: "unknown".into(),
+            city: "unknown".into(),
+        })
+    }
+}
+
 fn handle_auth_token(
     mut cookies: Cookies,
     redis_writer: fairings::RedisWriter,
@@ -83,14 +104,20 @@ fn handle_auth_token(
 #[post("/client/authenticate", data = "<auth_request>", format = "json")]
 pub fn post_client_authenticate(
     _ratelimited: guards::RateLimitedPublic,
+    client_ip: guards::ClientIP,
+    geo_headers: Option<guards::GeoHeaders>,
     cookies: Cookies,
     redis_writer: fairings::RedisWriter,
     auth_request: Json<models::AuthRequest>,
 ) -> Result<Json<models::AuthResponse>, ResponseError> {
     let rolodex_client = rolodex_client::Client::new(&config::CONFIG);
+
+    let location = make_location(client_ip, geo_headers);
+
     let response = rolodex_client.authenticate(rolodex_grpc::proto::AuthRequest {
         client_id: auth_request.client_id.clone(),
         password_hash: auth_request.password_hash.clone(),
+        location,
     })?;
 
     let token = handle_auth_token(cookies, redis_writer, &response.client_id)?;
@@ -104,6 +131,7 @@ pub fn post_client_authenticate(
 #[post("/client", data = "<new_client_request>", format = "json")]
 pub fn post_client(
     _ratelimited: guards::RateLimitedPublic,
+    client_ip: guards::ClientIP,
     geo_headers: Option<guards::GeoHeaders>,
     cookies: Cookies,
     redis_writer: fairings::RedisWriter,
@@ -111,15 +139,7 @@ pub fn post_client(
 ) -> Result<Json<models::NewClientResponse>, ResponseError> {
     let rolodex_client = rolodex_client::Client::new(&config::CONFIG);
 
-    let location = if let Some(location) = geo_headers {
-        Some(rolodex_grpc::proto::Location {
-            region: location.region,
-            region_subdivision: location.region_subdivision,
-            city: location.city,
-        })
-    } else {
-        None
-    };
+    let location = make_location(client_ip, geo_headers);
 
     let response = rolodex_client.add_client(rolodex_grpc::proto::NewClientRequest {
         full_name: new_client_request.full_name.clone(),
@@ -143,10 +163,11 @@ pub fn post_client(
 
 impl From<rolodex_grpc::proto::GetClientResponse> for models::GetClientResponse {
     fn from(response: rolodex_grpc::proto::GetClientResponse) -> Self {
+        let client = response.client.unwrap();
         models::GetClientResponse {
-            client_id: response.client_id,
-            full_name: response.full_name,
-            public_key: response.public_key,
+            client_id: client.client_id,
+            full_name: client.full_name,
+            public_key: client.public_key,
         }
     }
 }

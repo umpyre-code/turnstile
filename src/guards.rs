@@ -87,44 +87,15 @@ fn ratelimit_from_request<'a, 'r>(
             // 2. X-Forwarded-For
             // 3. Client IP from request
             let key = match request.guard::<Client>().succeeded() {
-                Some(client) => vec![client.client_id],
-                None => request
-                    .headers()
-                    .get_one("X-Forwarded-For")
-                    .map(|s| {
-                        info!("X-Forwarded-For: {:?}", s);
-
-                        s.split(',')
-                            .map(str::trim)
-                            .map(std::string::ToString::to_string)
-                            .collect()
-                    })
-                    .or_else(|| Some(vec![]))
-                    .unwrap(),
+                Some(client) => client.client_id,
+                None => match request.guard::<ClientIP>().succeeded() {
+                    Some(client_ip) => client_ip.0,
+                    None => "none".to_string(),
+                },
             };
 
-            let key = if key.is_empty() {
-                info!(
-                    "Using request.client_ip() to throttle: {:?}",
-                    request.client_ip().unwrap()
-                );
-                vec![request.client_ip().unwrap().to_string()]
-            } else {
-                key
-            };
-
-            info!("key={:?}", key);
-
-            let key = if key.len() == 1 {
-                format!("throttle:{}", key.first().unwrap())
-            } else {
-                // Take the second from last value of X-Forwarded-For, as per the docs at:
-                // https://cloud.google.com/load-balancing/docs/https/
-                // That _should_ give us the client IP address.
-                format!("throttle:{}", key[key.len() - 2])
-            };
-
-            info!("key={:?}", key);
+            info!("throttle key={:?}", key);
+            format!("throttle:{}", key);
 
             let (limited, limit, remaining, retry_after, reset): (i32, i32, i32, i32, i32) =
                 redis::cmd("CL.THROTTLE")
@@ -206,6 +177,40 @@ impl<'a, 'r> rocket::request::FromRequest<'a, 'r> for GeoHeaders {
             }
         } else {
             Outcome::Forward(())
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct ClientIP(pub String);
+
+impl<'a, 'r> rocket::request::FromRequest<'a, 'r> for ClientIP {
+    type Error = ();
+
+    fn from_request(
+        request: &'a rocket::request::Request<'r>,
+    ) -> rocket::request::Outcome<ClientIP, Self::Error> {
+        let forwarded_for = request
+            .headers()
+            .get_one("X-Forwarded-For")
+            .map(|s| {
+                s.split(',')
+                    .map(str::trim)
+                    .map(std::string::ToString::to_string)
+                    .collect()
+            })
+            .or_else(|| Some(vec![]))
+            .unwrap();
+
+        if forwarded_for.is_empty() || forwarded_for.len() < 2 {
+            let client_ip = request.client_ip().unwrap().to_string();
+
+            Outcome::Success(ClientIP(client_ip.into()))
+        } else {
+            // Take the second from last value of X-Forwarded-For, as per the docs at:
+            // https://cloud.google.com/load-balancing/docs/https/
+            // That _should_ give us the client IP address.
+            Outcome::Success(ClientIP(forwarded_for[forwarded_for.len() - 2].to_string()))
         }
     }
 }

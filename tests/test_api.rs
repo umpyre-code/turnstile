@@ -70,13 +70,12 @@ fn b2b_hash(s: &str, digest_size: usize) -> String {
     use data_encoding::BASE64_NOPAD;
     use sodiumoxide::crypto::generichash;
     let mut hasher = generichash::State::new(digest_size, None).unwrap();
-    hasher.update(s.as_bytes());
+    hasher.update(s.as_bytes()).unwrap();
     let digest = hasher.finalize().unwrap();
     BASE64_NOPAD.encode(digest.as_ref())
 }
 
 fn create_client(turnstile_process: &Turnstile, reqwest: &reqwest::Client) -> AddClient {
-    use data_encoding::HEXLOWER;
     use rand::Rng;
 
     let mut rng = rand::thread_rng();
@@ -121,8 +120,6 @@ struct AddClient {
 
 #[test]
 fn test_add_client() {
-    use data_encoding::HEXLOWER;
-
     use rand::Rng;
     let turnstile_process = Turnstile::new().wait_for_ping();
 
@@ -166,8 +163,6 @@ struct Authenticate {
 
 #[test]
 fn test_authenticate() {
-    use data_encoding::HEXLOWER;
-
     use rand::Rng;
     let turnstile_process = Turnstile::new().wait_for_ping();
 
