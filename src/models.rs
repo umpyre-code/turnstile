@@ -49,3 +49,10 @@ pub struct UpdateClientRequest {
     pub email: Option<String>,
     pub phone_number: Option<PhoneNumber>,
 }
+
+#[derive(Debug, Serialize)]
+pub struct UpdateClientResponse {
+    pub client_id: String,
+    pub full_name: String,
+    pub public_key: String,
+}

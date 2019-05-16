@@ -15,6 +15,8 @@ pub enum ResponseError {
     BadRequest { response: content::Json<String> },
     #[response(status = 503, content_type = "json")]
     DatabaseError { response: content::Json<String> },
+    #[response(status = 403, content_type = "json")]
+    Unauthorized { response: content::Json<String> },
 }
 
 impl From<rolodex_client::RolodexError> for ResponseError {
@@ -251,19 +253,131 @@ pub fn get_client(
     Ok(Json(response.into()))
 }
 
-#[put("/client/<client_id>")]
+impl From<rolodex_grpc::proto::UpdateClientResponse> for models::UpdateClientResponse {
+    fn from(response: rolodex_grpc::proto::UpdateClientResponse) -> Self {
+        let client = response.client.unwrap();
+        models::UpdateClientResponse {
+            client_id: client.client_id,
+            full_name: client.full_name,
+            public_key: client.public_key,
+        }
+    }
+}
+
+fn check_result(result: i32) -> Result<(), ResponseError> {
+    if result != rolodex_grpc::proto::Result::Success as i32 {
+        Err(ResponseError::BadRequest {
+            response: content::Json(
+                json!({
+                    "message:": "Update request failed",
+                })
+                .to_string(),
+            ),
+        })
+    } else {
+        Ok(())
+    }
+}
+
+#[put(
+    "/client/<client_id>",
+    data = "<update_client_request>",
+    format = "json"
+)]
 pub fn put_client(
     client_id: String,
     calling_client: guards::Client,
     temp_client: Option<guards::TempClient>,
     _ratelimited: guards::RateLimitedPrivate,
-) -> Result<Json<models::GetClientResponse>, ResponseError> {
+    update_client_request: Json<models::UpdateClientRequest>,
+    client_ip: guards::ClientIP,
+    geo_headers: Option<guards::GeoHeaders>,
+) -> Result<Json<models::UpdateClientResponse>, ResponseError> {
     let rolodex_client = rolodex_client::Client::new(&config::CONFIG);
 
-    let response = rolodex_client.get_client(rolodex_grpc::proto::GetClientRequest {
-        client_id,
-        calling_client_id: calling_client.client_id,
+    if client_id != calling_client.client_id {
+        return Err(ResponseError::Unauthorized {
+            response: content::Json(
+                json!({
+                    "message:": "Not authorized to modify the specified client account",
+                })
+                .to_string(),
+            ),
+        });
+    }
+
+    let location = make_location(client_ip, geo_headers);
+
+    if update_client_request.password_hash.is_some()
+        || update_client_request.email.is_some()
+        || update_client_request.phone_number.is_some()
+    {
+        // Trying to update password, email, or phone number, so we must have a
+        // temporary auth token
+        if temp_client.is_none() {
+            return Err(ResponseError::Unauthorized {
+                response: content::Json(
+                    json!({
+                        "message:": "Not authorized to modify the specified client account",
+                    })
+                    .to_string(),
+                ),
+            });
+        }
+
+        if let Some(password_hash) = &update_client_request.password_hash {
+            // Update password hash
+            let response = rolodex_client.update_client_password(
+                rolodex_grpc::proto::UpdateClientPasswordRequest {
+                    client_id: client_id.clone(),
+                    password_hash: password_hash.clone(),
+                    location: location.clone(),
+                },
+            )?;
+
+            check_result(response.result)?;
+        }
+
+        if let Some(email) = &update_client_request.email {
+            // Update email
+            let response = rolodex_client.update_client_email(
+                rolodex_grpc::proto::UpdateClientEmailRequest {
+                    client_id: client_id.clone(),
+                    email: email.clone(),
+                    location: location.clone(),
+                },
+            )?;
+
+            check_result(response.result)?;
+        }
+
+        if let Some(phone_number) = &update_client_request.phone_number {
+            // Update phone number
+            let response = rolodex_client.update_client_phone_number(
+                rolodex_grpc::proto::UpdateClientPhoneNumberRequest {
+                    client_id: client_id.clone(),
+                    phone_number: Some(rolodex_grpc::proto::PhoneNumber {
+                        country_code: phone_number.country_code.clone(),
+                        national_number: phone_number.national_number.clone(),
+                    }),
+                    location: location.clone(),
+                },
+            )?;
+
+            check_result(response.result)?;
+        }
+    }
+
+    let response = rolodex_client.update_client(rolodex_grpc::proto::UpdateClientRequest {
+        client: Some(rolodex_grpc::proto::Client {
+            client_id,
+            full_name: update_client_request.full_name.clone(),
+            public_key: update_client_request.public_key.clone(),
+        }),
+        location,
     })?;
+
+    check_result(response.result)?;
 
     Ok(Json(response.into()))
 }
