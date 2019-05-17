@@ -168,8 +168,14 @@ paths:
       summary: >-
         Get all messages
       description: >-
-        Returns all of the messages in a client's inbox stored on the server.
+        Returns all of the messages in a client's inbox stored on the server, minus any messages included in the optional sketch.
       operationId: get-messages
+      parameters:
+      - in: query
+        name: sketch
+        schema:
+          type: string
+        description: A URL-safe base-64 encoded sketch, or serialized bloom filter, representing the messages which the client already has.
       responses:
         "200":
           description: >-
