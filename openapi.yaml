@@ -101,14 +101,14 @@ paths:
       description: >-
         Updates the underlying client model for the provided client ID. If
         you're trying to modify the password hash, email address, or phone
-        number, you must obtain a temoporary API token.
+        number, you must obtain a temporary API token.
       operationId: update-client
       requestBody:
         required: true
         description: >-
           A JSON object containing the client model. If you're trying to
           modify the password hash, email address, or phone number, you must
-          obtain a temoporary API token.
+          obtain a temporary API token.
         content:
           application/json:
             schema:
