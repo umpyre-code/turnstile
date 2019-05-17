@@ -8,15 +8,14 @@ use crate::token;
 use rocket::http::{Cookie, Cookies};
 use rocket::response::content;
 use rocket_contrib::json::Json;
+use rocket_contrib::json::JsonError;
 
 #[derive(Responder, Debug)]
 pub enum ResponseError {
     #[response(status = 400, content_type = "json")]
     BadRequest { response: content::Json<String> },
-    #[response(status = 503, content_type = "json")]
-    DatabaseError { response: content::Json<String> },
-    #[response(status = 403, content_type = "json")]
-    Unauthorized { response: content::Json<String> },
+    #[response(status = 401, content_type = "json")]
+    Forbidden { response: content::Json<String> },
 }
 
 impl From<rolodex_client::RolodexError> for ResponseError {
@@ -37,6 +36,29 @@ impl From<rolodex_client::RolodexError> for ResponseError {
                 response: content::Json(
                     json!({
                         "message:": err.to_string(),
+                    })
+                    .to_string(),
+                ),
+            },
+        }
+    }
+}
+
+impl From<JsonError<'_>> for ResponseError {
+    fn from(err: JsonError) -> Self {
+        match err {
+            JsonError::Io(error) => ResponseError::BadRequest {
+                response: content::Json(
+                    json!({
+                        "message": error.to_string(),
+                    })
+                    .to_string(),
+                ),
+            },
+            JsonError::Parse(_raw, error) => ResponseError::BadRequest {
+                response: content::Json(
+                    json!({
+                        "message": error.to_string(),
                     })
                     .to_string(),
                 ),
@@ -142,8 +164,13 @@ pub fn post_client_authenticate(
     geo_headers: Option<guards::GeoHeaders>,
     cookies: Cookies,
     redis_writer: fairings::RedisWriter,
-    auth_request: Json<models::AuthRequest>,
+    auth_request: Result<Json<models::AuthRequest>, JsonError>,
 ) -> Result<Json<models::AuthResponse>, ResponseError> {
+    let auth_request = match auth_request {
+        Ok(auth_request) => auth_request,
+        Err(err) => return Err(err.into()),
+    };
+
     let rolodex_client = rolodex_client::Client::new(&config::CONFIG);
 
     let location = make_location(client_ip, geo_headers);
@@ -173,8 +200,13 @@ pub fn post_client_authenticate_temporarily(
     geo_headers: Option<guards::GeoHeaders>,
     cookies: Cookies,
     redis_writer: fairings::RedisWriter,
-    auth_request: Json<models::AuthRequest>,
+    auth_request: Result<Json<models::AuthRequest>, JsonError>,
 ) -> Result<Json<models::AuthResponse>, ResponseError> {
+    let auth_request = match auth_request {
+        Ok(auth_request) => auth_request,
+        Err(err) => return Err(err.into()),
+    };
+
     let rolodex_client = rolodex_client::Client::new(&config::CONFIG);
 
     let location = make_location(client_ip, geo_headers);
@@ -200,8 +232,13 @@ pub fn post_client(
     geo_headers: Option<guards::GeoHeaders>,
     cookies: Cookies,
     redis_writer: fairings::RedisWriter,
-    new_client_request: Json<models::NewClientRequest>,
+    new_client_request: Result<Json<models::NewClientRequest>, JsonError>,
 ) -> Result<Json<models::NewClientResponse>, ResponseError> {
+    let new_client_request = match new_client_request {
+        Ok(new_client_request) => new_client_request,
+        Err(err) => return Err(err.into()),
+    };
+
     let rolodex_client = rolodex_client::Client::new(&config::CONFIG);
 
     let location = make_location(client_ip, geo_headers);
@@ -289,14 +326,19 @@ pub fn put_client(
     calling_client: guards::Client,
     temp_client: Option<guards::TempClient>,
     _ratelimited: guards::RateLimitedPrivate,
-    update_client_request: Json<models::UpdateClientRequest>,
+    update_client_request: Result<Json<models::UpdateClientRequest>, JsonError>,
     client_ip: guards::ClientIP,
     geo_headers: Option<guards::GeoHeaders>,
 ) -> Result<Json<models::UpdateClientResponse>, ResponseError> {
+    let update_client_request = match update_client_request {
+        Ok(update_client_request) => update_client_request,
+        Err(err) => return Err(err.into()),
+    };
+
     let rolodex_client = rolodex_client::Client::new(&config::CONFIG);
 
     if client_id != calling_client.client_id {
-        return Err(ResponseError::Unauthorized {
+        return Err(ResponseError::Forbidden {
             response: content::Json(
                 json!({
                     "message:": "Not authorized to modify the specified client account",
@@ -315,7 +357,7 @@ pub fn put_client(
         // Trying to update password, email, or phone number, so we must have a
         // temporary auth token
         if temp_client.is_none() {
-            return Err(ResponseError::Unauthorized {
+            return Err(ResponseError::Forbidden {
                 response: content::Json(
                     json!({
                         "message:": "Not authorized to modify the specified client account",

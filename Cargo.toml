@@ -10,7 +10,7 @@ env_logger = { version = "0.5", default-features = false }
 failure = "0.1"
 futures = "0.1"
 http = "0.1"
-hyper = "0.12"
+hyper = "=0.12.28"
 instrumented = { git = "ssh://git@github.com/umpyre-code/instrumented.git" }
 jsonwebtoken = "6"
 lazy_static = "1.3"

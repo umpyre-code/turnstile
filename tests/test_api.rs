@@ -75,19 +75,20 @@ fn b2b_hash(s: &str, digest_size: usize) -> String {
     BASE64_NOPAD.encode(digest.as_ref())
 }
 
-fn create_client(turnstile_process: &Turnstile, reqwest: &reqwest::Client) -> AddClient {
+fn create_client(turnstile_process: &Turnstile, reqwest: &reqwest::Client) -> (AddClient, String) {
     use rand::Rng;
 
     let mut rng = rand::thread_rng();
     let rand_num: i64 = rng.gen_range(2_000_000, 10_000_000);
 
+    let password_hash = b2b_hash("derp", 64);
+
     let body = json!({
         "full_name": format!("herp derp {}", rand_num),
         "email": format!("test{}@aol.com", rand_num),
-        "password_hash":
-     b2b_hash("derp", 64    ),
-        "phone_number":{"country_code":"US","national_number":format!("510{}", rand_num)},
-        "public_key":"derp key"
+        "password_hash": password_hash,
+        "phone_number": {"country_code":"US","national_number":format!("510{}", rand_num)},
+        "public_key": "derp key"
     });
 
     let mut response = reqwest
@@ -97,7 +98,7 @@ fn create_client(turnstile_process: &Turnstile, reqwest: &reqwest::Client) -> Ad
         .unwrap();
 
     let add_client: AddClient = response.json().unwrap();
-    add_client
+    (add_client, password_hash)
 }
 
 #[test]
@@ -238,7 +239,7 @@ fn test_get_client() {
 
     assert_eq!(response.status(), reqwest::StatusCode::UNAUTHORIZED);
 
-    let this_client = create_client(&turnstile_process, &reqwest);
+    let (this_client, _) = create_client(&turnstile_process, &reqwest);
 
     let mut response = reqwest
         .get(&format!(
@@ -271,7 +272,7 @@ fn test_update_client() {
 
     assert_eq!(response.status(), reqwest::StatusCode::UNAUTHORIZED);
 
-    let this_client = create_client(&turnstile_process, &reqwest);
+    let (this_client, _) = create_client(&turnstile_process, &reqwest);
 
     let mut response = reqwest
         .get(&format!(
@@ -302,6 +303,304 @@ fn test_update_client() {
         ))
         .header("X-UMPYRE-APIKEY", this_client.token.clone())
         .json(&body)
+        .send()
+        .unwrap();
+
+    let client: Client = response.json().unwrap();
+
+    assert_eq!(response.status().is_success(), true);
+    assert_eq!(client.client_id, this_client.client_id);
+    assert_eq!(client.full_name, "arnold");
+    assert_eq!(client.public_key, "lyle");
+}
+
+#[test]
+fn test_update_client_password() {
+    use reqwest::StatusCode;
+
+    let turnstile_process = Turnstile::new().wait_for_ping();
+    let reqwest = reqwest::ClientBuilder::new()
+        .cookie_store(true)
+        .build()
+        .unwrap();
+
+    let response = reqwest
+        .get(&format!("{}/client/{}", turnstile_process.url, "lol"))
+        .send()
+        .unwrap();
+
+    assert_eq!(response.status(), reqwest::StatusCode::UNAUTHORIZED);
+
+    let (this_client, password_hash) = create_client(&turnstile_process, &reqwest);
+
+    let mut response = reqwest
+        .get(&format!(
+            "{}/client/{}",
+            turnstile_process.url, this_client.client_id
+        ))
+        .header("X-UMPYRE-APIKEY", this_client.token.clone())
+        .send()
+        .unwrap();
+
+    let client: Client = response.json().unwrap();
+
+    assert_eq!(response.status().is_success(), true);
+    assert_eq!(client.client_id, this_client.client_id);
+    assert_eq!(client.full_name.starts_with("herp derp "), true);
+
+    let new_pw = b2b_hash("helloplease", 64);
+
+    // Create a client update message
+    let new_body = json!({
+        "client_id": this_client.client_id.clone(),
+        "full_name": "arnold",
+        "public_key": "lyle",
+        "password_hash": new_pw,
+    });
+
+    // Test without a temporary token. Should return 403.
+    let response = reqwest
+        .put(&format!(
+            "{}/client/{}",
+            turnstile_process.url, this_client.client_id
+        ))
+        .header("X-UMPYRE-APIKEY", this_client.token.clone())
+        .json(&new_body)
+        .send()
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+
+    // Obtain a temporary token
+    let body = json!({
+        "client_id": client.client_id,
+        "password_hash": password_hash,
+    });
+    let mut response = reqwest
+        .post(&format!(
+            "{}/client/authenticate-temporarily",
+            turnstile_process.url
+        ))
+        .json(&body)
+        .send()
+        .unwrap();
+
+    let authenticate: Authenticate = response.json().unwrap();
+
+    assert_eq!(response.status().is_success(), true);
+    assert_eq!(authenticate.client_id, this_client.client_id);
+    assert_eq!(!authenticate.token.is_empty(), true);
+    assert_ne!(authenticate.token, this_client.token);
+
+    // Test with a temporary token
+    let mut response = reqwest
+        .put(&format!(
+            "{}/client/{}",
+            turnstile_process.url, this_client.client_id
+        ))
+        .header("X-UMPYRE-APIKEY", this_client.token.clone())
+        .header("X-UMPYRE-APIKEY-TEMP", authenticate.token.clone())
+        .json(&new_body)
+        .send()
+        .unwrap();
+
+    let client: Client = response.json().unwrap();
+
+    assert_eq!(response.status().is_success(), true);
+    assert_eq!(client.client_id, this_client.client_id);
+    assert_eq!(client.full_name, "arnold");
+    assert_eq!(client.public_key, "lyle");
+}
+
+#[test]
+fn test_update_client_email() {
+    use rand::Rng;
+    use reqwest::StatusCode;
+
+    let mut rng = rand::thread_rng();
+    let rand_num: i64 = rng.gen_range(2_000_000, 10_000_000);
+
+    let turnstile_process = Turnstile::new().wait_for_ping();
+    let reqwest = reqwest::ClientBuilder::new()
+        .cookie_store(true)
+        .build()
+        .unwrap();
+
+    let response = reqwest
+        .get(&format!("{}/client/{}", turnstile_process.url, "lol"))
+        .send()
+        .unwrap();
+
+    assert_eq!(response.status(), reqwest::StatusCode::UNAUTHORIZED);
+
+    let (this_client, password_hash) = create_client(&turnstile_process, &reqwest);
+
+    let mut response = reqwest
+        .get(&format!(
+            "{}/client/{}",
+            turnstile_process.url, this_client.client_id
+        ))
+        .header("X-UMPYRE-APIKEY", this_client.token.clone())
+        .send()
+        .unwrap();
+
+    let client: Client = response.json().unwrap();
+
+    assert_eq!(response.status().is_success(), true);
+    assert_eq!(client.client_id, this_client.client_id);
+    assert_eq!(client.full_name.starts_with("herp derp "), true);
+
+    // Create a client update message
+    let new_body = json!({
+        "client_id": this_client.client_id.clone(),
+        "full_name": "arnold",
+        "public_key": "lyle",
+        "email": format!("hellllllo{}@aol.com", rand_num),
+    });
+
+    // Test without a temporary token. Should return 403.
+    let response = reqwest
+        .put(&format!(
+            "{}/client/{}",
+            turnstile_process.url, this_client.client_id
+        ))
+        .header("X-UMPYRE-APIKEY", this_client.token.clone())
+        .json(&new_body)
+        .send()
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+
+    // Obtain a temporary token
+    let body = json!({
+        "client_id": client.client_id,
+        "password_hash": password_hash,
+    });
+    let mut response = reqwest
+        .post(&format!(
+            "{}/client/authenticate-temporarily",
+            turnstile_process.url
+        ))
+        .json(&body)
+        .send()
+        .unwrap();
+
+    let authenticate: Authenticate = response.json().unwrap();
+
+    assert_eq!(response.status().is_success(), true);
+    assert_eq!(authenticate.client_id, this_client.client_id);
+    assert_eq!(!authenticate.token.is_empty(), true);
+    assert_ne!(authenticate.token, this_client.token);
+
+    // Test with a temporary token
+    let mut response = reqwest
+        .put(&format!(
+            "{}/client/{}",
+            turnstile_process.url, this_client.client_id
+        ))
+        .header("X-UMPYRE-APIKEY", this_client.token.clone())
+        .header("X-UMPYRE-APIKEY-TEMP", authenticate.token.clone())
+        .json(&new_body)
+        .send()
+        .unwrap();
+
+    let client: Client = response.json().unwrap();
+
+    assert_eq!(response.status().is_success(), true);
+    assert_eq!(client.client_id, this_client.client_id);
+    assert_eq!(client.full_name, "arnold");
+    assert_eq!(client.public_key, "lyle");
+}
+
+#[test]
+fn test_update_client_phone_number() {
+    use rand::Rng;
+    use reqwest::StatusCode;
+
+    let mut rng = rand::thread_rng();
+    let rand_num: i64 = rng.gen_range(2_000_000, 10_000_000);
+
+    let turnstile_process = Turnstile::new().wait_for_ping();
+    let reqwest = reqwest::ClientBuilder::new()
+        .cookie_store(true)
+        .build()
+        .unwrap();
+
+    let response = reqwest
+        .get(&format!("{}/client/{}", turnstile_process.url, "lol"))
+        .send()
+        .unwrap();
+
+    assert_eq!(response.status(), reqwest::StatusCode::UNAUTHORIZED);
+
+    let (this_client, password_hash) = create_client(&turnstile_process, &reqwest);
+
+    let mut response = reqwest
+        .get(&format!(
+            "{}/client/{}",
+            turnstile_process.url, this_client.client_id
+        ))
+        .header("X-UMPYRE-APIKEY", this_client.token.clone())
+        .send()
+        .unwrap();
+
+    let client: Client = response.json().unwrap();
+
+    assert_eq!(response.status().is_success(), true);
+    assert_eq!(client.client_id, this_client.client_id);
+    assert_eq!(client.full_name.starts_with("herp derp "), true);
+
+    // Create a client update message
+    let new_body = json!({
+        "client_id": this_client.client_id.clone(),
+        "full_name": "arnold",
+        "public_key": "lyle",
+        "phone_number":{"country_code":"US","national_number":format!("510{}", rand_num)},
+    });
+
+    // Test without a temporary token. Should return 403.
+    let response = reqwest
+        .put(&format!(
+            "{}/client/{}",
+            turnstile_process.url, this_client.client_id
+        ))
+        .header("X-UMPYRE-APIKEY", this_client.token.clone())
+        .json(&new_body)
+        .send()
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+
+    // Obtain a temporary token
+    let body = json!({
+        "client_id": client.client_id,
+        "password_hash": password_hash,
+    });
+    let mut response = reqwest
+        .post(&format!(
+            "{}/client/authenticate-temporarily",
+            turnstile_process.url
+        ))
+        .json(&body)
+        .send()
+        .unwrap();
+
+    let authenticate: Authenticate = response.json().unwrap();
+
+    assert_eq!(response.status().is_success(), true);
+    assert_eq!(authenticate.client_id, this_client.client_id);
+    assert_eq!(!authenticate.token.is_empty(), true);
+    assert_ne!(authenticate.token, this_client.token);
+
+    // Test with a temporary token
+    let mut response = reqwest
+        .put(&format!(
+            "{}/client/{}",
+            turnstile_process.url, this_client.client_id
+        ))
+        .header("X-UMPYRE-APIKEY", this_client.token.clone())
+        .header("X-UMPYRE-APIKEY-TEMP", authenticate.token.clone())
+        .json(&new_body)
         .send()
         .unwrap();
 
