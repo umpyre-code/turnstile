@@ -213,7 +213,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Messages"
+                $ref: "#/components/schemas/Message"
         "404":
           description: >-
             The client does not exist.
