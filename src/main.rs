@@ -24,9 +24,9 @@ mod fairings;
 mod guards;
 mod models;
 mod rolodex_client;
-mod switchroom_client;
 mod routes;
 mod static_routes;
+mod switchroom_client;
 mod token;
 
 fn get_cors() -> rocket_cors::Cors {

@@ -132,7 +132,7 @@ fn ratelimit_from_request<'a, 'r>(
                 },
             };
 
-            info!("throttle key={:?}", key);
+            trace!("throttle key={:?}", key);
             format!("throttle:{}", key);
 
             let (limited, limit, remaining, retry_after, reset): (i32, i32, i32, i32, i32) =
@@ -144,9 +144,17 @@ fn ratelimit_from_request<'a, 'r>(
                     .query(redis)
                     .unwrap();
 
+            let limited = limited == 1;
+
+            if limited {
+                info!("Request from {} being rate limited: limit={} remaining={} retry_after={} reset={}",
+                key,
+                limit, remaining, retry_after, reset);
+            }
+
             RateLimited {
                 key,
-                limited: limited == 1,
+                limited,
                 limit,
                 remaining,
                 retry_after,

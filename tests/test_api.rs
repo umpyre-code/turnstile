@@ -635,11 +635,6 @@ pub struct Messages {
 #[test]
 fn test_send_message() {
     use data_encoding::BASE64_NOPAD;
-    use rand::Rng;
-    use reqwest::StatusCode;
-
-    let mut rng = rand::thread_rng();
-    let rand_num: i64 = rng.gen_range(2_000_000, 10_000_000);
 
     let turnstile_process = Turnstile::new().wait_for_ping();
     let reqwest = reqwest::ClientBuilder::new()

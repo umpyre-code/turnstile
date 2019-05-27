@@ -76,9 +76,12 @@ pub struct Client {
 impl Client {
     pub fn new(config: &config::Config) -> Self {
         Client {
-            uri: format!("http://{}:{}", config.switchroom.host, config.switchroom.port)
-                .parse()
-                .unwrap(),
+            uri: format!(
+                "http://{}:{}",
+                config.switchroom.host, config.switchroom.port
+            )
+            .parse()
+            .unwrap(),
         }
     }
 
@@ -120,7 +123,7 @@ impl Client {
         )
     }
 
-        #[instrument(INFO)]
+    #[instrument(INFO)]
     pub fn send_message(
         &self,
         message: switchroom_grpc::proto::Message,
