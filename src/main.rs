@@ -24,6 +24,7 @@ mod fairings;
 mod guards;
 mod models;
 mod rolodex_client;
+mod switchroom_client;
 mod routes;
 mod static_routes;
 mod token;
@@ -94,10 +95,12 @@ fn main() -> Result<(), std::io::Error> {
             "/",
             routes![
                 routes::get_client,
+                routes::get_messages,
                 routes::get_ping,
                 routes::post_client_authenticate_temporarily,
                 routes::post_client_authenticate,
                 routes::post_client,
+                routes::post_message,
                 routes::put_client,
                 static_routes::openapi_html,
                 static_routes::openapi_yaml,

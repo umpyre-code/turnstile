@@ -3,6 +3,7 @@ use crate::fairings;
 use crate::guards;
 use crate::models;
 use crate::rolodex_client;
+use crate::switchroom_client;
 use crate::token;
 
 use rocket::http::{Cookie, Cookies};
@@ -22,6 +23,32 @@ impl From<rolodex_client::RolodexError> for ResponseError {
     fn from(err: rolodex_client::RolodexError) -> Self {
         match err {
             rolodex_client::RolodexError::RequestFailure { code, message } => {
+                ResponseError::BadRequest {
+                    response: content::Json(
+                        json!({
+                            "code": code as i32,
+                            "message": message,
+                        })
+                        .to_string(),
+                    ),
+                }
+            }
+            _ => ResponseError::BadRequest {
+                response: content::Json(
+                    json!({
+                        "message:": err.to_string(),
+                    })
+                    .to_string(),
+                ),
+            },
+        }
+    }
+}
+
+impl From<switchroom_client::SwitchroomError> for ResponseError {
+    fn from(err: switchroom_client::SwitchroomError) -> Self {
+        match err {
+            switchroom_client::SwitchroomError::RequestFailure { code, message } => {
                 ResponseError::BadRequest {
                     response: content::Json(
                         json!({
@@ -69,6 +96,19 @@ impl From<JsonError<'_>> for ResponseError {
 
 impl From<rocket_contrib::databases::redis::RedisError> for ResponseError {
     fn from(err: rocket_contrib::databases::redis::RedisError) -> Self {
+        ResponseError::BadRequest {
+            response: content::Json(
+                json!({
+                    "message:": err.to_string(),
+                })
+                .to_string(),
+            ),
+        }
+    }
+}
+
+impl From<data_encoding::DecodeError> for ResponseError {
+    fn from(err: data_encoding::DecodeError) -> Self {
         ResponseError::BadRequest {
             response: content::Json(
                 json!({
@@ -427,4 +467,80 @@ pub fn put_client(
 #[get("/ping")]
 pub fn get_ping(_ratelimited: guards::RateLimitedPublic) -> String {
     "pong".into()
+}
+
+impl From<switchroom_grpc::proto::GetMessagesResponse> for models::GetMessagesResponse {
+    fn from(response: switchroom_grpc::proto::GetMessagesResponse) -> Self {
+        models::GetMessagesResponse {
+            messages: response
+                .messages
+                .iter()
+                .map(models::Message::from)
+                .collect(),
+        }
+    }
+}
+
+#[get("/messages")]
+pub fn get_messages(
+    calling_client: guards::Client,
+    _ratelimited: guards::RateLimitedPrivate,
+) -> Result<Json<models::GetMessagesResponse>, ResponseError> {
+    let switchroom_client = switchroom_client::Client::new(&config::CONFIG);
+
+    let response = switchroom_client.get_messages(switchroom_grpc::proto::GetMessagesRequest {
+        client_id: calling_client.client_id,
+        sketch: "".into(),
+    })?;
+
+    Ok(Json(response.into()))
+}
+
+impl From<&switchroom_grpc::proto::Message> for models::Message {
+    fn from(message: &switchroom_grpc::proto::Message) -> Self {
+        use data_encoding::BASE64_NOPAD;
+        let received_at = message.received_at.as_ref().unwrap();
+        models::Message {
+            to: message.to.clone(),
+            from: message.from.clone(),
+            body: BASE64_NOPAD.encode(&message.body),
+            hash: BASE64_NOPAD.encode(&message.hash),
+            received_at: models::Timestamp {
+                seconds: received_at.seconds,
+                nanos: received_at.nanos,
+            },
+        }
+    }
+}
+
+impl From<switchroom_grpc::proto::Message> for models::Message {
+    fn from(message: switchroom_grpc::proto::Message) -> Self {
+        models::Message::from(&message)
+    }
+}
+
+#[post("/messages", data = "<message>", format = "json")]
+pub fn post_message(
+    message: Result<Json<models::Message>, JsonError>,
+    calling_client: guards::Client,
+    _ratelimited: guards::RateLimitedPrivate,
+) -> Result<Json<models::Message>, ResponseError> {
+    use data_encoding::BASE64_NOPAD;
+
+    let message = match message {
+        Ok(message) => message,
+        Err(err) => return Err(err.into()),
+    };
+
+    let switchroom_client = switchroom_client::Client::new(&config::CONFIG);
+
+    let response = switchroom_client.send_message(switchroom_grpc::proto::Message {
+        to: message.to.clone(),
+        body: BASE64_NOPAD.decode(message.body.as_bytes())?,
+        from: calling_client.client_id.clone(),
+        hash: "".into(),
+        received_at: None,
+    })?;
+
+    Ok(Json(response.into()))
 }

@@ -8,7 +8,8 @@ use yansi::Paint;
 #[derive(Debug, Deserialize)]
 pub struct Config {
     pub service: Service,
-    pub rolodex: Rolodex,
+    pub rolodex: GrpcService,
+    pub switchroom: GrpcService,
     pub jwt: Jwt,
     pub metrics: Metrics,
     pub rate_limits: RateLimits,
@@ -20,7 +21,7 @@ pub struct Service {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct Rolodex {
+pub struct GrpcService {
     pub host: String,
     pub port: i32,
     pub ca_cert_path: String,

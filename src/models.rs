@@ -56,3 +56,26 @@ pub struct UpdateClientResponse {
     pub full_name: String,
     pub public_key: String,
 }
+
+#[derive(Debug, Deserialize, Serialize, Default)]
+pub struct Message {
+    pub to: String,
+    #[serde(default)]
+    pub from: String,
+    pub body: String,
+    #[serde(default)]
+    pub hash: String,
+    #[serde(default)]
+    pub received_at: Timestamp,
+}
+
+#[derive(Debug, Deserialize, Serialize, Default)]
+pub struct Timestamp {
+    pub seconds: i64,
+    pub nanos: i32,
+}
+
+#[derive(Debug, Serialize)]
+pub struct GetMessagesResponse {
+    pub messages: Vec<Message>,
+}

@@ -611,3 +611,100 @@ fn test_update_client_phone_number() {
     assert_eq!(client.full_name, "arnold");
     assert_eq!(client.public_key, "lyle");
 }
+
+#[derive(Debug, Deserialize)]
+pub struct Message {
+    pub to: String,
+    pub from: String,
+    pub body: String,
+    pub hash: String,
+    pub received_at: Timestamp,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct Timestamp {
+    pub seconds: i64,
+    pub nanos: i32,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct Messages {
+    pub messages: Vec<Message>,
+}
+
+#[test]
+fn test_send_message() {
+    use data_encoding::BASE64_NOPAD;
+    use rand::Rng;
+    use reqwest::StatusCode;
+
+    let mut rng = rand::thread_rng();
+    let rand_num: i64 = rng.gen_range(2_000_000, 10_000_000);
+
+    let turnstile_process = Turnstile::new().wait_for_ping();
+    let reqwest = reqwest::ClientBuilder::new()
+        .cookie_store(true)
+        .build()
+        .unwrap();
+
+    let response = reqwest
+        .get(&format!("{}/client/{}", turnstile_process.url, "lol"))
+        .send()
+        .unwrap();
+
+    assert_eq!(response.status(), reqwest::StatusCode::UNAUTHORIZED);
+
+    let (this_client, _password_hash) = create_client(&turnstile_process, &reqwest);
+
+    let mut response = reqwest
+        .get(&format!(
+            "{}/client/{}",
+            turnstile_process.url, this_client.client_id
+        ))
+        .header("X-UMPYRE-APIKEY", this_client.token.clone())
+        .send()
+        .unwrap();
+
+    let client: Client = response.json().unwrap();
+
+    assert_eq!(response.status().is_success(), true);
+    assert_eq!(client.client_id, this_client.client_id);
+    assert_eq!(client.full_name.starts_with("herp derp "), true);
+
+    // Create a message, send to self
+    let message_body = json!({
+        "to": this_client.client_id.clone(),
+        "body": BASE64_NOPAD.encode(b"lololol message"),
+    });
+
+    // Send the message
+    let mut response = reqwest
+        .post(&format!("{}/messages", turnstile_process.url))
+        .header("X-UMPYRE-APIKEY", this_client.token.clone())
+        .json(&message_body)
+        .send()
+        .unwrap();
+
+    assert_eq!(response.status().is_success(), true);
+
+    let message: Message = response.json().unwrap();
+
+    assert_eq!(message.hash.is_empty(), false);
+    assert_eq!(message.from, this_client.client_id);
+
+    // Check that the message is now in inbox
+    let mut response = reqwest
+        .get(&format!("{}/messages", turnstile_process.url))
+        .header("X-UMPYRE-APIKEY", this_client.token.clone())
+        .send()
+        .unwrap();
+
+    let messages: Messages = response.json().unwrap();
+    assert_eq!(messages.messages.len(), 1);
+    assert_eq!(
+        BASE64_NOPAD
+            .decode(messages.messages[0].body.as_bytes())
+            .unwrap(),
+        b"lololol message"
+    );
+}

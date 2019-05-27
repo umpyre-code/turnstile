@@ -197,7 +197,7 @@ paths:
       summary: >-
         Send a message
       description: >-
-        Send a message from the calling client's account to another client.
+        Send a message from the calling client's account to another client. When sending a message, only the `to` and `body` fields need to be specified.
       operationId: send-message
       requestBody:
         description: Message to send.
@@ -337,7 +337,6 @@ components:
             The time at which the message was received by the server.
           $ref: "#/components/schemas/Timestamp"
       required:
-        - from
         - to
         - body
     Messages:
