@@ -133,10 +133,10 @@ fn ratelimit_from_request<'a, 'r>(
                 },
             };
 
-            // Check if this is a 10.0.0.0/24 IP, and ignore it if so.
+            // Whitelist private IPs
             if let Ok(addr) = std::net::Ipv4Addr::from_str(&key) {
-                if addr.octets()[0] == 10 {
-                    // If this is a private 10.x.x.x address, ignore it. It's probably a health check.
+                if addr.is_private() {
+                    // If this is a private address, ignore it. It's probably a health check.
                     return RateLimited {
                         key,
                         limited: false,
@@ -264,7 +264,7 @@ impl<'a, 'r> rocket::request::FromRequest<'a, 'r> for ClientIP {
         if forwarded_for.is_empty() || forwarded_for.len() < 2 {
             let client_ip = request.client_ip().unwrap().to_string();
 
-            Outcome::Success(ClientIP(client_ip.into()))
+            Outcome::Success(ClientIP(client_ip))
         } else {
             // Take the second from last value of X-Forwarded-For, as per the docs at:
             // https://cloud.google.com/load-balancing/docs/https/
