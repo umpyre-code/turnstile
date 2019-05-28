@@ -110,7 +110,7 @@ impl Client {
         &self,
         get_messages_request: switchroom_grpc::proto::GetMessagesRequest,
     ) -> Result<switchroom_grpc::proto::GetMessagesResponse, SwitchroomError> {
-        let mut runtime = tokio::runtime::Runtime::new()?;
+        let mut runtime = tokio::runtime::current_thread::Runtime::new()?;
 
         runtime.block_on(
             self.make_service()
@@ -128,7 +128,7 @@ impl Client {
         &self,
         message: switchroom_grpc::proto::Message,
     ) -> Result<switchroom_grpc::proto::Message, SwitchroomError> {
-        let mut runtime = tokio::runtime::Runtime::new()?;
+        let mut runtime = tokio::runtime::current_thread::Runtime::new()?;
 
         runtime.block_on(
             self.make_service()

@@ -107,7 +107,7 @@ impl Client {
         &self,
         new_client_request: rolodex_grpc::proto::NewClientRequest,
     ) -> Result<rolodex_grpc::proto::NewClientResponse, RolodexError> {
-        let mut runtime = tokio::runtime::Runtime::new()?;
+        let mut runtime = tokio::runtime::current_thread::Runtime::new()?;
 
         runtime.block_on(
             self.make_service()
@@ -125,7 +125,7 @@ impl Client {
         &self,
         get_client_request: rolodex_grpc::proto::GetClientRequest,
     ) -> Result<rolodex_grpc::proto::GetClientResponse, RolodexError> {
-        let mut runtime = tokio::runtime::Runtime::new()?;
+        let mut runtime = tokio::runtime::current_thread::Runtime::new()?;
 
         runtime.block_on(
             self.make_service()
@@ -143,7 +143,7 @@ impl Client {
         &self,
         auth_request: rolodex_grpc::proto::AuthRequest,
     ) -> Result<rolodex_grpc::proto::AuthResponse, RolodexError> {
-        let mut runtime = tokio::runtime::Runtime::new()?;
+        let mut runtime = tokio::runtime::current_thread::Runtime::new()?;
 
         runtime.block_on(
             self.make_service()
@@ -161,7 +161,7 @@ impl Client {
         &self,
         update_request: rolodex_grpc::proto::UpdateClientRequest,
     ) -> Result<rolodex_grpc::proto::UpdateClientResponse, RolodexError> {
-        let mut runtime = tokio::runtime::Runtime::new()?;
+        let mut runtime = tokio::runtime::current_thread::Runtime::new()?;
 
         runtime.block_on(
             self.make_service()
@@ -179,7 +179,7 @@ impl Client {
         &self,
         update_request: rolodex_grpc::proto::UpdateClientPasswordRequest,
     ) -> Result<rolodex_grpc::proto::UpdateClientPasswordResponse, RolodexError> {
-        let mut runtime = tokio::runtime::Runtime::new()?;
+        let mut runtime = tokio::runtime::current_thread::Runtime::new()?;
 
         runtime.block_on(
             self.make_service()
@@ -197,7 +197,7 @@ impl Client {
         &self,
         update_request: rolodex_grpc::proto::UpdateClientEmailRequest,
     ) -> Result<rolodex_grpc::proto::UpdateClientEmailResponse, RolodexError> {
-        let mut runtime = tokio::runtime::Runtime::new()?;
+        let mut runtime = tokio::runtime::current_thread::Runtime::new()?;
 
         runtime.block_on(
             self.make_service()
@@ -215,7 +215,7 @@ impl Client {
         &self,
         update_request: rolodex_grpc::proto::UpdateClientPhoneNumberRequest,
     ) -> Result<rolodex_grpc::proto::UpdateClientPhoneNumberResponse, RolodexError> {
-        let mut runtime = tokio::runtime::Runtime::new()?;
+        let mut runtime = tokio::runtime::current_thread::Runtime::new()?;
 
         runtime.block_on(
             self.make_service()
