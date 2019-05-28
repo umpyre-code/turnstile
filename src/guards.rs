@@ -114,6 +114,7 @@ fn ratelimit_from_request<'a, 'r>(
     request: &'a rocket::request::Request<'r>,
 ) -> RateLimited {
     use rocket_contrib::databases::redis;
+    use std::str::FromStr;
 
     request
         .local_cache(|| {
@@ -132,8 +133,20 @@ fn ratelimit_from_request<'a, 'r>(
                 },
             };
 
+            // Check if this is a 10.0.0.0/24 IP, and ignore it if so.
+            if let Ok(addr) = std::net::Ipv4Addr::from_str(&key) {
+                if addr.octets()[0] == 10 {
+                    // If this is a private 10.x.x.x address, ignore it. It's probably a health check.
+                    return RateLimited {
+                        key,
+                        limited: false,
+                        limit: 0, remaining: 0, retry_after:0, reset:0,
+                    };
+                }
+            }
+
             trace!("throttle key={:?}", key);
-            format!("throttle:{}", key);
+            let key = format!("throttle:{}", key);
 
             let (limited, limit, remaining, retry_after, reset): (i32, i32, i32, i32, i32) =
                 redis::cmd("CL.THROTTLE")
