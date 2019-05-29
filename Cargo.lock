@@ -1774,7 +1774,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "switchroom-grpc"
 version = "0.1.0"
-source = "git+ssh://git@github.com/umpyre-code/switchroom.git#480e19f08c5da441742452f38ca955d935a27ba1"
+source = "git+ssh://git@github.com/umpyre-code/switchroom.git#c6712ef02543fda6c8064714566e28b62d86c5b5"
 dependencies = [
  "bytes 0.4.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "prost 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2083,7 +2083,7 @@ dependencies = [
 [[package]]
 name = "tower"
 version = "0.1.0"
-source = "git+https://github.com/tower-rs/tower#9b27863a6160e2146bcf1bc6548a0334e7ad1fb8"
+source = "git+https://github.com/tower-rs/tower#a611a140961975a406bc18644e599626205c48c9"
 dependencies = [
  "futures 0.1.27 (registry+https://github.com/rust-lang/crates.io-index)",
  "tower-buffer 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2100,7 +2100,7 @@ dependencies = [
 [[package]]
 name = "tower-buffer"
 version = "0.1.0"
-source = "git+https://github.com/tower-rs/tower#9b27863a6160e2146bcf1bc6548a0334e7ad1fb8"
+source = "git+https://github.com/tower-rs/tower#a611a140961975a406bc18644e599626205c48c9"
 dependencies = [
  "futures 0.1.27 (registry+https://github.com/rust-lang/crates.io-index)",
  "tokio-executor 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2235,7 +2235,7 @@ dependencies = [
 [[package]]
 name = "tower-reconnect"
 version = "0.1.0"
-source = "git+https://github.com/tower-rs/tower#9b27863a6160e2146bcf1bc6548a0334e7ad1fb8"
+source = "git+https://github.com/tower-rs/tower#a611a140961975a406bc18644e599626205c48c9"
 dependencies = [
  "futures 0.1.27 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
