@@ -1577,7 +1577,7 @@ dependencies = [
 [[package]]
 name = "rolodex-grpc"
 version = "0.1.0"
-source = "git+ssh://git@github.com/umpyre-code/rolodex.git#e684f3773d38cd4678c91fba1cacc1fba8a9f187"
+source = "git+ssh://git@github.com/umpyre-code/rolodex.git#00e01ca38855fd8b2f8d72cf6d07c09ba20575d0"
 dependencies = [
  "bytes 0.4.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "prost 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2083,7 +2083,7 @@ dependencies = [
 [[package]]
 name = "tower"
 version = "0.1.0"
-source = "git+https://github.com/tower-rs/tower#a611a140961975a406bc18644e599626205c48c9"
+source = "git+https://github.com/tower-rs/tower#a496fbf72c335052de772d1c8c65033f1bc733de"
 dependencies = [
  "futures 0.1.27 (registry+https://github.com/rust-lang/crates.io-index)",
  "tower-buffer 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2100,7 +2100,7 @@ dependencies = [
 [[package]]
 name = "tower-buffer"
 version = "0.1.0"
-source = "git+https://github.com/tower-rs/tower#a611a140961975a406bc18644e599626205c48c9"
+source = "git+https://github.com/tower-rs/tower#a496fbf72c335052de772d1c8c65033f1bc733de"
 dependencies = [
  "futures 0.1.27 (registry+https://github.com/rust-lang/crates.io-index)",
  "tokio-executor 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2235,7 +2235,7 @@ dependencies = [
 [[package]]
 name = "tower-reconnect"
 version = "0.1.0"
-source = "git+https://github.com/tower-rs/tower#a611a140961975a406bc18644e599626205c48c9"
+source = "git+https://github.com/tower-rs/tower#a496fbf72c335052de772d1c8c65033f1bc733de"
 dependencies = [
  "futures 0.1.27 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
