@@ -563,15 +563,6 @@ dependencies = [
 [[package]]
 name = "http-connection"
 version = "0.1.0"
-source = "git+https://github.com/hyperium/http-connection#a18f5f9d492ae18dba0bbb486ba227493fa4428c"
-dependencies = [
- "http 0.1.17 (registry+https://github.com/rust-lang/crates.io-index)",
- "tokio-tcp 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "http-connection"
-version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "http 0.1.17 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1586,7 +1577,7 @@ dependencies = [
 [[package]]
 name = "rolodex-grpc"
 version = "0.1.0"
-source = "git+ssh://git@github.com/umpyre-code/rolodex.git#00e01ca38855fd8b2f8d72cf6d07c09ba20575d0"
+source = "git+ssh://git@github.com/umpyre-code/rolodex.git#d068c15299c408fc4fc5653511a85d098eafe56a"
 dependencies = [
  "bytes 0.4.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "prost 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1783,7 +1774,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "switchroom-grpc"
 version = "0.1.0"
-source = "git+ssh://git@github.com/umpyre-code/switchroom.git#e6fbff2168596b8a051ea13c627eae69c76c838b"
+source = "git+ssh://git@github.com/umpyre-code/switchroom.git#0349f04287e9578cb9d2b80ffaddc27a590e46ce"
 dependencies = [
  "bytes 0.4.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "prost 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2171,7 +2162,7 @@ dependencies = [
 [[package]]
 name = "tower-http"
 version = "0.1.0"
-source = "git+https://github.com/tower-rs/tower-http#3d10200531aeb42ca3b6254ea5327aaaa56af4f3"
+source = "git+https://github.com/tower-rs/tower-http#8c450c637430c4d589a07c46ba5ea2ce4b435aeb"
 dependencies = [
  "http-body 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "tower-http-util 0.1.0 (git+https://github.com/tower-rs/tower-http)",
@@ -2180,7 +2171,7 @@ dependencies = [
 [[package]]
 name = "tower-http-util"
 version = "0.1.0"
-source = "git+https://github.com/tower-rs/tower-http#3d10200531aeb42ca3b6254ea5327aaaa56af4f3"
+source = "git+https://github.com/tower-rs/tower-http#8c450c637430c4d589a07c46ba5ea2ce4b435aeb"
 dependencies = [
  "futures 0.1.27 (registry+https://github.com/rust-lang/crates.io-index)",
  "http 0.1.17 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2255,7 +2246,7 @@ dependencies = [
 [[package]]
 name = "tower-request-modifier"
 version = "0.1.0"
-source = "git+https://github.com/tower-rs/tower-http#3d10200531aeb42ca3b6254ea5327aaaa56af4f3"
+source = "git+https://github.com/tower-rs/tower-http#8c450c637430c4d589a07c46ba5ea2ce4b435aeb"
 dependencies = [
  "futures 0.1.27 (registry+https://github.com/rust-lang/crates.io-index)",
  "http 0.1.17 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2659,7 +2650,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum heck 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)" = "20564e78d53d2bb135c343b3f47714a56af2061f1c928fdb541dc7b9fdd94205"
 "checksum http 0.1.17 (registry+https://github.com/rust-lang/crates.io-index)" = "eed324f0f0daf6ec10c474f150505af2c143f251722bf9dbd1261bd1f2ee2c1a"
 "checksum http-body 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "6741c859c1b2463a423a1dbce98d418e6c3c3fc720fb0d45528657320920292d"
-"checksum http-connection 0.1.0 (git+https://github.com/hyperium/http-connection)" = "<none>"
 "checksum http-connection 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "5f6080cea47f7371d4da9a46dd52787c598ce93886393e400bc178f9039bac27"
 "checksum httparse 1.3.3 (registry+https://github.com/rust-lang/crates.io-index)" = "e8734b0cfd3bc3e101ec59100e101c2eecd19282202e87808b3037b442777a83"
 "checksum hyper 0.10.16 (registry+https://github.com/rust-lang/crates.io-index)" = "0a0652d9a2609a968c14be1a9ea00bf4b1d64e2e1f53a1b51b6fff3a6e829273"
