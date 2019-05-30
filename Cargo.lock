@@ -2083,7 +2083,7 @@ dependencies = [
 [[package]]
 name = "tower"
 version = "0.1.0"
-source = "git+https://github.com/tower-rs/tower#a496fbf72c335052de772d1c8c65033f1bc733de"
+source = "git+https://github.com/tower-rs/tower#82e7b8a27b7e10aac69533e382e42f89642c230e"
 dependencies = [
  "futures 0.1.27 (registry+https://github.com/rust-lang/crates.io-index)",
  "tower-buffer 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2100,7 +2100,7 @@ dependencies = [
 [[package]]
 name = "tower-buffer"
 version = "0.1.0"
-source = "git+https://github.com/tower-rs/tower#a496fbf72c335052de772d1c8c65033f1bc733de"
+source = "git+https://github.com/tower-rs/tower#82e7b8a27b7e10aac69533e382e42f89642c230e"
 dependencies = [
  "futures 0.1.27 (registry+https://github.com/rust-lang/crates.io-index)",
  "tokio-executor 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2235,7 +2235,7 @@ dependencies = [
 [[package]]
 name = "tower-reconnect"
 version = "0.1.0"
-source = "git+https://github.com/tower-rs/tower#a496fbf72c335052de772d1c8c65033f1bc733de"
+source = "git+https://github.com/tower-rs/tower#82e7b8a27b7e10aac69533e382e42f89642c230e"
 dependencies = [
  "futures 0.1.27 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
