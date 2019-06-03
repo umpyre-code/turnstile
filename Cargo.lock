@@ -1577,7 +1577,7 @@ dependencies = [
 [[package]]
 name = "rolodex-grpc"
 version = "0.1.0"
-source = "git+ssh://git@github.com/umpyre-code/rolodex.git#94e5a2c00fbe763649e1a489e635dce73cb1db00"
+source = "git+ssh://git@github.com/umpyre-code/rolodex.git#ba6cbe9925fe630f979851b3f8a588accd390f4d"
 dependencies = [
  "bytes 0.4.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "prost 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1774,7 +1774,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "switchroom-grpc"
 version = "0.1.0"
-source = "git+ssh://git@github.com/umpyre-code/switchroom.git#3117fe9e408238b4bc5c5a7e7e6425c697c4db79"
+source = "git+ssh://git@github.com/umpyre-code/switchroom.git#fa71e8c07f548263a16cc4aa860790c9830c534d"
 dependencies = [
  "bytes 0.4.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "prost 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2083,7 +2083,7 @@ dependencies = [
 [[package]]
 name = "tower"
 version = "0.1.0"
-source = "git+https://github.com/tower-rs/tower#82e7b8a27b7e10aac69533e382e42f89642c230e"
+source = "git+https://github.com/tower-rs/tower#313530c8758eae736c9ab03cb77945fa1fd27c4f"
 dependencies = [
  "futures 0.1.27 (registry+https://github.com/rust-lang/crates.io-index)",
  "tower-buffer 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2100,7 +2100,7 @@ dependencies = [
 [[package]]
 name = "tower-buffer"
 version = "0.1.0"
-source = "git+https://github.com/tower-rs/tower#82e7b8a27b7e10aac69533e382e42f89642c230e"
+source = "git+https://github.com/tower-rs/tower#313530c8758eae736c9ab03cb77945fa1fd27c4f"
 dependencies = [
  "futures 0.1.27 (registry+https://github.com/rust-lang/crates.io-index)",
  "tokio-executor 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2249,7 +2249,7 @@ dependencies = [
 [[package]]
 name = "tower-reconnect"
 version = "0.1.0"
-source = "git+https://github.com/tower-rs/tower#82e7b8a27b7e10aac69533e382e42f89642c230e"
+source = "git+https://github.com/tower-rs/tower#313530c8758eae736c9ab03cb77945fa1fd27c4f"
 dependencies = [
  "futures 0.1.27 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
