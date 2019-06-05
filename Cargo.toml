@@ -28,10 +28,10 @@ time = "0.1"
 tokio = "0.1"
 tokio-connect = { git = "https://github.com/carllerche/tokio-connect" }
 toml = "0.5"
-tower = { git = "https://github.com/tower-rs/tower" }
-tower-buffer = { git = "https://github.com/tower-rs/tower" }
+tower = "0.1"
+tower-buffer = "0.1"
 tower-http = { git = "https://github.com/tower-rs/tower-http" }
-tower-hyper = { git = "https://github.com/tower-rs/tower-hyper" }
+tower-hyper = "0.1"
 tower-reconnect = { git = "https://github.com/tower-rs/tower" }
 tower-request-modifier = { git = "https://github.com/tower-rs/tower-http" }
 webpki = "0.19"
