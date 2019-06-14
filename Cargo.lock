@@ -1577,12 +1577,13 @@ dependencies = [
 [[package]]
 name = "rolodex-grpc"
 version = "0.1.0"
-source = "git+ssh://git@github.com/umpyre-code/rolodex.git#88d8bbf47c08b2267d2adff98f375ec00f9c12b5"
+source = "git+ssh://git@github.com/umpyre-code/rolodex.git#68a39e3ca7af87dafa1b429320de2cdc56d05131"
 dependencies = [
  "bytes 0.4.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "prost 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "tower-grpc 0.1.0 (git+https://github.com/tower-rs/tower-grpc)",
- "tower-grpc-build 0.1.0 (git+https://github.com/tower-rs/tower-grpc)",
+ "tower-grpc 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "tower-grpc-build 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "tower-hyper 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -1777,12 +1778,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "switchroom-grpc"
 version = "0.1.0"
-source = "git+ssh://git@github.com/umpyre-code/switchroom.git#a51a66206b1d39272ccee26a9021aff5936a50d0"
+source = "git+ssh://git@github.com/umpyre-code/switchroom.git#500693d5b4b135e20591578b525d1517a582f093"
 dependencies = [
  "bytes 0.4.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "prost 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "tower-grpc 0.1.0 (git+https://github.com/tower-rs/tower-grpc)",
- "tower-grpc-build 0.1.0 (git+https://github.com/tower-rs/tower-grpc)",
+ "tower-grpc 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "tower-grpc-build 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "tower-hyper 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -2124,7 +2126,7 @@ dependencies = [
 [[package]]
 name = "tower-grpc"
 version = "0.1.0"
-source = "git+https://github.com/tower-rs/tower-grpc#e16ff614088624bc7fd3783ce9f055c40a7ecd50"
+source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "base64 0.10.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "bytes 0.4.12 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2135,7 +2137,6 @@ dependencies = [
  "log 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "percent-encoding 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "prost 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "tower-hyper 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "tower-service 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "tower-util 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -2143,7 +2144,7 @@ dependencies = [
 [[package]]
 name = "tower-grpc-build"
 version = "0.1.0"
-source = "git+https://github.com/tower-rs/tower-grpc#e16ff614088624bc7fd3783ce9f055c40a7ecd50"
+source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "codegen 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "heck 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2815,8 +2816,8 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum tower 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "b931b40c84f47fd203101b2ef18cd6523e27bb2902129bc3ca2ed1f07fa17695"
 "checksum tower-buffer 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "5c98a7784e6c8ba106bc98d44ed1dbb9c018a8e0322e5e894d365f9020967128"
 "checksum tower-discover 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "73a7632286f78164d65d18fd0e570307acde9362489aa5c8c53e6315cc2bde47"
-"checksum tower-grpc 0.1.0 (git+https://github.com/tower-rs/tower-grpc)" = "<none>"
-"checksum tower-grpc-build 0.1.0 (git+https://github.com/tower-rs/tower-grpc)" = "<none>"
+"checksum tower-grpc 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "839c195fd6e4e87442e7a631ea62632799695a3f897949192325a4e509ff4328"
+"checksum tower-grpc-build 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "8862053a26bc7b901cf52bca8ae7d4c2e041222673e38f81a475aeb6c82481df"
 "checksum tower-http 0.1.0 (git+https://github.com/tower-rs/tower-http)" = "<none>"
 "checksum tower-http-util 0.1.0 (git+https://github.com/tower-rs/tower-http)" = "<none>"
 "checksum tower-http-util 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "442ba79e23bda499cdaa5ee52b3776bf08cb84a1d5ca6d3d82bfd4f12c1eefc3"
