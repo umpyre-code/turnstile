@@ -15,6 +15,8 @@ pool_size = 2
 [development]
 address = "localhost"
 log = "normal"
+# To generate:
+#   $ openssl rand -base64 32
 secret_key = "4adWbqpCHO3vGZUzAXIYBALTS9uGAo5FtfHuLb2Pi6Y="
 
 [staging]
