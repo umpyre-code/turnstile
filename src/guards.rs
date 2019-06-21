@@ -20,10 +20,8 @@ fn get_auth_client<'a, 'r, C: MakeClient + Send + Sync + Clone + 'static>(
         let redis = &*redis_reader;
 
         request
-            .cookies()
-            .get(token_name)
-            .and_then(|cookie| Some(cookie.value())) // API key can come from a cookie (preferred), or
-            .or_else(|| request.headers().get_one(token_name)) // from headers
+            .headers()
+            .get_one(token_name) // API key comes from headers
             .map(std::string::ToString::to_string)
             .and_then(|token: String| match token::decode_into_sub(&token) {
                 Ok(client_id) => Some((token, client_id)),

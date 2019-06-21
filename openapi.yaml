@@ -23,15 +23,6 @@ paths:
         "200":
           description: >
             Successfully authenticated.
-
-            The token is returned in a secure cookie named
-            `X-UMPYRE-APIKEY`. You need to include this cookie in subsequent
-            requests, or pass the token with the `X-UMPYRE-APIKEY` header.
-          headers:
-            Set-Cookie:
-              schema:
-                type: string
-                example: X-UMPYRE-APIKEY=token; Path=/; HttpOnly
         "401":
           $ref: "#/components/responses/UnauthorizedError"
   /client/authenticate-temporarily:
@@ -51,16 +42,7 @@ paths:
           description: >
             Successfully authenticated.
 
-            The token is returned in a secure cookie named
-            `X-UMPYRE-APIKEY-TEMP`. You need to include this cookie in
-            subsequent requests, or pass the token with the
-            `X-UMPYRE-APIKEY-TEMP` header. The token is only valid for 1
-            hour.
-          headers:
-            Set-Cookie:
-              schema:
-                type: string
-                example: X-UMPYRE-APIKEY-TEMP=token; Path=/; HttpOnly; Max-Age=3600;
+            The returned token is only valid for 1 hour.
         "401":
           $ref: "#/components/responses/UnauthorizedError"
   /client/{client_id}:
@@ -404,18 +386,9 @@ components:
       type: apiKey
       in: header
       name: X-UMPYRE-APIKEY
-    apiKeyCookie:
-      type: apiKey
-      in: cookie
-      name: X-UMPYRE-APIKEY
     apiKeyTempHeader:
       type: apiKey
       in: header
       name: X-UMPYRE-APIKEY-TEMP
-    apiKeyTempCookie:
-      type: apiKey
-      in: cookie
-      name: X-UMPYRE-APIKEY-TEMP
 security:
   - apiKeyHeader: []
-  - apiKeyCookie: []

@@ -29,7 +29,8 @@ impl Turnstile {
 
         // Get next available
         let port = GLOBAL_PORT_COUNTER.fetch_add(1, Ordering::SeqCst);
-        let url = format!("http://localhost:{}", port);
+        let url = "https://api.staging.umpyre.io".to_string();
+        // let url = format!("http://localhost:{}", port);
 
         // Fork binary to background
         Turnstile {
