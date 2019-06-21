@@ -1,16 +1,16 @@
 [global]
 port = 8000
-workers = 4
+workers = 2
 keep_alive = 5
 limits = { forms = 32768 }
 
 [global.databases.redis_reader]
 url = "redis://127.0.0.1:6379"
-pool_size = 4
+pool_size = 2
 
 [global.databases.redis_writer]
 url = "redis://127.0.0.1:6379"
-pool_size = 4
+pool_size = 2
 
 [development]
 address = "localhost"
