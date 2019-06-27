@@ -69,6 +69,8 @@ pub enum TokenError {
     InvalidToken,
     #[fail(display = "utf8 decode failure")]
     Utf8Decoding,
+    #[fail(display = "invalid token length (expecting 32 chars")]
+    InvalidTokenLength,
 }
 
 impl From<data_encoding::DecodeError> for TokenError {
@@ -98,6 +100,9 @@ fn decode_into_sub_inner(
     key: &Key,
     token: &str,
 ) -> Result<String, TokenError> {
+    if token.len() != 32 {
+        return Err(TokenError::InvalidTokenLength)
+    }
     // First 24 bytes (32 chars) are the nonce.
     let nonce = Nonce::from_slice(&BASE64URL_NOPAD.decode(token[..32].as_bytes())?).unwrap();
     // Remaining bytes are the ciphertext.
