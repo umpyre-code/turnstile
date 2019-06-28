@@ -511,6 +511,7 @@ impl From<&switchroom_grpc::proto::Message> for models::Message {
             },
             nonce: BASE64_NOPAD.encode(&message.nonce),
             public_key: BASE64_NOPAD.encode(&message.public_key),
+            pda: message.pda.clone(),
         }
     }
 }
@@ -565,6 +566,7 @@ pub fn post_message(
         received_at: None,
         nonce: BASE64_NOPAD.decode(message.nonce.as_bytes())?,
         public_key: BASE64_NOPAD.decode(message.public_key.as_bytes())?,
+        pda: message.pda.clone(),
     })?;
 
     Ok(Json(response.into()))

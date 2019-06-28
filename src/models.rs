@@ -69,6 +69,7 @@ pub struct Message {
     pub received_at: Timestamp,
     pub nonce: String,
     pub public_key: String,
+    pub pda: String,
 }
 
 #[derive(Debug, Deserialize, Serialize, Default)]
