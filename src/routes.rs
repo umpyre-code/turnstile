@@ -509,6 +509,8 @@ impl From<&switchroom_grpc::proto::Message> for models::Message {
                 seconds: received_at.seconds,
                 nanos: received_at.nanos,
             },
+            nonce: BASE64_NOPAD.encode(&message.nonce),
+            public_key: BASE64_NOPAD.encode(&message.public_key),
         }
     }
 }
@@ -532,6 +534,27 @@ pub fn post_message(
         Err(err) => return Err(err.into()),
     };
 
+    let rolodex_client = rolodex_client::Client::new(&config::CONFIG);
+
+    let response = rolodex_client.get_client(rolodex_grpc::proto::GetClientRequest {
+        client_id: calling_client.client_id.clone(),
+        calling_client_id: calling_client.client_id.clone(),
+    })?;
+
+    // Verify the public key of the client sending this message matches what's
+    // in our DB
+    let client = response.client.unwrap();
+    if message.public_key != client.public_key {
+        return Err(ResponseError::BadRequest {
+            response: content::Json(
+                json!({
+                    "message:": "Invalid public key (didn't match the one on record)",
+                })
+                .to_string(),
+            ),
+        });
+    }
+
     let switchroom_client = switchroom_client::Client::new(&config::CONFIG);
 
     let response = switchroom_client.send_message(switchroom_grpc::proto::Message {
@@ -540,6 +563,8 @@ pub fn post_message(
         from: calling_client.client_id.clone(),
         hash: "".into(),
         received_at: None,
+        nonce: BASE64_NOPAD.decode(message.nonce.as_bytes())?,
+        public_key: BASE64_NOPAD.decode(message.public_key.as_bytes())?,
     })?;
 
     Ok(Json(response.into()))

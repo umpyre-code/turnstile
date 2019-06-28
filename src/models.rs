@@ -67,6 +67,8 @@ pub struct Message {
     pub hash: String,
     #[serde(default)]
     pub received_at: Timestamp,
+    pub nonce: String,
+    pub public_key: String,
 }
 
 #[derive(Debug, Deserialize, Serialize, Default)]

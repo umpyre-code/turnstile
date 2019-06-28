@@ -101,7 +101,7 @@ fn decode_into_sub_inner(
     token: &str,
 ) -> Result<String, TokenError> {
     if token.len() < 32 {
-        return Err(TokenError::InvalidTokenLength)
+        return Err(TokenError::InvalidTokenLength);
     }
     // First 24 bytes (32 chars) are the nonce.
     let nonce = Nonce::from_slice(&BASE64URL_NOPAD.decode(token[..32].as_bytes())?).unwrap();
