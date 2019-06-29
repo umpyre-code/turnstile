@@ -510,7 +510,8 @@ impl From<&switchroom_grpc::proto::Message> for models::Message {
                 nanos: received_at.nanos,
             },
             nonce: BASE64_NOPAD.encode(&message.nonce),
-            public_key: BASE64_NOPAD.encode(&message.public_key),
+            sender_public_key: BASE64_NOPAD.encode(&message.sender_public_key),
+            recipient_public_key: BASE64_NOPAD.encode(&message.recipient_public_key),
             pda: message.pda.clone(),
         }
     }
@@ -519,6 +520,34 @@ impl From<&switchroom_grpc::proto::Message> for models::Message {
 impl From<switchroom_grpc::proto::Message> for models::Message {
     fn from(message: switchroom_grpc::proto::Message) -> Self {
         models::Message::from(&message)
+    }
+}
+
+fn check_public_keys(
+    rolodex_client: &rolodex_client::Client,
+    calling_client_id: &str,
+    client_id: &str,
+    expected_public_key: &str,
+) -> Result<(), ResponseError> {
+    let response = rolodex_client.get_client(rolodex_grpc::proto::GetClientRequest {
+        client_id: client_id.into(),
+        calling_client_id: calling_client_id.into(),
+    })?;
+
+    let client = response.client.unwrap();
+    if expected_public_key.eq(&client.public_key) {
+        Ok(())
+    } else {
+        Err(ResponseError::BadRequest {
+            response: content::Json(
+                json!({
+                    "message:": "Invalid public key (didn't match the one on record)",
+                    "expected": expected_public_key,
+                    "found": client.public_key
+                })
+                .to_string(),
+            ),
+        })
     }
 }
 
@@ -537,24 +566,22 @@ pub fn post_message(
 
     let rolodex_client = rolodex_client::Client::new(&config::CONFIG);
 
-    let response = rolodex_client.get_client(rolodex_grpc::proto::GetClientRequest {
-        client_id: calling_client.client_id.clone(),
-        calling_client_id: calling_client.client_id.clone(),
-    })?;
-
     // Verify the public key of the client sending this message matches what's
     // in our DB
-    let client = response.client.unwrap();
-    if message.public_key != client.public_key {
-        return Err(ResponseError::BadRequest {
-            response: content::Json(
-                json!({
-                    "message:": "Invalid public key (didn't match the one on record)",
-                })
-                .to_string(),
-            ),
-        });
-    }
+    check_public_keys(
+        &rolodex_client,
+        &calling_client.client_id,
+        &calling_client.client_id,
+        &message.sender_public_key,
+    )?;
+
+    // Verify the public key of the recipient matches what's in our DB
+    check_public_keys(
+        &rolodex_client,
+        &calling_client.client_id,
+        &message.to,
+        &message.recipient_public_key,
+    )?;
 
     let switchroom_client = switchroom_client::Client::new(&config::CONFIG);
 
@@ -565,7 +592,8 @@ pub fn post_message(
         hash: "".into(),
         received_at: None,
         nonce: BASE64_NOPAD.decode(message.nonce.as_bytes())?,
-        public_key: BASE64_NOPAD.decode(message.public_key.as_bytes())?,
+        sender_public_key: BASE64_NOPAD.decode(message.sender_public_key.as_bytes())?,
+        recipient_public_key: BASE64_NOPAD.decode(message.recipient_public_key.as_bytes())?,
         pda: message.pda.clone(),
     })?;
 

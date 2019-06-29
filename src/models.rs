@@ -59,17 +59,18 @@ pub struct UpdateClientResponse {
 
 #[derive(Debug, Deserialize, Serialize, Default)]
 pub struct Message {
+    #[serde(default)]
+    pub hash: String,
     pub to: String,
     #[serde(default)]
     pub from: String,
     pub body: String,
-    #[serde(default)]
-    pub hash: String,
+    pub pda: String,
     #[serde(default)]
     pub received_at: Timestamp,
     pub nonce: String,
-    pub public_key: String,
-    pub pda: String,
+    pub sender_public_key: String,
+    pub recipient_public_key: String,
 }
 
 #[derive(Debug, Deserialize, Serialize, Default)]
