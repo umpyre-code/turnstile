@@ -500,6 +500,7 @@ impl From<&switchroom_grpc::proto::Message> for models::Message {
     fn from(message: &switchroom_grpc::proto::Message) -> Self {
         use data_encoding::BASE64_NOPAD;
         let received_at = message.received_at.as_ref().unwrap();
+        let sent_at = message.sent_at.as_ref().unwrap();
         models::Message {
             to: message.to.clone(),
             from: message.from.clone(),
@@ -513,6 +514,11 @@ impl From<&switchroom_grpc::proto::Message> for models::Message {
             sender_public_key: BASE64_NOPAD.encode(&message.sender_public_key),
             recipient_public_key: BASE64_NOPAD.encode(&message.recipient_public_key),
             pda: message.pda.clone(),
+            sent_at: models::Timestamp {
+                seconds: sent_at.seconds,
+                nanos: sent_at.nanos,
+            },
+            signature: BASE64_NOPAD.encode(&message.signature),
         }
     }
 }
@@ -564,6 +570,17 @@ pub fn post_message(
         Err(err) => return Err(err.into()),
     };
 
+    if !message.is_valid() {
+        return Err(ResponseError::BadRequest {
+            response: content::Json(
+                json!({
+                    "message:": "Invalid message (validation failed)",
+                })
+                .to_string(),
+            ),
+        });
+    }
+
     let rolodex_client = rolodex_client::Client::new(&config::CONFIG);
 
     // Verify the public key of the client sending this message matches what's
@@ -589,12 +606,17 @@ pub fn post_message(
         to: message.to.clone(),
         body: BASE64_NOPAD.decode(message.body.as_bytes())?,
         from: calling_client.client_id.clone(),
-        hash: "".into(),
+        hash: BASE64_NOPAD.decode(message.hash.as_bytes())?,
         received_at: None,
         nonce: BASE64_NOPAD.decode(message.nonce.as_bytes())?,
         sender_public_key: BASE64_NOPAD.decode(message.sender_public_key.as_bytes())?,
         recipient_public_key: BASE64_NOPAD.decode(message.recipient_public_key.as_bytes())?,
         pda: message.pda.clone(),
+        sent_at: Some(switchroom_grpc::proto::Timestamp {
+            seconds: message.sent_at.seconds,
+            nanos: message.sent_at.nanos,
+        }),
+        signature: BASE64_NOPAD.decode(message.signature.as_bytes())?,
     })?;
 
     Ok(Json(response.into()))

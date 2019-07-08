@@ -28,6 +28,7 @@ mod routes;
 mod static_routes;
 mod switchroom_client;
 mod token;
+mod validation;
 
 fn get_cors() -> rocket_cors::Cors {
     use rocket_cors::{AllowedHeaders, AllowedMethods, AllowedOrigins};

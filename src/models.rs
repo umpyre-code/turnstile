@@ -59,10 +59,8 @@ pub struct UpdateClientResponse {
 
 #[derive(Debug, Deserialize, Serialize, Default)]
 pub struct Message {
-    #[serde(default)]
     pub hash: String,
     pub to: String,
-    #[serde(default)]
     pub from: String,
     pub body: String,
     pub pda: String,
@@ -71,6 +69,8 @@ pub struct Message {
     pub nonce: String,
     pub sender_public_key: String,
     pub recipient_public_key: String,
+    pub sent_at: Timestamp,
+    pub signature: String,
 }
 
 #[derive(Debug, Deserialize, Serialize, Default)]

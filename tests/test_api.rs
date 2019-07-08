@@ -148,12 +148,6 @@ fn test_add_client() {
     assert_eq!(response.status().is_success(), true);
     assert_eq!(add_client.client_id.len(), 32);
     assert_eq!(!add_client.token.is_empty(), true);
-
-    let token = response
-        .cookies()
-        .find(|cookie| cookie.name() == "X-UMPYRE-APIKEY")
-        .unwrap();
-    assert_eq!(add_client.token, token.value());
 }
 
 #[derive(Deserialize, Debug)]
@@ -192,12 +186,6 @@ fn test_authenticate() {
     assert_eq!(add_client.client_id.len(), 32);
     assert_eq!(!add_client.token.is_empty(), true);
 
-    let token = response
-        .cookies()
-        .find(|cookie| cookie.name() == "X-UMPYRE-APIKEY")
-        .unwrap();
-    assert_eq!(add_client.token, token.value());
-
     // Now we have a valid client, test auth with the existing (current) client
     let body = json!({
         "client_id": add_client.client_id,
@@ -227,10 +215,7 @@ struct Client {
 #[test]
 fn test_get_client() {
     let turnstile_process = Turnstile::new().wait_for_ping();
-    let reqwest = reqwest::ClientBuilder::new()
-        .cookie_store(true)
-        .build()
-        .unwrap();
+    let reqwest = reqwest::ClientBuilder::new().build().unwrap();
 
     let response = reqwest
         .get(&format!("{}/client/{}", turnstile_process.url, "lol"))
@@ -260,10 +245,7 @@ fn test_get_client() {
 #[test]
 fn test_update_client() {
     let turnstile_process = Turnstile::new().wait_for_ping();
-    let reqwest = reqwest::ClientBuilder::new()
-        .cookie_store(true)
-        .build()
-        .unwrap();
+    let reqwest = reqwest::ClientBuilder::new().build().unwrap();
 
     let response = reqwest
         .get(&format!("{}/client/{}", turnstile_process.url, "lol"))
@@ -319,10 +301,7 @@ fn test_update_client_password() {
     use reqwest::StatusCode;
 
     let turnstile_process = Turnstile::new().wait_for_ping();
-    let reqwest = reqwest::ClientBuilder::new()
-        .cookie_store(true)
-        .build()
-        .unwrap();
+    let reqwest = reqwest::ClientBuilder::new().build().unwrap();
 
     let response = reqwest
         .get(&format!("{}/client/{}", turnstile_process.url, "lol"))
@@ -421,10 +400,7 @@ fn test_update_client_email() {
     let rand_num: i64 = rng.gen_range(2_000_000, 10_000_000);
 
     let turnstile_process = Turnstile::new().wait_for_ping();
-    let reqwest = reqwest::ClientBuilder::new()
-        .cookie_store(true)
-        .build()
-        .unwrap();
+    let reqwest = reqwest::ClientBuilder::new().build().unwrap();
 
     let response = reqwest
         .get(&format!("{}/client/{}", turnstile_process.url, "lol"))
@@ -521,10 +497,7 @@ fn test_update_client_phone_number() {
     let rand_num: i64 = rng.gen_range(2_000_000, 10_000_000);
 
     let turnstile_process = Turnstile::new().wait_for_ping();
-    let reqwest = reqwest::ClientBuilder::new()
-        .cookie_store(true)
-        .build()
-        .unwrap();
+    let reqwest = reqwest::ClientBuilder::new().build().unwrap();
 
     let response = reqwest
         .get(&format!("{}/client/{}", turnstile_process.url, "lol"))
@@ -613,7 +586,7 @@ fn test_update_client_phone_number() {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct Message {
+pub struct ReceiveMessage {
     pub to: String,
     pub from: String,
     pub body: String,
@@ -621,7 +594,7 @@ pub struct Message {
     pub received_at: Timestamp,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct Timestamp {
     pub seconds: i64,
     pub nanos: i32,
@@ -629,7 +602,21 @@ pub struct Timestamp {
 
 #[derive(Debug, Deserialize)]
 pub struct Messages {
-    pub messages: Vec<Message>,
+    pub messages: Vec<ReceiveMessage>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct SendMessage {
+    pub hash: String,
+    pub to: String,
+    pub from: String,
+    pub body: String,
+    pub pda: String,
+    pub nonce: String,
+    pub sender_public_key: String,
+    pub recipient_public_key: String,
+    pub sent_at: Timestamp,
+    pub signature: String,
 }
 
 #[test]
@@ -637,10 +624,7 @@ fn test_send_message() {
     use data_encoding::BASE64_NOPAD;
 
     let turnstile_process = Turnstile::new().wait_for_ping();
-    let reqwest = reqwest::ClientBuilder::new()
-        .cookie_store(true)
-        .build()
-        .unwrap();
+    let reqwest = reqwest::ClientBuilder::new().build().unwrap();
 
     let response = reqwest
         .get(&format!("{}/client/{}", turnstile_process.url, "lol"))
@@ -669,7 +653,13 @@ fn test_send_message() {
     // Create a message, send to self
     let message_body = json!({
         "to": this_client.client_id.clone(),
+        "from": this_client.client_id.clone(),
         "body": BASE64_NOPAD.encode(b"lololol message"),
+        "pda":"hi",
+        "sent_at": {
+            "seconds":1,
+            "nanos":1,
+        },
     });
 
     // Send the message
@@ -682,7 +672,7 @@ fn test_send_message() {
 
     assert_eq!(response.status().is_success(), true);
 
-    let message: Message = response.json().unwrap();
+    let message: ReceiveMessage = response.json().unwrap();
 
     assert_eq!(message.hash.is_empty(), false);
     assert_eq!(message.from, this_client.client_id);
