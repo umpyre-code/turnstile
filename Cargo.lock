@@ -2328,7 +2328,7 @@ dependencies = [
 [[package]]
 name = "tower-reconnect"
 version = "0.1.0"
-source = "git+https://github.com/tower-rs/tower#03ec4aafa8a3a7237b5e2b23ac2b59a27987ab06"
+source = "git+https://github.com/tower-rs/tower#18b30eb70e3bdb836fde19238720b5558b4a74d9"
 dependencies = [
  "futures 0.1.28 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
