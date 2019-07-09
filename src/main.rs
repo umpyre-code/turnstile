@@ -1,4 +1,4 @@
-#![feature(proc_macro_hygiene, decl_macro)]
+#![feature(proc_macro_hygiene, decl_macro, try_trait)]
 
 #[macro_use]
 extern crate rocket;
@@ -18,8 +18,10 @@ extern crate log;
 extern crate failure;
 extern crate time;
 
+mod auth;
 mod catchers;
 mod config;
+mod error;
 mod fairings;
 mod guards;
 mod models;
@@ -28,7 +30,7 @@ mod routes;
 mod static_routes;
 mod switchroom_client;
 mod token;
-mod validation;
+mod utils;
 
 fn get_cors() -> rocket_cors::Cors {
     use rocket_cors::{AllowedHeaders, AllowedMethods, AllowedOrigins};

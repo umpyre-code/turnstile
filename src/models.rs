@@ -19,11 +19,12 @@ pub struct PhoneNumber {
 
 #[derive(Debug, Deserialize)]
 pub struct NewClientRequest {
+    pub box_public_key: String,
+    pub email: String,
     pub full_name: String,
     pub password_hash: String,
-    pub email: String,
     pub phone_number: PhoneNumber,
-    pub public_key: String,
+    pub sign_public_key: String,
 }
 
 #[derive(Debug, Serialize)]
@@ -36,44 +37,51 @@ pub struct NewClientResponse {
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub struct GetClientResponse {
+    pub box_public_key: String,
     pub client_id: String,
     pub full_name: String,
-    pub public_key: String,
+    pub sign_public_key: String,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct UpdateClientRequest {
-    pub full_name: String,
-    pub public_key: String,
-    pub password_hash: Option<String>,
+    pub box_public_key: String,
     pub email: Option<String>,
+    pub full_name: String,
+    pub password_hash: Option<String>,
     pub phone_number: Option<PhoneNumber>,
+    pub sign_public_key: String,
 }
 
 #[derive(Debug, Serialize)]
 pub struct UpdateClientResponse {
+    pub box_public_key: String,
     pub client_id: String,
     pub full_name: String,
-    pub public_key: String,
+    pub sign_public_key: String,
 }
 
-#[derive(Debug, Deserialize, Serialize, Default)]
+#[derive(Debug, Deserialize, Serialize, Default, Clone)]
 pub struct Message {
-    pub hash: String,
-    pub to: String,
-    pub from: String,
+    // Fields should be in lexicographical order. Changing the order will break
+    // signature & hash verification.
     pub body: String,
-    pub pda: String,
-    #[serde(default)]
-    pub received_at: Timestamp,
+    pub from: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub hash: Option<String>,
     pub nonce: String,
-    pub sender_public_key: String,
+    pub pda: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub received_at: Option<Timestamp>,
     pub recipient_public_key: String,
+    pub sender_public_key: String,
     pub sent_at: Timestamp,
-    pub signature: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub signature: Option<String>,
+    pub to: String,
 }
 
-#[derive(Debug, Deserialize, Serialize, Default)]
+#[derive(Debug, Deserialize, Serialize, Default, Clone)]
 pub struct Timestamp {
     pub seconds: i64,
     pub nanos: i32,

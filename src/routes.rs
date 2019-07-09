@@ -1,201 +1,17 @@
+use crate::auth;
 use crate::config;
+use crate::error::ResponseError;
 use crate::fairings;
 use crate::guards;
 use crate::models;
 use crate::rolodex_client;
 use crate::switchroom_client;
-use crate::token;
+use crate::utils;
 
-use rocket::http::{Cookie, Cookies};
+use rocket::http::Cookies;
 use rocket::response::content;
 use rocket_contrib::json::Json;
 use rocket_contrib::json::JsonError;
-
-#[derive(Responder, Debug)]
-pub enum ResponseError {
-    #[response(status = 400, content_type = "json")]
-    BadRequest { response: content::Json<String> },
-    #[response(status = 401, content_type = "json")]
-    Forbidden { response: content::Json<String> },
-}
-
-impl From<rolodex_client::RolodexError> for ResponseError {
-    fn from(err: rolodex_client::RolodexError) -> Self {
-        match err {
-            rolodex_client::RolodexError::RequestFailure { code, message } => {
-                ResponseError::BadRequest {
-                    response: content::Json(
-                        json!({
-                            "code": code as i32,
-                            "message": message,
-                        })
-                        .to_string(),
-                    ),
-                }
-            }
-            _ => ResponseError::BadRequest {
-                response: content::Json(
-                    json!({
-                        "message:": err.to_string(),
-                    })
-                    .to_string(),
-                ),
-            },
-        }
-    }
-}
-
-impl From<switchroom_client::SwitchroomError> for ResponseError {
-    fn from(err: switchroom_client::SwitchroomError) -> Self {
-        match err {
-            switchroom_client::SwitchroomError::RequestFailure { code, message } => {
-                ResponseError::BadRequest {
-                    response: content::Json(
-                        json!({
-                            "code": code as i32,
-                            "message": message,
-                        })
-                        .to_string(),
-                    ),
-                }
-            }
-            _ => ResponseError::BadRequest {
-                response: content::Json(
-                    json!({
-                        "message:": err.to_string(),
-                    })
-                    .to_string(),
-                ),
-            },
-        }
-    }
-}
-
-impl From<JsonError<'_>> for ResponseError {
-    fn from(err: JsonError) -> Self {
-        match err {
-            JsonError::Io(error) => ResponseError::BadRequest {
-                response: content::Json(
-                    json!({
-                        "message": error.to_string(),
-                    })
-                    .to_string(),
-                ),
-            },
-            JsonError::Parse(_raw, error) => ResponseError::BadRequest {
-                response: content::Json(
-                    json!({
-                        "message": error.to_string(),
-                    })
-                    .to_string(),
-                ),
-            },
-        }
-    }
-}
-
-impl From<rocket_contrib::databases::redis::RedisError> for ResponseError {
-    fn from(err: rocket_contrib::databases::redis::RedisError) -> Self {
-        ResponseError::BadRequest {
-            response: content::Json(
-                json!({
-                    "message:": err.to_string(),
-                })
-                .to_string(),
-            ),
-        }
-    }
-}
-
-impl From<data_encoding::DecodeError> for ResponseError {
-    fn from(err: data_encoding::DecodeError) -> Self {
-        ResponseError::BadRequest {
-            response: content::Json(
-                json!({
-                    "message:": err.to_string(),
-                })
-                .to_string(),
-            ),
-        }
-    }
-}
-
-fn make_location(
-    client_ip: guards::ClientIP,
-    geo_headers: Option<guards::GeoHeaders>,
-) -> Option<rolodex_grpc::proto::Location> {
-    if let Some(location) = geo_headers {
-        Some(rolodex_grpc::proto::Location {
-            ip_address: client_ip.0,
-            region: location.region,
-            region_subdivision: location.region_subdivision,
-            city: location.city,
-        })
-    } else {
-        Some(rolodex_grpc::proto::Location {
-            ip_address: client_ip.0,
-            region: "unknown".into(),
-            region_subdivision: "unknown".into(),
-            city: "unknown".into(),
-        })
-    }
-}
-
-fn handle_auth_token(
-    mut cookies: Cookies,
-    redis_writer: fairings::RedisWriter,
-    client_id: &str,
-) -> Result<String, ResponseError> {
-    use rocket_contrib::databases::redis::Commands;
-    use time::Duration;
-
-    // 1 year expiry
-    let expiry = 365 * 24 * 3600;
-
-    // generate token (JWT)
-    let token = token::generate(&client_id, expiry);
-
-    // store token in Redis
-    let redis = &*redis_writer;
-    let _c: i32 = redis.sadd(&format!("token:{}", client_id), &token)?;
-
-    let cookie = Cookie::build("X-UMPYRE-APIKEY", token.clone())
-        .path("/")
-        .secure(true)
-        .max_age(Duration::seconds(expiry as i64))
-        .finish();
-    cookies.add(cookie);
-
-    Ok(token)
-}
-
-fn handle_auth_temporary_token(
-    mut cookies: Cookies,
-    redis_writer: fairings::RedisWriter,
-    client_id: &str,
-) -> Result<String, ResponseError> {
-    use rocket_contrib::databases::redis::Commands;
-    use time::Duration;
-
-    // 1 hour expiry
-    let expiry = 3600;
-
-    // generate token (JWT)
-    let token = token::generate(&client_id, expiry);
-
-    // store token in Redis
-    let redis = &*redis_writer;
-    let _c: i32 = redis.sadd(&format!("token:{}", client_id), &token)?;
-
-    let cookie = Cookie::build("X-UMPYRE-APIKEY-TEMP", token.clone())
-        .path("/")
-        .secure(true)
-        .max_age(Duration::seconds(expiry as i64))
-        .finish();
-    cookies.add(cookie);
-
-    Ok(token)
-}
 
 #[post("/client/authenticate", data = "<auth_request>", format = "json")]
 pub fn post_client_authenticate(
@@ -213,7 +29,7 @@ pub fn post_client_authenticate(
 
     let rolodex_client = rolodex_client::Client::new(&config::CONFIG);
 
-    let location = make_location(client_ip, geo_headers);
+    let location = utils::make_location(client_ip, geo_headers);
 
     let response = rolodex_client.authenticate(rolodex_grpc::proto::AuthRequest {
         client_id: auth_request.client_id.clone(),
@@ -221,7 +37,7 @@ pub fn post_client_authenticate(
         location,
     })?;
 
-    let token = handle_auth_token(cookies, redis_writer, &response.client_id)?;
+    let token = auth::handle_auth_token(cookies, redis_writer, &response.client_id)?;
 
     Ok(Json(models::AuthResponse {
         client_id: response.client_id,
@@ -249,7 +65,7 @@ pub fn post_client_authenticate_temporarily(
 
     let rolodex_client = rolodex_client::Client::new(&config::CONFIG);
 
-    let location = make_location(client_ip, geo_headers);
+    let location = utils::make_location(client_ip, geo_headers);
 
     let response = rolodex_client.authenticate(rolodex_grpc::proto::AuthRequest {
         client_id: auth_request.client_id.clone(),
@@ -257,7 +73,7 @@ pub fn post_client_authenticate_temporarily(
         location,
     })?;
 
-    let token = handle_auth_temporary_token(cookies, redis_writer, &response.client_id)?;
+    let token = auth::handle_auth_temporary_token(cookies, redis_writer, &response.client_id)?;
 
     Ok(Json(models::AuthResponse {
         client_id: response.client_id,
@@ -281,7 +97,7 @@ pub fn post_client(
 
     let rolodex_client = rolodex_client::Client::new(&config::CONFIG);
 
-    let location = make_location(client_ip, geo_headers);
+    let location = utils::make_location(client_ip, geo_headers);
 
     let response = rolodex_client.add_client(rolodex_grpc::proto::NewClientRequest {
         full_name: new_client_request.full_name.clone(),
@@ -291,11 +107,12 @@ pub fn post_client(
             country_code: new_client_request.phone_number.country_code.clone(),
             national_number: new_client_request.phone_number.national_number.clone(),
         }),
-        public_key: new_client_request.public_key.clone(),
+        box_public_key: new_client_request.box_public_key.clone(),
+        sign_public_key: new_client_request.sign_public_key.clone(),
         location,
     })?;
 
-    let token = handle_auth_token(cookies, redis_writer, &response.client_id)?;
+    let token = auth::handle_auth_token(cookies, redis_writer, &response.client_id)?;
 
     Ok(Json(models::NewClientResponse {
         client_id: response.client_id,
@@ -309,7 +126,8 @@ impl From<rolodex_grpc::proto::GetClientResponse> for models::GetClientResponse 
         models::GetClientResponse {
             client_id: client.client_id,
             full_name: client.full_name,
-            public_key: client.public_key,
+            box_public_key: client.box_public_key,
+            sign_public_key: client.sign_public_key,
         }
     }
 }
@@ -336,7 +154,8 @@ impl From<rolodex_grpc::proto::UpdateClientResponse> for models::UpdateClientRes
         models::UpdateClientResponse {
             client_id: client.client_id,
             full_name: client.full_name,
-            public_key: client.public_key,
+            box_public_key: client.box_public_key,
+            sign_public_key: client.sign_public_key,
         }
     }
 }
@@ -388,7 +207,7 @@ pub fn put_client(
         });
     }
 
-    let location = make_location(client_ip, geo_headers);
+    let location = utils::make_location(client_ip, geo_headers);
 
     if update_client_request.password_hash.is_some()
         || update_client_request.email.is_some()
@@ -454,7 +273,8 @@ pub fn put_client(
         client: Some(rolodex_grpc::proto::Client {
             client_id,
             full_name: update_client_request.full_name.clone(),
-            public_key: update_client_request.public_key.clone(),
+            box_public_key: update_client_request.box_public_key.clone(),
+            sign_public_key: update_client_request.sign_public_key.clone(),
         }),
         location,
     })?;
@@ -505,11 +325,11 @@ impl From<&switchroom_grpc::proto::Message> for models::Message {
             to: message.to.clone(),
             from: message.from.clone(),
             body: BASE64_NOPAD.encode(&message.body),
-            hash: BASE64_NOPAD.encode(&message.hash),
-            received_at: models::Timestamp {
+            hash: Some(BASE64_NOPAD.encode(&message.hash)),
+            received_at: Some(models::Timestamp {
                 seconds: received_at.seconds,
                 nanos: received_at.nanos,
-            },
+            }),
             nonce: BASE64_NOPAD.encode(&message.nonce),
             sender_public_key: BASE64_NOPAD.encode(&message.sender_public_key),
             recipient_public_key: BASE64_NOPAD.encode(&message.recipient_public_key),
@@ -518,7 +338,7 @@ impl From<&switchroom_grpc::proto::Message> for models::Message {
                 seconds: sent_at.seconds,
                 nanos: sent_at.nanos,
             },
-            signature: BASE64_NOPAD.encode(&message.signature),
+            signature: Some(BASE64_NOPAD.encode(&message.signature)),
         }
     }
 }
@@ -529,27 +349,94 @@ impl From<switchroom_grpc::proto::Message> for models::Message {
     }
 }
 
-fn check_public_keys(
+fn check_box_public_keys(
     rolodex_client: &rolodex_client::Client,
     calling_client_id: &str,
     client_id: &str,
-    expected_public_key: &str,
-) -> Result<(), ResponseError> {
+    expected_box_public_key: &str,
+) -> Result<rolodex_grpc::proto::Client, ResponseError> {
     let response = rolodex_client.get_client(rolodex_grpc::proto::GetClientRequest {
         client_id: client_id.into(),
         calling_client_id: calling_client_id.into(),
     })?;
 
-    let client = response.client.unwrap();
-    if expected_public_key.eq(&client.public_key) {
+    let client = response.client?;
+    if expected_box_public_key.eq(&client.box_public_key) {
+        Ok(client)
+    } else {
+        Err(ResponseError::BadRequest {
+            response: content::Json(
+                json!({
+                    "message:": "Invalid box public key (didn't match the one on record)",
+                    "expected": expected_box_public_key,
+                    "found": client.box_public_key
+                })
+                .to_string(),
+            ),
+        })
+    }
+}
+
+fn check_message_signature(
+    client: &rolodex_grpc::proto::Client,
+    message: &models::Message,
+) -> Result<(), ResponseError> {
+    use data_encoding::BASE64_NOPAD;
+    use sodiumoxide::crypto::sign;
+
+    let pk = sign::PublicKey::from_slice(&BASE64_NOPAD.decode(client.sign_public_key.as_bytes())?)?;
+
+    let signature =
+        sign::Signature::from_slice(&BASE64_NOPAD.decode(message.signature.as_ref()?.as_bytes())?)?;
+
+    let message_json = serde_json::to_string(&models::Message {
+        signature: None,
+        ..message.clone()
+    })?;
+
+    if sign::verify_detached(&signature, &message_json.as_bytes(), &pk) {
         Ok(())
     } else {
         Err(ResponseError::BadRequest {
             response: content::Json(
                 json!({
-                    "message:": "Invalid public key (didn't match the one on record)",
-                    "expected": expected_public_key,
-                    "found": client.public_key
+                    "message:": "Invalid message signature",
+                    "sign_public_key": client.sign_public_key,
+                })
+                .to_string(),
+            ),
+        })
+    }
+}
+
+fn check_message_hash(message: &models::Message) -> Result<(), ResponseError> {
+    use data_encoding::BASE64_NOPAD;
+    use sodiumoxide::crypto::generichash;
+
+    let mut hasher = generichash::State::new(16, None).unwrap();
+
+    let message_json = serde_json::to_string(&models::Message {
+        signature: None,
+        hash: None,
+        ..message.clone()
+    })?;
+    println!("{}", message_json);
+
+    hasher.update(message_json.as_bytes()).unwrap();
+    let digest = hasher.finalize().unwrap();
+    let expected_hash = BASE64_NOPAD.encode(digest.as_ref());
+    let empty_string = String::from("");
+    let hash = message.hash.as_ref().unwrap_or(&empty_string);
+
+    if expected_hash.eq(hash) {
+        Ok(())
+    } else {
+        Err(ResponseError::BadRequest {
+            response: content::Json(
+                json!({
+                    "message:": "Invalid message hash",
+                    "expected": expected_hash,
+                    "found": message.hash,
                 })
                 .to_string(),
             ),
@@ -570,22 +457,14 @@ pub fn post_message(
         Err(err) => return Err(err.into()),
     };
 
-    if !message.is_valid() {
-        return Err(ResponseError::BadRequest {
-            response: content::Json(
-                json!({
-                    "message:": "Invalid message (validation failed)",
-                })
-                .to_string(),
-            ),
-        });
-    }
+    // Verify the message hash
+    check_message_hash(&message)?;
 
     let rolodex_client = rolodex_client::Client::new(&config::CONFIG);
 
     // Verify the public key of the client sending this message matches what's
-    // in our DB
-    check_public_keys(
+    // in our DB. Keep the client struct so we can verify the signature as well.
+    let sending_client = check_box_public_keys(
         &rolodex_client,
         &calling_client.client_id,
         &calling_client.client_id,
@@ -593,12 +472,15 @@ pub fn post_message(
     )?;
 
     // Verify the public key of the recipient matches what's in our DB
-    check_public_keys(
+    check_box_public_keys(
         &rolodex_client,
         &calling_client.client_id,
         &message.to,
         &message.recipient_public_key,
     )?;
+
+    // Verify the message signature
+    check_message_signature(&sending_client, &message)?;
 
     let switchroom_client = switchroom_client::Client::new(&config::CONFIG);
 
@@ -606,7 +488,7 @@ pub fn post_message(
         to: message.to.clone(),
         body: BASE64_NOPAD.decode(message.body.as_bytes())?,
         from: calling_client.client_id.clone(),
-        hash: BASE64_NOPAD.decode(message.hash.as_bytes())?,
+        hash: BASE64_NOPAD.decode(message.hash.as_ref()?.as_bytes())?,
         received_at: None,
         nonce: BASE64_NOPAD.decode(message.nonce.as_bytes())?,
         sender_public_key: BASE64_NOPAD.decode(message.sender_public_key.as_bytes())?,
@@ -616,7 +498,7 @@ pub fn post_message(
             seconds: message.sent_at.seconds,
             nanos: message.sent_at.nanos,
         }),
-        signature: BASE64_NOPAD.decode(message.signature.as_bytes())?,
+        signature: BASE64_NOPAD.decode(message.signature.as_ref()?.as_bytes())?,
     })?;
 
     Ok(Json(response.into()))

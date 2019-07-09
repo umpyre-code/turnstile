@@ -218,10 +218,15 @@ components:
           type: string
           description: >-
             Public display name of this client.
-        public_key:
+        box_public_key:
           type: string
           description: >-
-            Public key for this client.
+            Box public key for this client. Used for encrypting the message body.
+        sign_public_key:
+          type: string
+          description: >-
+            Signing public key for this client. Used for signing the message
+            to verify authenticity.
         password_hash:
           type: string
           format: password
@@ -255,7 +260,8 @@ components:
       required:
         - client_id
         - full_name
-        - public_key
+        - box_public_key
+        - sign_public_key
     NewClient:
       type: object
       properties:
@@ -263,10 +269,15 @@ components:
           type: string
           description: >-
             Public display name of this client.
-        public_key:
+        box_public_key:
           type: string
           description: >-
-            Public key for this client.
+            Box public key for this client. Used for encrypting the message body.
+        sign_public_key:
+          type: string
+          description: >-
+            Signing public key for this client. Used for signing the message
+            to verify authenticity.
         password_hash:
           type: string
           format: password
@@ -291,7 +302,8 @@ components:
                 The national phone number.
       required:
         - full_name
-        - public_key
+        - box_public_key
+        - sign_public_key
         - password_hash
         - email
         - phone_number
@@ -318,9 +330,33 @@ components:
           description: >-
             The time at which the message was received by the server.
           $ref: "#/components/schemas/Timestamp"
+        sent_at:
+          description: >-
+            The time at which the message was sent by the client.
+          $ref: "#/components/schemas/Timestamp"
+        sender_public_key:
+          type: string
+          description: >-
+            Public key of the sender used to encrypt the message body.
+        recipient_public_key:
+          type: string
+          description: >-
+            Public key of the recipient used to encrypt the message body.
+        nonce:
+          type: string
+          description: Nonce used for encryption.
+        pda:
+          type: string
+          description: Public display of affection.
       required:
+        - hash
         - to
+        - from
         - body
+        - sent_at
+        - signature
+        - sender_public_key
+        - recipient_public_key
     Messages:
       type: object
       properties:

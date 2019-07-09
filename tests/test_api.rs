@@ -5,6 +5,7 @@ extern crate reqwest;
 use std::sync::atomic::{AtomicI32, Ordering};
 #[macro_use]
 extern crate serde_derive;
+extern crate sodiumoxide;
 
 #[macro_use]
 extern crate serde_json;
@@ -75,7 +76,87 @@ fn b2b_hash(s: &str, digest_size: usize) -> String {
     BASE64_NOPAD.encode(digest.as_ref())
 }
 
-fn create_client(turnstile_process: &Turnstile, reqwest: &reqwest::Client) -> (AddClient, String) {
+struct KeyPairs {
+    sign_public_key: String,
+    sign_secret_key: String,
+    box_public_key: String,
+    box_secret_key: String,
+}
+
+fn gen_keys() -> KeyPairs {
+    use data_encoding::BASE64_NOPAD;
+    use sodiumoxide::crypto::box_;
+    use sodiumoxide::crypto::sign;
+    let (spk, ssk) = sign::gen_keypair();
+    let (bpk, bsk) = box_::gen_keypair();
+    KeyPairs {
+        sign_public_key: BASE64_NOPAD.encode(spk.as_ref()),
+        sign_secret_key: BASE64_NOPAD.encode(ssk.as_ref()),
+        box_public_key: BASE64_NOPAD.encode(bpk.as_ref()),
+        box_secret_key: BASE64_NOPAD.encode(bsk.as_ref()),
+    }
+}
+
+fn encrypt_body(keypairs: &KeyPairs, body: &str) -> (String, String) {
+    use data_encoding::BASE64_NOPAD;
+    use sodiumoxide::crypto::box_;
+
+    let theirpk = box_::PublicKey::from_slice(
+        &BASE64_NOPAD
+            .decode(keypairs.box_public_key.as_bytes())
+            .unwrap(),
+    )
+    .unwrap();
+    let oursk = box_::SecretKey::from_slice(
+        &BASE64_NOPAD
+            .decode(keypairs.box_secret_key.as_bytes())
+            .unwrap(),
+    )
+    .unwrap();
+
+    let nonce = box_::gen_nonce();
+    let ciphertext = box_::seal(body.as_bytes(), &nonce, &theirpk, &oursk);
+
+    (
+        BASE64_NOPAD.encode(&ciphertext),
+        BASE64_NOPAD.encode(nonce.as_ref()),
+    )
+}
+
+fn decrypt_body(keypairs: &KeyPairs, body: &str, nonce: &str) -> String {
+    use data_encoding::BASE64_NOPAD;
+    use sodiumoxide::crypto::box_;
+
+    let ourpk = box_::PublicKey::from_slice(
+        &BASE64_NOPAD
+            .decode(keypairs.box_public_key.as_bytes())
+            .unwrap(),
+    )
+    .unwrap();
+    let theirsk = box_::SecretKey::from_slice(
+        &BASE64_NOPAD
+            .decode(keypairs.box_secret_key.as_bytes())
+            .unwrap(),
+    )
+    .unwrap();
+    let nonce = box_::Nonce::from_slice(&BASE64_NOPAD.decode(nonce.as_bytes()).unwrap()).unwrap();
+
+    String::from_utf8(
+        box_::open(
+            &BASE64_NOPAD.decode(body.as_bytes()).unwrap(),
+            &nonce,
+            &ourpk,
+            &theirsk,
+        )
+        .unwrap(),
+    )
+    .unwrap()
+}
+
+fn create_client(
+    turnstile_process: &Turnstile,
+    reqwest: &reqwest::Client,
+) -> (AddClient, String, KeyPairs) {
     use rand::Rng;
 
     let mut rng = rand::thread_rng();
@@ -83,12 +164,15 @@ fn create_client(turnstile_process: &Turnstile, reqwest: &reqwest::Client) -> (A
 
     let password_hash = b2b_hash("derp", 64);
 
+    let keypairs = gen_keys();
+
     let body = json!({
         "full_name": format!("herp derp {}", rand_num),
         "email": format!("test{}@aol.com", rand_num),
         "password_hash": password_hash,
         "phone_number": {"country_code":"US","national_number":format!("510{}", rand_num)},
-        "public_key": "derp key"
+        "box_public_key": keypairs.box_public_key.clone(),
+        "sign_public_key": keypairs.sign_public_key.clone(),
     });
 
     let mut response = reqwest
@@ -98,7 +182,7 @@ fn create_client(turnstile_process: &Turnstile, reqwest: &reqwest::Client) -> (A
         .unwrap();
 
     let add_client: AddClient = response.json().unwrap();
-    (add_client, password_hash)
+    (add_client, password_hash, keypairs)
 }
 
 #[test]
@@ -134,7 +218,8 @@ fn test_add_client() {
         "email": format!("lol{}@aol.com", rand_num),
         "password_hash":password_hash,
         "phone_number":{"country_code":"US","national_number":format!("510{}", rand_num)},
-        "public_key":"derp key"
+        "box_public_key":"derp key",
+        "sign_public_key":"derp key",
     });
 
     let mut response = reqwest
@@ -171,7 +256,8 @@ fn test_authenticate() {
         "email": format!("lol{}@aol.com", rand_num),
         "password_hash":password_hash.clone(),
         "phone_number":{"country_code":"US","national_number":format!("510{}", rand_num)},
-        "public_key":"derp key"
+        "box_public_key":"derp key",
+        "sign_public_key":"derp key",
     });
 
     let mut response = client
@@ -209,7 +295,8 @@ fn test_authenticate() {
 struct Client {
     client_id: String,
     full_name: String,
-    public_key: String,
+    box_public_key: String,
+    sign_public_key: String,
 }
 
 #[test]
@@ -224,7 +311,7 @@ fn test_get_client() {
 
     assert_eq!(response.status(), reqwest::StatusCode::UNAUTHORIZED);
 
-    let (this_client, _) = create_client(&turnstile_process, &reqwest);
+    let (this_client, _password_hash, _keypairs) = create_client(&turnstile_process, &reqwest);
 
     let mut response = reqwest
         .get(&format!(
@@ -254,7 +341,7 @@ fn test_update_client() {
 
     assert_eq!(response.status(), reqwest::StatusCode::UNAUTHORIZED);
 
-    let (this_client, _) = create_client(&turnstile_process, &reqwest);
+    let (this_client, _password_hash, _keypairs) = create_client(&turnstile_process, &reqwest);
 
     let mut response = reqwest
         .get(&format!(
@@ -275,7 +362,8 @@ fn test_update_client() {
     let body = json!({
         "client_id": this_client.client_id.clone(),
         "full_name": "arnold",
-        "public_key": "lyle",
+        "box_public_key": "lyle",
+        "sign_public_key": "lyle",
     });
 
     let mut response = reqwest
@@ -293,7 +381,8 @@ fn test_update_client() {
     assert_eq!(response.status().is_success(), true);
     assert_eq!(client.client_id, this_client.client_id);
     assert_eq!(client.full_name, "arnold");
-    assert_eq!(client.public_key, "lyle");
+    assert_eq!(client.box_public_key, "lyle");
+    assert_eq!(client.sign_public_key, "lyle");
 }
 
 #[test]
@@ -310,7 +399,7 @@ fn test_update_client_password() {
 
     assert_eq!(response.status(), reqwest::StatusCode::UNAUTHORIZED);
 
-    let (this_client, password_hash) = create_client(&turnstile_process, &reqwest);
+    let (this_client, password_hash, _keypairs) = create_client(&turnstile_process, &reqwest);
 
     let mut response = reqwest
         .get(&format!(
@@ -333,7 +422,8 @@ fn test_update_client_password() {
     let new_body = json!({
         "client_id": this_client.client_id.clone(),
         "full_name": "arnold",
-        "public_key": "lyle",
+        "box_public_key": "lyle",
+        "sign_public_key": "lyle",
         "password_hash": new_pw,
     });
 
@@ -388,7 +478,8 @@ fn test_update_client_password() {
     assert_eq!(response.status().is_success(), true);
     assert_eq!(client.client_id, this_client.client_id);
     assert_eq!(client.full_name, "arnold");
-    assert_eq!(client.public_key, "lyle");
+    assert_eq!(client.box_public_key, "lyle");
+    assert_eq!(client.sign_public_key, "lyle");
 }
 
 #[test]
@@ -409,7 +500,7 @@ fn test_update_client_email() {
 
     assert_eq!(response.status(), reqwest::StatusCode::UNAUTHORIZED);
 
-    let (this_client, password_hash) = create_client(&turnstile_process, &reqwest);
+    let (this_client, password_hash, _keypairs) = create_client(&turnstile_process, &reqwest);
 
     let mut response = reqwest
         .get(&format!(
@@ -430,7 +521,8 @@ fn test_update_client_email() {
     let new_body = json!({
         "client_id": this_client.client_id.clone(),
         "full_name": "arnold",
-        "public_key": "lyle",
+        "box_public_key": "lyle",
+        "sign_public_key": "lyle",
         "email": format!("hellllllo{}@aol.com", rand_num),
     });
 
@@ -485,7 +577,8 @@ fn test_update_client_email() {
     assert_eq!(response.status().is_success(), true);
     assert_eq!(client.client_id, this_client.client_id);
     assert_eq!(client.full_name, "arnold");
-    assert_eq!(client.public_key, "lyle");
+    assert_eq!(client.box_public_key, "lyle");
+    assert_eq!(client.sign_public_key, "lyle");
 }
 
 #[test]
@@ -506,7 +599,7 @@ fn test_update_client_phone_number() {
 
     assert_eq!(response.status(), reqwest::StatusCode::UNAUTHORIZED);
 
-    let (this_client, password_hash) = create_client(&turnstile_process, &reqwest);
+    let (this_client, password_hash, _keypairs) = create_client(&turnstile_process, &reqwest);
 
     let mut response = reqwest
         .get(&format!(
@@ -527,7 +620,8 @@ fn test_update_client_phone_number() {
     let new_body = json!({
         "client_id": this_client.client_id.clone(),
         "full_name": "arnold",
-        "public_key": "lyle",
+        "box_public_key": "lyle",
+        "sign_public_key": "lyle",
         "phone_number":{"country_code":"US","national_number":format!("510{}", rand_num)},
     });
 
@@ -582,7 +676,8 @@ fn test_update_client_phone_number() {
     assert_eq!(response.status().is_success(), true);
     assert_eq!(client.client_id, this_client.client_id);
     assert_eq!(client.full_name, "arnold");
-    assert_eq!(client.public_key, "lyle");
+    assert_eq!(client.box_public_key, "lyle");
+    assert_eq!(client.sign_public_key, "lyle");
 }
 
 #[derive(Debug, Deserialize)]
@@ -592,6 +687,7 @@ pub struct ReceiveMessage {
     pub body: String,
     pub hash: String,
     pub received_at: Timestamp,
+    pub nonce: String,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -607,21 +703,24 @@ pub struct Messages {
 
 #[derive(Debug, Serialize)]
 pub struct SendMessage {
-    pub hash: String,
-    pub to: String,
-    pub from: String,
     pub body: String,
-    pub pda: String,
+    pub from: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub hash: Option<String>,
     pub nonce: String,
-    pub sender_public_key: String,
+    pub pda: String,
     pub recipient_public_key: String,
+    pub sender_public_key: String,
     pub sent_at: Timestamp,
-    pub signature: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub signature: Option<String>,
+    pub to: String,
 }
 
 #[test]
 fn test_send_message() {
     use data_encoding::BASE64_NOPAD;
+    use sodiumoxide::crypto::sign;
 
     let turnstile_process = Turnstile::new().wait_for_ping();
     let reqwest = reqwest::ClientBuilder::new().build().unwrap();
@@ -633,7 +732,7 @@ fn test_send_message() {
 
     assert_eq!(response.status(), reqwest::StatusCode::UNAUTHORIZED);
 
-    let (this_client, _password_hash) = create_client(&turnstile_process, &reqwest);
+    let (this_client, _password_hash, keypairs) = create_client(&turnstile_process, &reqwest);
 
     let mut response = reqwest
         .get(&format!(
@@ -650,23 +749,55 @@ fn test_send_message() {
     assert_eq!(client.client_id, this_client.client_id);
     assert_eq!(client.full_name.starts_with("herp derp "), true);
 
+    let original_body = "derp";
+    let (body, nonce) = encrypt_body(&keypairs, &original_body);
+
     // Create a message, send to self
-    let message_body = json!({
-        "to": this_client.client_id.clone(),
-        "from": this_client.client_id.clone(),
-        "body": BASE64_NOPAD.encode(b"lololol message"),
-        "pda":"hi",
-        "sent_at": {
-            "seconds":1,
-            "nanos":1,
+    let message = SendMessage {
+        body,
+        nonce,
+        from: this_client.client_id.clone(),
+        hash: None,
+        pda: "hello".into(),
+        recipient_public_key: keypairs.box_public_key.clone(),
+        sender_public_key: keypairs.box_public_key.clone(),
+        sent_at: Timestamp {
+            nanos: 1,
+            seconds: 1,
         },
-    });
+        signature: None,
+        to: this_client.client_id.clone(),
+    };
+
+    // Compute hash
+    let message_json = serde_json::to_string(&message).unwrap();
+    let hash = b2b_hash(&message_json, 16);
+    let message = SendMessage {
+        hash: Some(hash),
+        ..message
+    };
+
+    // Compute signature
+    let message_json = serde_json::to_string(&message).unwrap();
+    let sign_secret_key = sign::SecretKey::from_slice(
+        &BASE64_NOPAD
+            .decode(keypairs.sign_secret_key.as_bytes())
+            .unwrap(),
+    )
+    .unwrap();
+
+    let signature = BASE64_NOPAD
+        .encode(&sign::sign_detached(message_json.as_bytes(), &sign_secret_key).as_ref());
+    let message = SendMessage {
+        signature: Some(signature),
+        ..message
+    };
 
     // Send the message
     let mut response = reqwest
         .post(&format!("{}/messages", turnstile_process.url))
         .header("X-UMPYRE-APIKEY", this_client.token.clone())
-        .json(&message_body)
+        .json(&message)
         .send()
         .unwrap();
 
@@ -685,11 +816,10 @@ fn test_send_message() {
         .unwrap();
 
     let messages: Messages = response.json().unwrap();
-    assert_eq!(messages.messages.len(), 1);
-    assert_eq!(
-        BASE64_NOPAD
-            .decode(messages.messages[0].body.as_bytes())
-            .unwrap(),
-        b"lololol message"
-    );
+    let messages = messages.messages;
+    assert_eq!(messages.len(), 1);
+
+    // decrypt message body
+    let decrypted_body = decrypt_body(&keypairs, &messages[0].body, &messages[0].nonce);
+    assert_eq!(original_body, decrypted_body);
 }
