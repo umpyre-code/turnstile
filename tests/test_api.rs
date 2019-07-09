@@ -77,8 +77,8 @@ fn b2b_hash(s: &str, digest_size: usize) -> String {
 }
 
 struct KeyPairs {
-    sign_public_key: String,
-    sign_secret_key: String,
+    signing_public_key: String,
+    signing_secret_key: String,
     box_public_key: String,
     box_secret_key: String,
 }
@@ -90,8 +90,8 @@ fn gen_keys() -> KeyPairs {
     let (spk, ssk) = sign::gen_keypair();
     let (bpk, bsk) = box_::gen_keypair();
     KeyPairs {
-        sign_public_key: BASE64_NOPAD.encode(spk.as_ref()),
-        sign_secret_key: BASE64_NOPAD.encode(ssk.as_ref()),
+        signing_public_key: BASE64_NOPAD.encode(spk.as_ref()),
+        signing_secret_key: BASE64_NOPAD.encode(ssk.as_ref()),
         box_public_key: BASE64_NOPAD.encode(bpk.as_ref()),
         box_secret_key: BASE64_NOPAD.encode(bsk.as_ref()),
     }
@@ -172,7 +172,7 @@ fn create_client(
         "password_hash": password_hash,
         "phone_number": {"country_code":"US","national_number":format!("510{}", rand_num)},
         "box_public_key": keypairs.box_public_key.clone(),
-        "sign_public_key": keypairs.sign_public_key.clone(),
+        "signing_public_key": keypairs.signing_public_key.clone(),
     });
 
     let mut response = reqwest
@@ -219,7 +219,7 @@ fn test_add_client() {
         "password_hash":password_hash,
         "phone_number":{"country_code":"US","national_number":format!("510{}", rand_num)},
         "box_public_key":"derp key",
-        "sign_public_key":"derp key",
+        "signing_public_key":"derp key",
     });
 
     let mut response = reqwest
@@ -257,7 +257,7 @@ fn test_authenticate() {
         "password_hash":password_hash.clone(),
         "phone_number":{"country_code":"US","national_number":format!("510{}", rand_num)},
         "box_public_key":"derp key",
-        "sign_public_key":"derp key",
+        "signing_public_key":"derp key",
     });
 
     let mut response = client
@@ -296,7 +296,7 @@ struct Client {
     client_id: String,
     full_name: String,
     box_public_key: String,
-    sign_public_key: String,
+    signing_public_key: String,
 }
 
 #[test]
@@ -363,7 +363,7 @@ fn test_update_client() {
         "client_id": this_client.client_id.clone(),
         "full_name": "arnold",
         "box_public_key": "lyle",
-        "sign_public_key": "lyle",
+        "signing_public_key": "lyle",
     });
 
     let mut response = reqwest
@@ -382,7 +382,7 @@ fn test_update_client() {
     assert_eq!(client.client_id, this_client.client_id);
     assert_eq!(client.full_name, "arnold");
     assert_eq!(client.box_public_key, "lyle");
-    assert_eq!(client.sign_public_key, "lyle");
+    assert_eq!(client.signing_public_key, "lyle");
 }
 
 #[test]
@@ -423,7 +423,7 @@ fn test_update_client_password() {
         "client_id": this_client.client_id.clone(),
         "full_name": "arnold",
         "box_public_key": "lyle",
-        "sign_public_key": "lyle",
+        "signing_public_key": "lyle",
         "password_hash": new_pw,
     });
 
@@ -479,7 +479,7 @@ fn test_update_client_password() {
     assert_eq!(client.client_id, this_client.client_id);
     assert_eq!(client.full_name, "arnold");
     assert_eq!(client.box_public_key, "lyle");
-    assert_eq!(client.sign_public_key, "lyle");
+    assert_eq!(client.signing_public_key, "lyle");
 }
 
 #[test]
@@ -522,7 +522,7 @@ fn test_update_client_email() {
         "client_id": this_client.client_id.clone(),
         "full_name": "arnold",
         "box_public_key": "lyle",
-        "sign_public_key": "lyle",
+        "signing_public_key": "lyle",
         "email": format!("hellllllo{}@aol.com", rand_num),
     });
 
@@ -578,7 +578,7 @@ fn test_update_client_email() {
     assert_eq!(client.client_id, this_client.client_id);
     assert_eq!(client.full_name, "arnold");
     assert_eq!(client.box_public_key, "lyle");
-    assert_eq!(client.sign_public_key, "lyle");
+    assert_eq!(client.signing_public_key, "lyle");
 }
 
 #[test]
@@ -621,7 +621,7 @@ fn test_update_client_phone_number() {
         "client_id": this_client.client_id.clone(),
         "full_name": "arnold",
         "box_public_key": "lyle",
-        "sign_public_key": "lyle",
+        "signing_public_key": "lyle",
         "phone_number":{"country_code":"US","national_number":format!("510{}", rand_num)},
     });
 
@@ -677,7 +677,7 @@ fn test_update_client_phone_number() {
     assert_eq!(client.client_id, this_client.client_id);
     assert_eq!(client.full_name, "arnold");
     assert_eq!(client.box_public_key, "lyle");
-    assert_eq!(client.sign_public_key, "lyle");
+    assert_eq!(client.signing_public_key, "lyle");
 }
 
 #[derive(Debug, Deserialize)]
@@ -779,15 +779,15 @@ fn test_send_message() {
 
     // Compute signature
     let message_json = serde_json::to_string(&message).unwrap();
-    let sign_secret_key = sign::SecretKey::from_slice(
+    let signing_secret_key = sign::SecretKey::from_slice(
         &BASE64_NOPAD
-            .decode(keypairs.sign_secret_key.as_bytes())
+            .decode(keypairs.signing_secret_key.as_bytes())
             .unwrap(),
     )
     .unwrap();
 
     let signature = BASE64_NOPAD
-        .encode(&sign::sign_detached(message_json.as_bytes(), &sign_secret_key).as_ref());
+        .encode(&sign::sign_detached(message_json.as_bytes(), &signing_secret_key).as_ref());
     let message = SendMessage {
         signature: Some(signature),
         ..message

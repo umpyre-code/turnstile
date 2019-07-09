@@ -24,7 +24,7 @@ pub struct NewClientRequest {
     pub full_name: String,
     pub password_hash: String,
     pub phone_number: PhoneNumber,
-    pub sign_public_key: String,
+    pub signing_public_key: String,
 }
 
 #[derive(Debug, Serialize)]
@@ -40,7 +40,7 @@ pub struct GetClientResponse {
     pub box_public_key: String,
     pub client_id: String,
     pub full_name: String,
-    pub sign_public_key: String,
+    pub signing_public_key: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -50,7 +50,7 @@ pub struct UpdateClientRequest {
     pub full_name: String,
     pub password_hash: Option<String>,
     pub phone_number: Option<PhoneNumber>,
-    pub sign_public_key: String,
+    pub signing_public_key: String,
 }
 
 #[derive(Debug, Serialize)]
@@ -58,7 +58,7 @@ pub struct UpdateClientResponse {
     pub box_public_key: String,
     pub client_id: String,
     pub full_name: String,
-    pub sign_public_key: String,
+    pub signing_public_key: String,
 }
 
 #[derive(Debug, Deserialize, Serialize, Default, Clone)]

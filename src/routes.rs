@@ -108,7 +108,7 @@ pub fn post_client(
             national_number: new_client_request.phone_number.national_number.clone(),
         }),
         box_public_key: new_client_request.box_public_key.clone(),
-        sign_public_key: new_client_request.sign_public_key.clone(),
+        signing_public_key: new_client_request.signing_public_key.clone(),
         location,
     })?;
 
@@ -127,7 +127,7 @@ impl From<rolodex_grpc::proto::GetClientResponse> for models::GetClientResponse 
             client_id: client.client_id,
             full_name: client.full_name,
             box_public_key: client.box_public_key,
-            sign_public_key: client.sign_public_key,
+            signing_public_key: client.signing_public_key,
         }
     }
 }
@@ -155,7 +155,7 @@ impl From<rolodex_grpc::proto::UpdateClientResponse> for models::UpdateClientRes
             client_id: client.client_id,
             full_name: client.full_name,
             box_public_key: client.box_public_key,
-            sign_public_key: client.sign_public_key,
+            signing_public_key: client.signing_public_key,
         }
     }
 }
@@ -274,7 +274,7 @@ pub fn put_client(
             client_id,
             full_name: update_client_request.full_name.clone(),
             box_public_key: update_client_request.box_public_key.clone(),
-            sign_public_key: update_client_request.sign_public_key.clone(),
+            signing_public_key: update_client_request.signing_public_key.clone(),
         }),
         location,
     })?;
@@ -384,7 +384,7 @@ fn check_message_signature(
     use data_encoding::BASE64_NOPAD;
     use sodiumoxide::crypto::sign;
 
-    let pk = sign::PublicKey::from_slice(&BASE64_NOPAD.decode(client.sign_public_key.as_bytes())?)?;
+    let pk = sign::PublicKey::from_slice(&BASE64_NOPAD.decode(client.signing_public_key.as_bytes())?)?;
 
     let signature =
         sign::Signature::from_slice(&BASE64_NOPAD.decode(message.signature.as_ref()?.as_bytes())?)?;
@@ -401,7 +401,7 @@ fn check_message_signature(
             response: content::Json(
                 json!({
                     "message:": "Invalid message signature",
-                    "sign_public_key": client.sign_public_key,
+                    "signing_public_key": client.signing_public_key,
                 })
                 .to_string(),
             ),
