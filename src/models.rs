@@ -83,8 +83,8 @@ pub struct Message {
 
 #[derive(Debug, Deserialize, Serialize, Default, Clone)]
 pub struct Timestamp {
-    pub seconds: i64,
     pub nanos: i32,
+    pub seconds: i64,
 }
 
 #[derive(Debug, Serialize)]
