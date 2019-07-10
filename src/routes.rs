@@ -413,7 +413,7 @@ fn check_message_hash(message: &models::Message) -> Result<(), ResponseError> {
     use data_encoding::BASE64_NOPAD;
     use sodiumoxide::crypto::generichash;
 
-    let mut hasher = generichash::State::new(16, None).unwrap();
+    let mut hasher = generichash::State::new(32, None).unwrap();
 
     let message_json = serde_json::to_string(&models::Message {
         signature: None,
