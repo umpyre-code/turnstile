@@ -313,7 +313,7 @@ components:
         hash:
           type: string
           description: >-
-            Base64 encoded 16-byte Blake2b hash of this message's body. When sending messages, this field does not need to be specified (it will be overwritten by the server if specified).
+            Base64 encoded 32-byte Blake2b hash of this message's body. When sending messages, this field does not need to be specified (it will be overwritten by the server if specified).
         from:
           type: string
           description: >-
