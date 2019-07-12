@@ -8,10 +8,11 @@ use crate::rolodex_client;
 use crate::switchroom_client;
 use crate::utils;
 
-use rocket::http::Cookies;
-use rocket::response::content;
 use rocket_contrib::json::Json;
 use rocket_contrib::json::JsonError;
+use rocket::http::Cookies;
+use rocket::http::RawStr;
+use rocket::response::content;
 
 #[post("/client/authenticate", data = "<auth_request>", format = "json")]
 pub fn post_client_authenticate(
@@ -301,8 +302,9 @@ impl From<switchroom_grpc::proto::GetMessagesResponse> for models::GetMessagesRe
     }
 }
 
-#[get("/messages")]
+#[get("/messages?<sketch>")]
 pub fn get_messages(
+    sketch: Option<&RawStr>,
     calling_client: guards::Client,
     _ratelimited: guards::RateLimitedPrivate,
 ) -> Result<Json<models::GetMessagesResponse>, ResponseError> {
@@ -310,7 +312,7 @@ pub fn get_messages(
 
     let response = switchroom_client.get_messages(switchroom_grpc::proto::GetMessagesRequest {
         client_id: calling_client.client_id,
-        sketch: "".into(),
+        sketch: sketch.unwrap_or_else(||RawStr::from_str("")).as_str().to_string(),
     })?;
 
     Ok(Json(response.into()))
