@@ -148,7 +148,7 @@ pub fn get_client(
         calling_client_id: calling_client.client_id,
     })?;
 
-    Ok(Cached(Json(response.into()), 3600))
+    Ok(Cached::from(Json(response.into()), 3600))
 }
 
 impl From<rolodex_grpc::proto::UpdateClientResponse> for models::UpdateClientResponse {
