@@ -8,11 +8,13 @@ use crate::rolodex_client;
 use crate::switchroom_client;
 use crate::utils;
 
-use rocket_contrib::json::Json;
-use rocket_contrib::json::JsonError;
 use rocket::http::Cookies;
 use rocket::http::RawStr;
 use rocket::response::content;
+use rocket_contrib::json::Json;
+use rocket_contrib::json::JsonError;
+
+use crate::responders::Cached;
 
 #[post("/client/authenticate", data = "<auth_request>", format = "json")]
 pub fn post_client_authenticate(
@@ -138,7 +140,7 @@ pub fn get_client(
     client_id: String,
     calling_client: guards::Client,
     _ratelimited: guards::RateLimitedPrivate,
-) -> Result<Json<models::GetClientResponse>, ResponseError> {
+) -> Result<Cached<Json<models::GetClientResponse>>, ResponseError> {
     let rolodex_client = rolodex_client::Client::new(&config::CONFIG);
 
     let response = rolodex_client.get_client(rolodex_grpc::proto::GetClientRequest {
@@ -146,7 +148,7 @@ pub fn get_client(
         calling_client_id: calling_client.client_id,
     })?;
 
-    Ok(Json(response.into()))
+    Ok(Cached(Json(response.into()), 3600))
 }
 
 impl From<rolodex_grpc::proto::UpdateClientResponse> for models::UpdateClientResponse {
@@ -312,7 +314,10 @@ pub fn get_messages(
 
     let response = switchroom_client.get_messages(switchroom_grpc::proto::GetMessagesRequest {
         client_id: calling_client.client_id,
-        sketch: sketch.unwrap_or_else(||RawStr::from_str("")).as_str().to_string(),
+        sketch: sketch
+            .unwrap_or_else(|| RawStr::from_str(""))
+            .as_str()
+            .to_string(),
     })?;
 
     Ok(Json(response.into()))
@@ -386,7 +391,8 @@ fn check_message_signature(
     use data_encoding::BASE64_NOPAD;
     use sodiumoxide::crypto::sign;
 
-    let pk = sign::PublicKey::from_slice(&BASE64_NOPAD.decode(client.signing_public_key.as_bytes())?)?;
+    let pk =
+        sign::PublicKey::from_slice(&BASE64_NOPAD.decode(client.signing_public_key.as_bytes())?)?;
 
     let signature =
         sign::Signature::from_slice(&BASE64_NOPAD.decode(message.signature.as_ref()?.as_bytes())?)?;
