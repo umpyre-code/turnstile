@@ -147,11 +147,23 @@ pub fn get_client(
     let rolodex_client = rolodex_client::Client::new(&config::CONFIG);
 
     let response = rolodex_client.get_client(rolodex_grpc::proto::GetClientRequest {
-        client_id,
+        client_id: client_id.clone(),
         calling_client_id: calling_client.client_id,
-    })?;
+    });
 
-    Ok(Cached::from(Json(response.into()), 3600))
+    if response.is_ok() {
+        Ok(Cached::from(Json(response.unwrap().into()), 3600))
+    } else {
+        Err(ResponseError::NotFound {
+            response: content::Json(
+                json!({
+                    "message:": "Client not found",
+                    "client_id": client_id
+                })
+                .to_string(),
+            ),
+        })
+    }
 }
 
 impl From<rolodex_grpc::proto::UpdateClientResponse> for models::UpdateClientResponse {
@@ -284,8 +296,14 @@ pub fn put_client(
             full_name: update_client_request.full_name.clone(),
             box_public_key: update_client_request.box_public_key.clone(),
             signing_public_key: update_client_request.signing_public_key.clone(),
-            handle: update_client_request.handle.clone().unwrap_or_else(|| String::from("")),
-            profile: update_client_request.profile.clone().unwrap_or_else(|| String::from("")),
+            handle: update_client_request
+                .handle
+                .clone()
+                .unwrap_or_else(|| String::from("")),
+            profile: update_client_request
+                .profile
+                .clone()
+                .unwrap_or_else(|| String::from("")),
         }),
         location,
     })?;

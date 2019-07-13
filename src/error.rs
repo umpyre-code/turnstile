@@ -10,6 +10,8 @@ pub enum ResponseError {
     BadRequest { response: content::Json<String> },
     #[response(status = 401, content_type = "json")]
     Forbidden { response: content::Json<String> },
+    #[response(status = 404, content_type = "json")]
+    NotFound { response: content::Json<String> },
 }
 
 impl From<std::option::NoneError> for ResponseError {
