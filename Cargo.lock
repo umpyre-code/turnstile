@@ -1649,7 +1649,7 @@ dependencies = [
 [[package]]
 name = "rolodex-grpc"
 version = "0.1.0"
-source = "git+ssh://git@github.com/umpyre-code/rolodex.git#117914eeba9e6a4c26222293ad6955f031423ab5"
+source = "git+ssh://git@github.com/umpyre-code/rolodex.git#1d71801dc34b8d9dc42569a3a2924b267b9f99b3"
 dependencies = [
  "bytes 0.4.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "prost 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1855,7 +1855,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "switchroom-grpc"
 version = "0.1.0"
-source = "git+ssh://git@github.com/umpyre-code/switchroom.git#40d428c6580ec64212573c8473d46b86efe954e0"
+source = "git+ssh://git@github.com/umpyre-code/switchroom.git#3926d9c2b81f1ec4666da8d017fa5a66a883518c"
 dependencies = [
  "bytes 0.4.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "prost 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2303,7 +2303,7 @@ dependencies = [
 [[package]]
 name = "tower-reconnect"
 version = "0.1.0"
-source = "git+https://github.com/tower-rs/tower#b39a4881d8eff6cbbb3a49b95db8492f6f8afb15"
+source = "git+https://github.com/tower-rs/tower#491dfbe6340108113d460780319bcb3e7a499342"
 dependencies = [
  "futures 0.1.28 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.7 (registry+https://github.com/rust-lang/crates.io-index)",

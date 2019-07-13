@@ -125,12 +125,15 @@ pub fn post_client(
 
 impl From<rolodex_grpc::proto::GetClientResponse> for models::GetClientResponse {
     fn from(response: rolodex_grpc::proto::GetClientResponse) -> Self {
+        use crate::optional::Optional;
         let client = response.client.unwrap();
         models::GetClientResponse {
             client_id: client.client_id,
             full_name: client.full_name,
             box_public_key: client.box_public_key,
             signing_public_key: client.signing_public_key,
+            handle: client.handle.into_option(),
+            profile: client.profile.into_option(),
         }
     }
 }
@@ -153,12 +156,15 @@ pub fn get_client(
 
 impl From<rolodex_grpc::proto::UpdateClientResponse> for models::UpdateClientResponse {
     fn from(response: rolodex_grpc::proto::UpdateClientResponse) -> Self {
+        use crate::optional::Optional;
         let client = response.client.unwrap();
         models::UpdateClientResponse {
             client_id: client.client_id,
             full_name: client.full_name,
             box_public_key: client.box_public_key,
             signing_public_key: client.signing_public_key,
+            handle: client.handle.into_option(),
+            profile: client.profile.into_option(),
         }
     }
 }
@@ -278,6 +284,8 @@ pub fn put_client(
             full_name: update_client_request.full_name.clone(),
             box_public_key: update_client_request.box_public_key.clone(),
             signing_public_key: update_client_request.signing_public_key.clone(),
+            handle: update_client_request.handle.clone().unwrap_or_else(|| String::from("")),
+            profile: update_client_request.profile.clone().unwrap_or_else(|| String::from("")),
         }),
         location,
     })?;

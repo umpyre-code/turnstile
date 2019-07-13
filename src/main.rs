@@ -25,6 +25,7 @@ mod error;
 mod fairings;
 mod guards;
 mod models;
+mod optional;
 mod responders;
 mod rolodex_client;
 mod routes;

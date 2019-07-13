@@ -257,6 +257,14 @@ components:
               type: string
               description: >-
                 The national phone number.
+        handle:
+          type: string
+          description: >-
+            The client's public handle.
+        profile:
+          type: string
+          description: >-
+            The client's public profile.
       required:
         - client_id
         - full_name
