@@ -147,7 +147,9 @@ pub fn get_client(
     let rolodex_client = rolodex_client::Client::new(&config::CONFIG);
 
     let response = rolodex_client.get_client(rolodex_grpc::proto::GetClientRequest {
-        client_id: client_id.clone(),
+        id: Some(rolodex_grpc::proto::get_client_request::Id::ClientId(
+            client_id.clone(),
+        )),
         calling_client_id: calling_client.client_id,
     });
 
@@ -159,6 +161,36 @@ pub fn get_client(
                 json!({
                     "message:": "Client not found",
                     "client_id": client_id
+                })
+                .to_string(),
+            ),
+        })
+    }
+}
+
+#[get("/client/<handle>")]
+pub fn get_client_by_handle(
+    handle: String,
+    calling_client: guards::Client,
+    _ratelimited: guards::RateLimitedPrivate,
+) -> Result<Cached<Json<models::GetClientResponse>>, ResponseError> {
+    let rolodex_client = rolodex_client::Client::new(&config::CONFIG);
+
+    let response = rolodex_client.get_client(rolodex_grpc::proto::GetClientRequest {
+        id: Some(rolodex_grpc::proto::get_client_request::Id::Handle(
+            handle.clone(),
+        )),
+        calling_client_id: calling_client.client_id,
+    });
+
+    if response.is_ok() {
+        Ok(Cached::from(Json(response.unwrap().into()), 3600))
+    } else {
+        Err(ResponseError::NotFound {
+            response: content::Json(
+                json!({
+                    "message:": "Client not found",
+                    "handle": handle
                 })
                 .to_string(),
             ),
@@ -389,7 +421,9 @@ fn check_box_public_keys(
     expected_box_public_key: &str,
 ) -> Result<rolodex_grpc::proto::Client, ResponseError> {
     let response = rolodex_client.get_client(rolodex_grpc::proto::GetClientRequest {
-        client_id: client_id.into(),
+        id: Some(rolodex_grpc::proto::get_client_request::Id::ClientId(
+            client_id.into(),
+        )),
         calling_client_id: calling_client_id.into(),
     })?;
 

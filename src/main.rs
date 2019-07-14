@@ -99,6 +99,7 @@ fn main() -> Result<(), std::io::Error> {
         .mount(
             "/",
             routes![
+                routes::get_client_by_handle,
                 routes::get_client,
                 routes::get_messages,
                 routes::get_ping,

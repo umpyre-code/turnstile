@@ -145,6 +145,38 @@ paths:
                 $ref: "#/components/responses/Error"
         "401":
           $ref: "#/components/responses/UnauthorizedError"
+  /handle/{handle}:
+    get:
+      summary: >-
+        Get client info by handle
+      description: >-
+        Fetches and returns the client info object for the provided handle.
+      operationId: get-client-by-handle
+      parameters:
+        - name: handle
+          in: path
+          description: "Client handle."
+          required: true
+          example: "cool_dude"
+          schema:
+            type: string
+      responses:
+        "200":
+          description: >-
+            The client exists and is available.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Client"
+        "404":
+          description: >-
+            The client does not exist.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
   /messages:
     get:
       summary: >-
@@ -421,7 +453,7 @@ components:
           schema:
             type: object
             properties:
-              error:
+              message:
                 type: string
                 description: >-
                   A description of the error.
