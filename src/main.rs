@@ -48,6 +48,7 @@ fn get_cors() -> rocket_cors::Cors {
         allowed_methods,
         allowed_headers: AllowedHeaders::all(),
         allow_credentials: true,
+        max_age: Some(3600 * 24), // Cache for 24h
         ..Default::default()
     }
     .to_cors()
