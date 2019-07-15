@@ -168,7 +168,7 @@ pub fn get_client(
     }
 }
 
-#[get("/client/<handle>")]
+#[get("/handle/<handle>")]
 pub fn get_client_by_handle(
     handle: String,
     calling_client: guards::Client,
