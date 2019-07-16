@@ -154,7 +154,7 @@ pub fn get_client(
     });
 
     if response.is_ok() {
-        Ok(Cached::from(Json(response.unwrap().into()), 3600))
+        Ok(Cached::from(Json(response.unwrap().into()), 60))
     } else {
         Err(ResponseError::NotFound {
             response: content::Json(
@@ -184,7 +184,7 @@ pub fn get_client_by_handle(
     });
 
     if response.is_ok() {
-        Ok(Cached::from(Json(response.unwrap().into()), 3600))
+        Ok(Cached::from(Json(response.unwrap().into()), 60))
     } else {
         Err(ResponseError::NotFound {
             response: content::Json(
