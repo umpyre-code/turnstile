@@ -343,7 +343,7 @@ fn test_update_client() {
 
     assert_eq!(response.status(), reqwest::StatusCode::UNAUTHORIZED);
 
-    let (this_client, _password_hash, _keypairs) = create_client(&turnstile_process, &reqwest);
+    let (this_client, _password_hash, keypairs) = create_client(&turnstile_process, &reqwest);
 
     let mut response = reqwest
         .get(&format!(
@@ -364,9 +364,9 @@ fn test_update_client() {
     let body = json!({
         "client_id": this_client.client_id.clone(),
         "full_name": "arnold",
-        "box_public_key": "lyle",
-        "signing_public_key": "lyle",
-        "handle":"handle",
+        "box_public_key": keypairs.box_public_key.clone(),
+        "signing_public_key": keypairs.signing_public_key.clone(),
+        "handle":this_client.client_id.clone(),
         "profile":"profile"
     });
 
@@ -385,9 +385,9 @@ fn test_update_client() {
     assert_eq!(response.status().is_success(), true);
     assert_eq!(client.client_id, this_client.client_id);
     assert_eq!(client.full_name, "arnold");
-    assert_eq!(client.box_public_key, "lyle");
-    assert_eq!(client.signing_public_key, "lyle");
-    assert_eq!(client.handle.unwrap(), "handle");
+    assert_eq!(client.box_public_key, keypairs.box_public_key);
+    assert_eq!(client.signing_public_key, keypairs.signing_public_key);
+    assert_eq!(client.handle.unwrap(),this_client.client_id);
     assert_eq!(client.profile.unwrap(), "profile");
 }
 
@@ -698,8 +698,8 @@ pub struct ReceiveMessage {
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Timestamp {
-    pub seconds: i64,
     pub nanos: i32,
+    pub seconds: i64,
 }
 
 #[derive(Debug, Deserialize)]
@@ -777,7 +777,7 @@ fn test_send_message() {
 
     // Compute hash
     let message_json = serde_json::to_string(&message).unwrap();
-    let hash = b2b_hash(&message_json, 16);
+    let hash = b2b_hash(&message_json, 32);
     let message = SendMessage {
         hash: Some(hash),
         ..message
@@ -798,6 +798,7 @@ fn test_send_message() {
         signature: Some(signature),
         ..message
     };
+
 
     // Send the message
     let mut response = reqwest
