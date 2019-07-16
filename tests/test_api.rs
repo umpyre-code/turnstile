@@ -297,6 +297,8 @@ struct Client {
     full_name: String,
     box_public_key: String,
     signing_public_key: String,
+    handle: Option<String>,
+    profile: Option<String>,
 }
 
 #[test]
@@ -364,6 +366,8 @@ fn test_update_client() {
         "full_name": "arnold",
         "box_public_key": "lyle",
         "signing_public_key": "lyle",
+        "handle":"handle",
+        "profile":"profile"
     });
 
     let mut response = reqwest
@@ -383,6 +387,8 @@ fn test_update_client() {
     assert_eq!(client.full_name, "arnold");
     assert_eq!(client.box_public_key, "lyle");
     assert_eq!(client.signing_public_key, "lyle");
+    assert_eq!(client.handle.unwrap(), "handle");
+    assert_eq!(client.profile.unwrap(), "profile");
 }
 
 #[test]

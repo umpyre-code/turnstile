@@ -488,7 +488,6 @@ fn check_message_hash(message: &models::Message) -> Result<(), ResponseError> {
         hash: None,
         ..message.clone()
     })?;
-    println!("{}", message_json);
 
     hasher.update(message_json.as_bytes()).unwrap();
     let digest = hasher.finalize().unwrap();
