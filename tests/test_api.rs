@@ -387,7 +387,7 @@ fn test_update_client() {
     assert_eq!(client.full_name, "arnold");
     assert_eq!(client.box_public_key, keypairs.box_public_key);
     assert_eq!(client.signing_public_key, keypairs.signing_public_key);
-    assert_eq!(client.handle.unwrap(),this_client.client_id);
+    assert_eq!(client.handle.unwrap(), this_client.client_id);
     assert_eq!(client.profile.unwrap(), "profile");
 }
 
@@ -798,7 +798,6 @@ fn test_send_message() {
         signature: Some(signature),
         ..message
     };
-
 
     // Send the message
     let mut response = reqwest

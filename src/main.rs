@@ -57,15 +57,24 @@ fn get_cors() -> rocket_cors::Cors {
 
 fn get_helmet() -> rocket_contrib::helmet::SpaceHelmet {
     use rocket::http::uri::Uri;
-    use rocket_contrib::helmet::{Frame, Hsts, Referrer, SpaceHelmet, XssFilter};
+    use rocket_contrib::helmet::{ExpectCt, Frame, Hsts, Referrer, SpaceHelmet, XssFilter};
+    use time::Duration;
     let site_uri = Uri::parse(&config::CONFIG.service.site_uri).unwrap();
     let report_uri = Uri::parse(&config::CONFIG.service.site_uri).unwrap();
 
-    SpaceHelmet::default()
+    let helmet = SpaceHelmet::default()
         .enable(Hsts::default())
         .enable(Frame::AllowFrom(site_uri))
         .enable(XssFilter::EnableReport(report_uri))
-        .enable(Referrer::NoReferrer)
+        .enable(ExpectCt::Enforce(Duration::weeks(52)))
+        .enable(Referrer::NoReferrer);
+
+    if config::CONFIG.service.enable_hsts {
+        // Enable HSTS for 1 year
+        helmet.enable(Hsts::IncludeSubDomains(Duration::weeks(52)))
+    } else {
+        helmet
+    }
 }
 
 fn main() -> Result<(), std::io::Error> {

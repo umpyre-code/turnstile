@@ -18,6 +18,7 @@ pub struct Config {
 #[derive(Debug, Deserialize)]
 pub struct Service {
     pub site_uri: String,
+    pub enable_hsts: bool,
 }
 
 #[derive(Debug, Deserialize)]

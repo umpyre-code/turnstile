@@ -1,5 +1,6 @@
 [service]
 site_uri = "http://localhost:8000"
+enable_hsts = false
 
 [rolodex]
 tls_cert_path = "tests/certs/Frontend.crt"
