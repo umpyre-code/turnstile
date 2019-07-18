@@ -145,7 +145,7 @@ impl Fairing for RateLimitHeaders {
 
     fn on_response(&self, request: &Request, response: &mut Response) {
         use crate::guards;
-        let rate_limit = request.local_cache(guards::RateLimited::default);
+        let rate_limit = request.local_cache(guards::RateLimit::default);
         if rate_limit.limit > 0 {
             response.set_raw_header("X-RateLimit-Limit", rate_limit.limit.to_string());
             response.set_raw_header("X-RateLimit-Remaining", rate_limit.remaining.to_string());

@@ -88,7 +88,7 @@ impl<'a, 'r> rocket::request::FromRequest<'a, 'r> for TempClient {
 }
 
 #[derive(Debug, Clone, Default)]
-pub struct RateLimited {
+pub struct RateLimit {
     pub key: String,
     pub limited: bool,
     pub limit: i32,
@@ -98,19 +98,11 @@ pub struct RateLimited {
 }
 
 #[derive(Debug, Clone, Default)]
-pub struct RateLimitedPublic {
-    pub rate_limited: RateLimited,
+pub struct RateLimited {
+    pub rate_limit: RateLimit,
 }
 
-#[derive(Debug, Clone, Default)]
-pub struct RateLimitedPrivate {
-    pub rate_limited: RateLimited,
-}
-
-fn ratelimit_from_request<'a, 'r>(
-    config: &config::RateLimit,
-    request: &'a rocket::request::Request<'r>,
-) -> RateLimited {
+fn ratelimit_from_request<'a, 'r>(request: &'a rocket::request::Request<'r>) -> RateLimit {
     use rocket_contrib::databases::redis;
     use std::str::FromStr;
 
@@ -119,11 +111,21 @@ fn ratelimit_from_request<'a, 'r>(
             let redis_writer = request.guard::<RedisWriter>().unwrap();
             let redis = &*redis_writer;
 
+            let client = request.guard::<Client>();
+
+            let ratelimit_config = if client.as_ref().succeeded().is_some() {
+                // use private rate limit
+                &config::CONFIG.rate_limits.private
+            } else {
+                // use public rate limit
+                &config::CONFIG.rate_limits.public
+            };
+
             // Prefer:
             // 1. Client ID
             // 2. X-Forwarded-For
             // 3. Client IP from request
-            let key = match request.guard::<Client>().succeeded() {
+            let key = match client.succeeded() {
                 Some(client) => client.client_id,
                 None => match request.guard::<ClientIP>().succeeded() {
                     Some(client_ip) => client_ip.0,
@@ -135,7 +137,7 @@ fn ratelimit_from_request<'a, 'r>(
             if let Ok(addr) = std::net::Ipv4Addr::from_str(&key) {
                 if addr.is_private() {
                     // If this is a private address, ignore it. It's probably a health check.
-                    return RateLimited {
+                    return RateLimit {
                         key,
                         limited: false,
                         limit: 0, remaining: 0, retry_after:0, reset:0,
@@ -149,9 +151,9 @@ fn ratelimit_from_request<'a, 'r>(
             let (limited, limit, remaining, retry_after, reset): (i32, i32, i32, i32, i32) =
                 redis::cmd("CL.THROTTLE")
                     .arg(&key)
-                    .arg(config.max_burst)
-                    .arg(config.tokens)
-                    .arg(config.period)
+                    .arg(ratelimit_config.max_burst)
+                    .arg(ratelimit_config.tokens)
+                    .arg(ratelimit_config.period)
                     .query(redis)
                     .unwrap();
 
@@ -163,7 +165,7 @@ fn ratelimit_from_request<'a, 'r>(
                 limit, remaining, retry_after, reset);
             }
 
-            RateLimited {
+            RateLimit {
                 key,
                 limited,
                 limit,
@@ -175,30 +177,15 @@ fn ratelimit_from_request<'a, 'r>(
         .clone()
 }
 
-impl<'a, 'r> rocket::request::FromRequest<'a, 'r> for RateLimitedPublic {
+impl<'a, 'r> rocket::request::FromRequest<'a, 'r> for RateLimited {
     type Error = ();
 
     fn from_request(
         request: &'a rocket::request::Request<'r>,
-    ) -> rocket::request::Outcome<RateLimitedPublic, Self::Error> {
-        let rate_limited = ratelimit_from_request(&config::CONFIG.rate_limits.public, request);
-        if !rate_limited.limited {
-            Outcome::Success(RateLimitedPublic { rate_limited })
-        } else {
-            Outcome::Failure((Status::TooManyRequests, ()))
-        }
-    }
-}
-
-impl<'a, 'r> rocket::request::FromRequest<'a, 'r> for RateLimitedPrivate {
-    type Error = ();
-
-    fn from_request(
-        request: &'a rocket::request::Request<'r>,
-    ) -> rocket::request::Outcome<RateLimitedPrivate, Self::Error> {
-        let rate_limited = ratelimit_from_request(&config::CONFIG.rate_limits.private, request);
-        if !rate_limited.limited {
-            Outcome::Success(RateLimitedPrivate { rate_limited })
+    ) -> rocket::request::Outcome<RateLimited, Self::Error> {
+        let rate_limit = ratelimit_from_request(request);
+        if !rate_limit.limited {
+            Outcome::Success(RateLimited { rate_limit })
         } else {
             Outcome::Failure((Status::TooManyRequests, ()))
         }

@@ -18,7 +18,7 @@ use crate::responders::Cached;
 
 #[post("/client/authenticate", data = "<auth_request>", format = "json")]
 pub fn post_client_authenticate(
-    _ratelimited: guards::RateLimitedPublic,
+    _ratelimited: guards::RateLimited,
     client_ip: guards::ClientIP,
     geo_headers: Option<guards::GeoHeaders>,
     cookies: Cookies,
@@ -54,7 +54,7 @@ pub fn post_client_authenticate(
     format = "json"
 )]
 pub fn post_client_authenticate_temporarily(
-    _ratelimited: guards::RateLimitedPublic,
+    _ratelimited: guards::RateLimited,
     client_ip: guards::ClientIP,
     geo_headers: Option<guards::GeoHeaders>,
     cookies: Cookies,
@@ -86,7 +86,7 @@ pub fn post_client_authenticate_temporarily(
 
 #[post("/client", data = "<new_client_request>", format = "json")]
 pub fn post_client(
-    _ratelimited: guards::RateLimitedPublic,
+    _ratelimited: guards::RateLimited,
     client_ip: guards::ClientIP,
     geo_headers: Option<guards::GeoHeaders>,
     cookies: Cookies,
@@ -141,8 +141,8 @@ impl From<rolodex_grpc::proto::GetClientResponse> for models::GetClientResponse 
 #[get("/client/<client_id>")]
 pub fn get_client(
     client_id: String,
-    calling_client: guards::Client,
-    _ratelimited: guards::RateLimitedPrivate,
+    calling_client: Option<guards::Client>,
+    _ratelimited: guards::RateLimited,
 ) -> Result<Cached<Json<models::GetClientResponse>>, ResponseError> {
     let rolodex_client = rolodex_client::Client::new(&config::CONFIG);
 
@@ -150,7 +150,10 @@ pub fn get_client(
         id: Some(rolodex_grpc::proto::get_client_request::Id::ClientId(
             client_id.clone(),
         )),
-        calling_client_id: calling_client.client_id,
+        calling_client_id: match calling_client {
+            Some(client) => client.client_id,
+            _ => "".to_string(),
+        },
     });
 
     if response.is_ok() {
@@ -171,8 +174,8 @@ pub fn get_client(
 #[get("/handle/<handle>")]
 pub fn get_client_by_handle(
     handle: String,
-    calling_client: guards::Client,
-    _ratelimited: guards::RateLimitedPrivate,
+    calling_client: Option<guards::Client>,
+    _ratelimited: guards::RateLimited,
 ) -> Result<Cached<Json<models::GetClientResponse>>, ResponseError> {
     let rolodex_client = rolodex_client::Client::new(&config::CONFIG);
 
@@ -180,7 +183,10 @@ pub fn get_client_by_handle(
         id: Some(rolodex_grpc::proto::get_client_request::Id::Handle(
             handle.clone(),
         )),
-        calling_client_id: calling_client.client_id,
+        calling_client_id: match calling_client {
+            Some(client) => client.client_id,
+            _ => "".to_string(),
+        },
     });
 
     if response.is_ok() {
@@ -237,7 +243,7 @@ pub fn put_client(
     client_id: String,
     calling_client: guards::Client,
     temp_client: Option<guards::TempClient>,
-    _ratelimited: guards::RateLimitedPrivate,
+    _ratelimited: guards::RateLimited,
     update_client_request: Result<Json<models::UpdateClientRequest>, JsonError>,
     client_ip: guards::ClientIP,
     geo_headers: Option<guards::GeoHeaders>,
@@ -346,7 +352,7 @@ pub fn put_client(
 }
 
 #[get("/ping")]
-pub fn get_ping(_ratelimited: guards::RateLimitedPublic) -> String {
+pub fn get_ping(_ratelimited: guards::RateLimited) -> String {
     "pong".into()
 }
 
@@ -366,7 +372,7 @@ impl From<switchroom_grpc::proto::GetMessagesResponse> for models::GetMessagesRe
 pub fn get_messages(
     sketch: Option<&RawStr>,
     calling_client: guards::Client,
-    _ratelimited: guards::RateLimitedPrivate,
+    _ratelimited: guards::RateLimited,
 ) -> Result<Json<models::GetMessagesResponse>, ResponseError> {
     let switchroom_client = switchroom_client::Client::new(&config::CONFIG);
 
@@ -515,7 +521,7 @@ fn check_message_hash(message: &models::Message) -> Result<(), ResponseError> {
 pub fn post_message(
     message: Result<Json<models::Message>, JsonError>,
     calling_client: guards::Client,
-    _ratelimited: guards::RateLimitedPrivate,
+    _ratelimited: guards::RateLimited,
 ) -> Result<Json<models::Message>, ResponseError> {
     use data_encoding::BASE64_NOPAD;
 

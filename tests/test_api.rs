@@ -311,7 +311,7 @@ fn test_get_client() {
         .send()
         .unwrap();
 
-    assert_eq!(response.status(), reqwest::StatusCode::UNAUTHORIZED);
+    assert_eq!(response.status(), reqwest::StatusCode::NOT_FOUND);
 
     let (this_client, _password_hash, _keypairs) = create_client(&turnstile_process, &reqwest);
 
@@ -341,7 +341,7 @@ fn test_update_client() {
         .send()
         .unwrap();
 
-    assert_eq!(response.status(), reqwest::StatusCode::UNAUTHORIZED);
+    assert_eq!(response.status(), reqwest::StatusCode::NOT_FOUND);
 
     let (this_client, _password_hash, keypairs) = create_client(&turnstile_process, &reqwest);
 
@@ -403,7 +403,7 @@ fn test_update_client_password() {
         .send()
         .unwrap();
 
-    assert_eq!(response.status(), reqwest::StatusCode::UNAUTHORIZED);
+    assert_eq!(response.status(), reqwest::StatusCode::NOT_FOUND);
 
     let (this_client, password_hash, _keypairs) = create_client(&turnstile_process, &reqwest);
 
@@ -504,7 +504,7 @@ fn test_update_client_email() {
         .send()
         .unwrap();
 
-    assert_eq!(response.status(), reqwest::StatusCode::UNAUTHORIZED);
+    assert_eq!(response.status(), reqwest::StatusCode::NOT_FOUND);
 
     let (this_client, password_hash, _keypairs) = create_client(&turnstile_process, &reqwest);
 
@@ -603,7 +603,7 @@ fn test_update_client_phone_number() {
         .send()
         .unwrap();
 
-    assert_eq!(response.status(), reqwest::StatusCode::UNAUTHORIZED);
+    assert_eq!(response.status(), reqwest::StatusCode::NOT_FOUND);
 
     let (this_client, password_hash, _keypairs) = create_client(&turnstile_process, &reqwest);
 
@@ -736,7 +736,7 @@ fn test_send_message() {
         .send()
         .unwrap();
 
-    assert_eq!(response.status(), reqwest::StatusCode::UNAUTHORIZED);
+    assert_eq!(response.status(), reqwest::StatusCode::NOT_FOUND);
 
     let (this_client, _password_hash, keypairs) = create_client(&turnstile_process, &reqwest);
 
@@ -828,4 +828,105 @@ fn test_send_message() {
     // decrypt message body
     let decrypted_body = decrypt_body(&keypairs, &messages[0].body, &messages[0].nonce);
     assert_eq!(original_body, decrypted_body);
+}
+
+#[test]
+fn test_get_client_anonymously() {
+    use data_encoding::BASE64_NOPAD;
+    use sodiumoxide::crypto::sign;
+
+    let turnstile_process = Turnstile::new().wait_for_ping();
+    let reqwest = reqwest::ClientBuilder::new().build().unwrap();
+
+    let response = reqwest
+        .get(&format!("{}/client/{}", turnstile_process.url, "lol"))
+        .send()
+        .unwrap();
+
+    assert_eq!(response.status(), reqwest::StatusCode::NOT_FOUND);
+
+    let (this_client, _password_hash, keypairs) = create_client(&turnstile_process, &reqwest);
+
+    let mut response = reqwest
+        .get(&format!(
+            "{}/client/{}",
+            turnstile_process.url, this_client.client_id
+        ))
+        .header("X-UMPYRE-APIKEY", this_client.token.clone())
+        .send()
+        .unwrap();
+
+    let client: Client = response.json().unwrap();
+
+    assert_eq!(response.status().is_success(), true);
+    assert_eq!(client.client_id, this_client.client_id);
+    assert_eq!(client.full_name.starts_with("herp derp "), true);
+
+    // Create a client update message
+    let body = json!({
+        "client_id": this_client.client_id.clone(),
+        "full_name": "arnold",
+        "box_public_key": keypairs.box_public_key.clone(),
+        "signing_public_key": keypairs.signing_public_key.clone(),
+        "handle":this_client.client_id.clone(),
+        "profile":"profile"
+    });
+
+    let mut response = reqwest
+        .put(&format!(
+            "{}/client/{}",
+            turnstile_process.url, this_client.client_id
+        ))
+        .header("X-UMPYRE-APIKEY", this_client.token.clone())
+        .json(&body)
+        .send()
+        .unwrap();
+
+    let client: Client = response.json().unwrap();
+
+    assert_eq!(response.status().is_success(), true);
+    assert_eq!(client.client_id, this_client.client_id);
+    assert_eq!(client.full_name, "arnold");
+    assert_eq!(client.box_public_key, keypairs.box_public_key);
+    assert_eq!(client.signing_public_key, keypairs.signing_public_key);
+    assert_eq!(client.handle.unwrap(), this_client.client_id);
+    assert_eq!(client.profile.unwrap(), "profile");
+
+    // Get client by client_id
+    let mut response = reqwest
+        .get(&format!(
+            "{}/client/{}",
+            turnstile_process.url, this_client.client_id
+        ))
+        .send()
+        .unwrap();
+
+    let client: Client = response.json().unwrap();
+
+    assert_eq!(response.status().is_success(), true);
+    assert_eq!(client.client_id, this_client.client_id);
+    assert_eq!(client.full_name, "arnold");
+    assert_eq!(client.box_public_key, keypairs.box_public_key);
+    assert_eq!(client.signing_public_key, keypairs.signing_public_key);
+    assert_eq!(client.handle.unwrap(), this_client.client_id);
+    assert_eq!(client.profile.unwrap(), "profile");
+
+    // Get client by handle
+    let mut response = reqwest
+        .get(&format!(
+            "{}/handle/{}",
+            turnstile_process.url, this_client.client_id
+        ))
+        .send()
+        .unwrap();
+
+    let client: Client = response.json().unwrap();
+
+    assert_eq!(response.status().is_success(), true);
+    assert_eq!(client.client_id, this_client.client_id);
+    assert_eq!(client.full_name, "arnold");
+    assert_eq!(client.box_public_key, keypairs.box_public_key);
+    assert_eq!(client.signing_public_key, keypairs.signing_public_key);
+    assert_eq!(client.handle.unwrap(), this_client.client_id);
+    assert_eq!(client.profile.unwrap(), "profile");
 }
