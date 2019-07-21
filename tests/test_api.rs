@@ -162,8 +162,6 @@ fn create_client<'a>(
     let mut rng = rand::thread_rng();
     let rand_num: i64 = rng.gen_range(2_000_000, 10_000_000);
 
-    let password_hash = b2b_hash("derp", 64);
-
     let keypairs = gen_keys();
 
     let email = format!("test{}@aol.com", rand_num);
@@ -918,7 +916,7 @@ fn test_get_client_anonymously() {
 
     assert_eq!(response.status(), reqwest::StatusCode::NOT_FOUND);
 
-    let (this_client, email, srp, keypairs) = create_client(&turnstile_process, &reqwest);
+    let (this_client, _email, _srp, keypairs) = create_client(&turnstile_process, &reqwest);
 
     let mut response = reqwest
         .get(&format!(

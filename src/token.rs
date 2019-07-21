@@ -138,7 +138,7 @@ pub fn decode_sub(token: &str) -> Result<Jwt, TokenError> {
 mod test {
     use super::*;
     #[test]
-    fn token_test() {
+    fn test_token() {
         let jwt_config = config::Jwt {
             iss: "test iss".into(),
             leeway: 300,
