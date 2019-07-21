@@ -1,5 +1,6 @@
 use crate::rolodex_client;
 use crate::switchroom_client;
+use crate::token;
 
 use rocket::response::content;
 use rocket_contrib::json::JsonError;
@@ -29,6 +30,19 @@ impl From<std::option::NoneError> for ResponseError {
 
 impl From<serde_json::error::Error> for ResponseError {
     fn from(err: serde_json::error::Error) -> Self {
+        ResponseError::BadRequest {
+            response: content::Json(
+                json!({
+                    "message": err.to_string(),
+                })
+                .to_string(),
+            ),
+        }
+    }
+}
+
+impl From<token::TokenError> for ResponseError {
+    fn from(err: token::TokenError) -> Self {
         ResponseError::BadRequest {
             response: content::Json(
                 json!({
@@ -94,6 +108,29 @@ impl From<switchroom_client::SwitchroomError> for ResponseError {
 
 impl From<JsonError<'_>> for ResponseError {
     fn from(err: JsonError) -> Self {
+        match err {
+            JsonError::Io(error) => ResponseError::BadRequest {
+                response: content::Json(
+                    json!({
+                        "message": error.to_string(),
+                    })
+                    .to_string(),
+                ),
+            },
+            JsonError::Parse(_raw, error) => ResponseError::BadRequest {
+                response: content::Json(
+                    json!({
+                        "message": error.to_string(),
+                    })
+                    .to_string(),
+                ),
+            },
+        }
+    }
+}
+
+impl From<&JsonError<'_>> for ResponseError {
+    fn from(err: &JsonError) -> Self {
         match err {
             JsonError::Io(error) => ResponseError::BadRequest {
                 response: content::Json(

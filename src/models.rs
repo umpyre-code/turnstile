@@ -1,14 +1,33 @@
 #[derive(Debug, Deserialize)]
-pub struct AuthRequest {
-    pub client_id: String,
-    pub password_hash: String,
+pub struct AuthHandshakeRequest {
+    pub a_pub: String,
+    pub email: String,
 }
 
 #[derive(Debug, Serialize)]
-#[serde(rename_all = "snake_case")]
-pub struct AuthResponse {
-    pub client_id: String,
+pub struct AuthHandshakeResponse {
+    pub b_pub: String,
+    pub salt: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct AuthVerifyRequest {
+    pub a_pub: String,
+    pub client_proof: String,
+    pub email: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct Jwt {
     pub token: String,
+    pub secret: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct AuthVerifyResponse {
+    pub client_id: String,
+    pub server_proof: String,
+    pub jwt: Jwt,
 }
 
 #[derive(Debug, Deserialize)]
@@ -22,7 +41,8 @@ pub struct NewClientRequest {
     pub box_public_key: String,
     pub email: String,
     pub full_name: String,
-    pub password_hash: String,
+    pub password_verifier: String,
+    pub password_salt: String,
     pub phone_number: PhoneNumber,
     pub signing_public_key: String,
 }
@@ -31,7 +51,7 @@ pub struct NewClientRequest {
 #[serde(rename_all = "snake_case")]
 pub struct NewClientResponse {
     pub client_id: String,
-    pub token: String,
+    pub jwt: Jwt,
 }
 
 #[derive(Debug, Serialize)]
@@ -50,7 +70,8 @@ pub struct UpdateClientRequest {
     pub box_public_key: String,
     pub email: Option<String>,
     pub full_name: String,
-    pub password_hash: Option<String>,
+    pub password_verifier: Option<String>,
+    pub password_salt: Option<String>,
     pub phone_number: Option<PhoneNumber>,
     pub signing_public_key: String,
     pub handle: Option<String>,

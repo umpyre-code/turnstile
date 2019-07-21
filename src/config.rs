@@ -33,8 +33,7 @@ pub struct GrpcService {
 #[derive(Debug, Deserialize)]
 pub struct Jwt {
     pub iss: String,
-    pub jwt_secret: String,
-    pub encryption_secret: String,
+    pub leeway: i64,
 }
 
 #[derive(Debug, Deserialize)]

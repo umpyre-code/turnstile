@@ -16,7 +16,9 @@ extern crate yansi;
 extern crate log;
 #[macro_use]
 extern crate failure;
+extern crate rand;
 extern crate time;
+extern crate uuid;
 
 mod auth;
 mod catchers;
@@ -113,8 +115,10 @@ fn main() -> Result<(), std::io::Error> {
                 routes::get_client,
                 routes::get_messages,
                 routes::get_ping,
-                routes::post_client_authenticate_temporarily,
-                routes::post_client_authenticate,
+                routes::post_client_auth_handshake_temporarily,
+                routes::post_client_auth_handshake,
+                routes::post_client_auth_verify_temporarily,
+                routes::post_client_auth_verify,
                 routes::post_client,
                 routes::post_message,
                 routes::put_client,

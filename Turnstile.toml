@@ -18,11 +18,7 @@ port = 10012
 
 [jwt]
 iss = "Umpyre"
-exp = 10000000000
-jwt_secret = "secretsecretsecret"
-# To generate:
-#   $ openssl rand -base64 32
-encryption_secret = "6BGlVqPAQH2/RFNSGrmGdbiFVt/lWHVfyXX5cSyFmKc="
+leeway = 300
 
 [metrics]
 bind_to_address = "127.0.0.1:5000"

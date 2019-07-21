@@ -1,6 +1,6 @@
+use crate::auth;
 use crate::config;
 use crate::fairings::{RedisReader, RedisWriter};
-use crate::token;
 use rocket::http::Status;
 use rocket::Outcome;
 
@@ -12,26 +12,16 @@ fn get_auth_client<'a, 'r, C: MakeClient + Send + Sync + Clone + 'static>(
     token_name: &str,
     request: &'a rocket::request::Request<'r>,
 ) -> rocket::request::Outcome<C, ()> {
-    use rocket_contrib::databases::redis::Commands;
-
     // Store the client object in local request cache to avoid multiple lookups
     let client = request.local_cache(|| {
         let redis_reader = request.guard::<RedisReader>().unwrap();
-        let redis = &*redis_reader;
 
         request
             .headers()
             .get_one(token_name) // API key comes from headers
             .map(std::string::ToString::to_string)
-            .and_then(|token: String| match token::decode_into_sub(&token) {
-                Ok(client_id) => Some((token, client_id)),
-                Err(_) => None,
-            })
-            .and_then(|(token, client_id)| {
-                let is_member: bool = redis
-                    .sismember(&format!("token:{}", client_id), token)
-                    .unwrap();
-                if is_member {
+            .and_then(|token: String| {
+                if let Ok(client_id) = auth::verify_auth_token_get_sub(&*redis_reader, &token) {
                     Some(C::make_client(client_id))
                 } else {
                     None
@@ -62,7 +52,7 @@ impl<'a, 'r> rocket::request::FromRequest<'a, 'r> for Client {
     fn from_request(
         request: &'a rocket::request::Request<'r>,
     ) -> rocket::request::Outcome<Client, Self::Error> {
-        get_auth_client("X-UMPYRE-APIKEY", request)
+        get_auth_client("X-UMPYRE-TOKEN", request)
     }
 }
 
@@ -83,7 +73,7 @@ impl<'a, 'r> rocket::request::FromRequest<'a, 'r> for TempClient {
     fn from_request(
         request: &'a rocket::request::Request<'r>,
     ) -> rocket::request::Outcome<TempClient, Self::Error> {
-        get_auth_client("X-UMPYRE-APIKEY-TEMP", request)
+        get_auth_client("X-UMPYRE-TOKEN-TEMP", request)
     }
 }
 

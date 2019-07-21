@@ -5,10 +5,14 @@ extern crate reqwest;
 use std::sync::atomic::{AtomicI32, Ordering};
 #[macro_use]
 extern crate serde_derive;
+extern crate sha3;
 extern crate sodiumoxide;
+extern crate srp;
 
 #[macro_use]
 extern crate serde_json;
+
+use data_encoding::BASE64_NOPAD;
 
 struct Turnstile {
     child: std::process::Child,
@@ -68,7 +72,6 @@ impl Turnstile {
 }
 
 fn b2b_hash(s: &str, digest_size: usize) -> String {
-    use data_encoding::BASE64_NOPAD;
     use sodiumoxide::crypto::generichash;
     let mut hasher = generichash::State::new(digest_size, None).unwrap();
     hasher.update(s.as_bytes()).unwrap();
@@ -84,7 +87,6 @@ struct KeyPairs {
 }
 
 fn gen_keys() -> KeyPairs {
-    use data_encoding::BASE64_NOPAD;
     use sodiumoxide::crypto::box_;
     use sodiumoxide::crypto::sign;
     let (spk, ssk) = sign::gen_keypair();
@@ -98,7 +100,6 @@ fn gen_keys() -> KeyPairs {
 }
 
 fn encrypt_body(keypairs: &KeyPairs, body: &str) -> (String, String) {
-    use data_encoding::BASE64_NOPAD;
     use sodiumoxide::crypto::box_;
 
     let theirpk = box_::PublicKey::from_slice(
@@ -124,7 +125,6 @@ fn encrypt_body(keypairs: &KeyPairs, body: &str) -> (String, String) {
 }
 
 fn decrypt_body(keypairs: &KeyPairs, body: &str, nonce: &str) -> String {
-    use data_encoding::BASE64_NOPAD;
     use sodiumoxide::crypto::box_;
 
     let ourpk = box_::PublicKey::from_slice(
@@ -153,10 +153,10 @@ fn decrypt_body(keypairs: &KeyPairs, body: &str, nonce: &str) -> String {
     .unwrap()
 }
 
-fn create_client(
+fn create_client<'a>(
     turnstile_process: &Turnstile,
     reqwest: &reqwest::Client,
-) -> (AddClient, String, KeyPairs) {
+) -> (AddClient, String, Srp<'a>, KeyPairs) {
     use rand::Rng;
 
     let mut rng = rand::thread_rng();
@@ -166,10 +166,16 @@ fn create_client(
 
     let keypairs = gen_keys();
 
+    let email = format!("test{}@aol.com", rand_num);
+    let password = "password";
+    let srp = make_srp_client(&email, password);
+    let password_verifier = srp.client.get_password_verifier(&srp.private_key);
+
     let body = json!({
         "full_name": format!("herp derp {}", rand_num),
-        "email": format!("test{}@aol.com", rand_num),
-        "password_hash": password_hash,
+        "email": email.clone(),
+        "password_verifier": BASE64_NOPAD.encode(&password_verifier),
+        "password_salt": BASE64_NOPAD.encode(&srp.salt),
         "phone_number": {"country_code":"US","national_number":format!("510{}", rand_num)},
         "box_public_key": keypairs.box_public_key.clone(),
         "signing_public_key": keypairs.signing_public_key.clone(),
@@ -182,7 +188,7 @@ fn create_client(
         .unwrap();
 
     let add_client: AddClient = response.json().unwrap();
-    (add_client, password_hash, keypairs)
+    (add_client, email, srp, keypairs)
 }
 
 #[test]
@@ -198,9 +204,40 @@ fn test_ping() {
 }
 
 #[derive(Deserialize, Debug)]
+struct Jwt {
+    token: String,
+    secret: String,
+}
+
+#[derive(Deserialize, Debug)]
 struct AddClient {
     client_id: String,
-    token: String,
+    jwt: Jwt,
+}
+
+struct Srp<'a> {
+    client: srp::client::SrpClient<'a, sha3::Sha3_512>,
+    salt: Vec<u8>,
+    private_key: Vec<u8>,
+}
+
+fn make_srp_client<'a>(email: &str, password: &str) -> Srp<'a> {
+    use rand::RngCore;
+    use sha3::Sha3_512;
+    use srp::client::srp_private_key;
+    use srp::client::SrpClient;
+    use srp::groups::G_2048;
+
+    let mut a = [0u8; 64];
+    rand::thread_rng().fill_bytes(&mut a);
+    let mut salt = [0u8; 64];
+    rand::thread_rng().fill_bytes(&mut salt);
+    Srp {
+        client: SrpClient::<Sha3_512>::new(&a, &G_2048),
+        salt: salt.to_vec(),
+        private_key: srp_private_key::<Sha3_512>(email.as_bytes(), password.as_bytes(), &salt)
+            .to_vec(),
+    }
 }
 
 #[test]
@@ -212,14 +249,20 @@ fn test_add_client() {
     let rand_num: i64 = rng.gen_range(2_000_000, 10_000_000);
 
     let reqwest = reqwest::Client::new();
-    let password_hash = b2b_hash("derp", 64);
+
+    let email = format!("lol{}@aol.com", rand_num);
+    let password = "password";
+    let srp = make_srp_client(&email, password);
+    let password_verifier = srp.client.get_password_verifier(&srp.private_key);
+
     let body = json!({
         "full_name": format!("herp derp {}", rand_num),
-        "email": format!("lol{}@aol.com", rand_num),
-        "password_hash":password_hash,
-        "phone_number":{"country_code":"US","national_number":format!("510{}", rand_num)},
-        "box_public_key":"derp key",
-        "signing_public_key":"derp key",
+        "email": email,
+        "password_verifier": BASE64_NOPAD.encode(&password_verifier),
+        "password_salt": BASE64_NOPAD.encode(&srp.salt),
+        "phone_number": {"country_code":"US","national_number":format!("510{}", rand_num)},
+        "box_public_key": "derp key",
+        "signing_public_key": "derp key",
     });
 
     let mut response = reqwest
@@ -232,13 +275,81 @@ fn test_add_client() {
 
     assert_eq!(response.status().is_success(), true);
     assert_eq!(add_client.client_id.len(), 32);
-    assert_eq!(!add_client.token.is_empty(), true);
+    assert_eq!(!add_client.jwt.token.is_empty(), true);
 }
 
 #[derive(Deserialize, Debug)]
-struct Authenticate {
+struct AuthHandshake {
+    b_pub: String,
+}
+
+#[derive(Deserialize, Debug)]
+struct AuthVerify {
     client_id: String,
-    token: String,
+    server_proof: String,
+    jwt: Jwt,
+}
+
+fn handle_auth(
+    email: &str,
+    client: &reqwest::Client,
+    srp: Srp,
+    url: &str,
+    add_client: &AddClient,
+    temporary: bool,
+) -> AuthVerify {
+    let temporary = if temporary { "-temporarily" } else { "" };
+    // Now we have a valid client, test auth with the existing (current) client
+    let body = json!({
+        "email": email,
+        "a_pub": BASE64_NOPAD.encode(&srp.client.get_a_pub()),
+    });
+    let mut response = client
+        .post(&format!("{}/client/auth{}/handshake", url, temporary))
+        .json(&body)
+        .send()
+        .unwrap();
+
+    let auth_handshake: AuthHandshake = response.json().unwrap();
+
+    assert_eq!(response.status().is_success(), true);
+    assert_eq!(auth_handshake.b_pub.is_empty(), false);
+
+    let a_pub = srp.client.get_a_pub().clone();
+    let srp_client2 = srp
+        .client
+        .process_reply(
+            &srp.private_key,
+            &BASE64_NOPAD
+                .decode(auth_handshake.b_pub.as_bytes())
+                .unwrap(),
+        )
+        .unwrap();
+
+    let body = json!({
+        "email": email,
+        "a_pub": BASE64_NOPAD.encode(&a_pub),
+        "client_proof": BASE64_NOPAD.encode(&srp_client2.get_proof()),
+    });
+    let mut response = client
+        .post(&format!("{}/client/auth{}/verify", url, temporary))
+        .json(&body)
+        .send()
+        .unwrap();
+
+    let auth_verify: AuthVerify = response.json().unwrap();
+    assert_eq!(auth_verify.client_id, add_client.client_id);
+    assert_eq!(auth_verify.server_proof.is_empty(), false);
+    assert_eq!(auth_verify.jwt.token.is_empty(), false);
+    srp_client2
+        .verify_server(
+            &BASE64_NOPAD
+                .decode(auth_verify.server_proof.as_bytes())
+                .unwrap(),
+        )
+        .unwrap();
+
+    auth_verify
 }
 
 #[test]
@@ -249,12 +360,18 @@ fn test_authenticate() {
     let mut rng = rand::thread_rng();
     let rand_num: i64 = rng.gen_range(2_000_000, 10_000_000);
 
+    let email = format!("lol{}@aol.com", rand_num);
+    let password = "password";
+    let srp = make_srp_client(&email, password);
+    let password_verifier = srp.client.get_password_verifier(&srp.private_key);
+
     let client = reqwest::Client::new();
-    let password_hash = b2b_hash("derp", 64);
+
     let body = json!({
         "full_name": format!("herp derp {}", rand_num),
-        "email": format!("lol{}@aol.com", rand_num),
-        "password_hash":password_hash.clone(),
+        "email": email.clone(),
+        "password_verifier": BASE64_NOPAD.encode(&password_verifier),
+        "password_salt": BASE64_NOPAD.encode(&srp.salt),
         "phone_number":{"country_code":"US","national_number":format!("510{}", rand_num)},
         "box_public_key":"derp key",
         "signing_public_key":"derp key",
@@ -270,25 +387,17 @@ fn test_authenticate() {
 
     assert_eq!(response.status().is_success(), true);
     assert_eq!(add_client.client_id.len(), 32);
-    assert_eq!(!add_client.token.is_empty(), true);
+    assert_eq!(!add_client.jwt.token.is_empty(), true);
 
     // Now we have a valid client, test auth with the existing (current) client
-    let body = json!({
-        "client_id": add_client.client_id,
-        "password_hash":password_hash,
-    });
-    let mut response = client
-        .post(&format!("{}/client/authenticate", turnstile_process.url))
-        .json(&body)
-        .send()
-        .unwrap();
-
-    let authenticate: Authenticate = response.json().unwrap();
-
-    assert_eq!(response.status().is_success(), true);
-    assert_eq!(authenticate.client_id, add_client.client_id);
-    assert_eq!(!authenticate.token.is_empty(), true);
-    assert_ne!(authenticate.token, add_client.token);
+    let _auth_verify = handle_auth(
+        &email,
+        &client,
+        srp,
+        &turnstile_process.url,
+        &add_client,
+        false,
+    );
 }
 
 #[derive(Deserialize, Debug)]
@@ -313,14 +422,14 @@ fn test_get_client() {
 
     assert_eq!(response.status(), reqwest::StatusCode::NOT_FOUND);
 
-    let (this_client, _password_hash, _keypairs) = create_client(&turnstile_process, &reqwest);
+    let (this_client, _email, _srp, _keypairs) = create_client(&turnstile_process, &reqwest);
 
     let mut response = reqwest
         .get(&format!(
             "{}/client/{}",
             turnstile_process.url, this_client.client_id
         ))
-        .header("X-UMPYRE-APIKEY", this_client.token)
+        .header("X-UMPYRE-TOKEN", this_client.jwt.token)
         .send()
         .unwrap();
 
@@ -343,14 +452,14 @@ fn test_update_client() {
 
     assert_eq!(response.status(), reqwest::StatusCode::NOT_FOUND);
 
-    let (this_client, _password_hash, keypairs) = create_client(&turnstile_process, &reqwest);
+    let (this_client, _email, _srp, keypairs) = create_client(&turnstile_process, &reqwest);
 
     let mut response = reqwest
         .get(&format!(
             "{}/client/{}",
             turnstile_process.url, this_client.client_id
         ))
-        .header("X-UMPYRE-APIKEY", this_client.token.clone())
+        .header("X-UMPYRE-TOKEN", this_client.jwt.token.clone())
         .send()
         .unwrap();
 
@@ -375,7 +484,7 @@ fn test_update_client() {
             "{}/client/{}",
             turnstile_process.url, this_client.client_id
         ))
-        .header("X-UMPYRE-APIKEY", this_client.token.clone())
+        .header("X-UMPYRE-TOKEN", this_client.jwt.token.clone())
         .json(&body)
         .send()
         .unwrap();
@@ -405,14 +514,14 @@ fn test_update_client_password() {
 
     assert_eq!(response.status(), reqwest::StatusCode::NOT_FOUND);
 
-    let (this_client, password_hash, _keypairs) = create_client(&turnstile_process, &reqwest);
+    let (this_client, email, srp, _keypairs) = create_client(&turnstile_process, &reqwest);
 
     let mut response = reqwest
         .get(&format!(
             "{}/client/{}",
             turnstile_process.url, this_client.client_id
         ))
-        .header("X-UMPYRE-APIKEY", this_client.token.clone())
+        .header("X-UMPYRE-TOKEN", this_client.jwt.token.clone())
         .send()
         .unwrap();
 
@@ -422,7 +531,7 @@ fn test_update_client_password() {
     assert_eq!(client.client_id, this_client.client_id);
     assert_eq!(client.full_name.starts_with("herp derp "), true);
 
-    let new_pw = b2b_hash("helloplease", 64);
+    let new_pw = "AAAA";
 
     // Create a client update message
     let new_body = json!({
@@ -430,7 +539,8 @@ fn test_update_client_password() {
         "full_name": "arnold",
         "box_public_key": "lyle",
         "signing_public_key": "lyle",
-        "password_hash": new_pw,
+        "password_verifier": new_pw,
+        "password_salt": new_pw,
     });
 
     // Test without a temporary token. Should return 403.
@@ -439,7 +549,7 @@ fn test_update_client_password() {
             "{}/client/{}",
             turnstile_process.url, this_client.client_id
         ))
-        .header("X-UMPYRE-APIKEY", this_client.token.clone())
+        .header("X-UMPYRE-TOKEN", this_client.jwt.token.clone())
         .json(&new_body)
         .send()
         .unwrap();
@@ -447,25 +557,14 @@ fn test_update_client_password() {
     assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
 
     // Obtain a temporary token
-    let body = json!({
-        "client_id": client.client_id,
-        "password_hash": password_hash,
-    });
-    let mut response = reqwest
-        .post(&format!(
-            "{}/client/authenticate-temporarily",
-            turnstile_process.url
-        ))
-        .json(&body)
-        .send()
-        .unwrap();
-
-    let authenticate: Authenticate = response.json().unwrap();
-
-    assert_eq!(response.status().is_success(), true);
-    assert_eq!(authenticate.client_id, this_client.client_id);
-    assert_eq!(!authenticate.token.is_empty(), true);
-    assert_ne!(authenticate.token, this_client.token);
+    let auth_verify = handle_auth(
+        &email,
+        &reqwest,
+        srp,
+        &turnstile_process.url,
+        &this_client,
+        true,
+    );
 
     // Test with a temporary token
     let mut response = reqwest
@@ -473,8 +572,8 @@ fn test_update_client_password() {
             "{}/client/{}",
             turnstile_process.url, this_client.client_id
         ))
-        .header("X-UMPYRE-APIKEY", this_client.token.clone())
-        .header("X-UMPYRE-APIKEY-TEMP", authenticate.token.clone())
+        .header("X-UMPYRE-TOKEN", this_client.jwt.token.clone())
+        .header("X-UMPYRE-TOKEN-TEMP", auth_verify.jwt.token.clone())
         .json(&new_body)
         .send()
         .unwrap();
@@ -506,14 +605,14 @@ fn test_update_client_email() {
 
     assert_eq!(response.status(), reqwest::StatusCode::NOT_FOUND);
 
-    let (this_client, password_hash, _keypairs) = create_client(&turnstile_process, &reqwest);
+    let (this_client, email, srp, _keypairs) = create_client(&turnstile_process, &reqwest);
 
     let mut response = reqwest
         .get(&format!(
             "{}/client/{}",
             turnstile_process.url, this_client.client_id
         ))
-        .header("X-UMPYRE-APIKEY", this_client.token.clone())
+        .header("X-UMPYRE-TOKEN", this_client.jwt.token.clone())
         .send()
         .unwrap();
 
@@ -538,7 +637,7 @@ fn test_update_client_email() {
             "{}/client/{}",
             turnstile_process.url, this_client.client_id
         ))
-        .header("X-UMPYRE-APIKEY", this_client.token.clone())
+        .header("X-UMPYRE-TOKEN", this_client.jwt.token.clone())
         .json(&new_body)
         .send()
         .unwrap();
@@ -546,25 +645,14 @@ fn test_update_client_email() {
     assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
 
     // Obtain a temporary token
-    let body = json!({
-        "client_id": client.client_id,
-        "password_hash": password_hash,
-    });
-    let mut response = reqwest
-        .post(&format!(
-            "{}/client/authenticate-temporarily",
-            turnstile_process.url
-        ))
-        .json(&body)
-        .send()
-        .unwrap();
-
-    let authenticate: Authenticate = response.json().unwrap();
-
-    assert_eq!(response.status().is_success(), true);
-    assert_eq!(authenticate.client_id, this_client.client_id);
-    assert_eq!(!authenticate.token.is_empty(), true);
-    assert_ne!(authenticate.token, this_client.token);
+    let auth_verify = handle_auth(
+        &email,
+        &reqwest,
+        srp,
+        &turnstile_process.url,
+        &this_client,
+        true,
+    );
 
     // Test with a temporary token
     let mut response = reqwest
@@ -572,8 +660,8 @@ fn test_update_client_email() {
             "{}/client/{}",
             turnstile_process.url, this_client.client_id
         ))
-        .header("X-UMPYRE-APIKEY", this_client.token.clone())
-        .header("X-UMPYRE-APIKEY-TEMP", authenticate.token.clone())
+        .header("X-UMPYRE-TOKEN", this_client.jwt.token.clone())
+        .header("X-UMPYRE-TOKEN-TEMP", auth_verify.jwt.token.clone())
         .json(&new_body)
         .send()
         .unwrap();
@@ -605,14 +693,14 @@ fn test_update_client_phone_number() {
 
     assert_eq!(response.status(), reqwest::StatusCode::NOT_FOUND);
 
-    let (this_client, password_hash, _keypairs) = create_client(&turnstile_process, &reqwest);
+    let (this_client, email, srp, _keypairs) = create_client(&turnstile_process, &reqwest);
 
     let mut response = reqwest
         .get(&format!(
             "{}/client/{}",
             turnstile_process.url, this_client.client_id
         ))
-        .header("X-UMPYRE-APIKEY", this_client.token.clone())
+        .header("X-UMPYRE-TOKEN", this_client.jwt.token.clone())
         .send()
         .unwrap();
 
@@ -637,7 +725,7 @@ fn test_update_client_phone_number() {
             "{}/client/{}",
             turnstile_process.url, this_client.client_id
         ))
-        .header("X-UMPYRE-APIKEY", this_client.token.clone())
+        .header("X-UMPYRE-TOKEN", this_client.jwt.token.clone())
         .json(&new_body)
         .send()
         .unwrap();
@@ -645,25 +733,14 @@ fn test_update_client_phone_number() {
     assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
 
     // Obtain a temporary token
-    let body = json!({
-        "client_id": client.client_id,
-        "password_hash": password_hash,
-    });
-    let mut response = reqwest
-        .post(&format!(
-            "{}/client/authenticate-temporarily",
-            turnstile_process.url
-        ))
-        .json(&body)
-        .send()
-        .unwrap();
-
-    let authenticate: Authenticate = response.json().unwrap();
-
-    assert_eq!(response.status().is_success(), true);
-    assert_eq!(authenticate.client_id, this_client.client_id);
-    assert_eq!(!authenticate.token.is_empty(), true);
-    assert_ne!(authenticate.token, this_client.token);
+    let auth_verify = handle_auth(
+        &email,
+        &reqwest,
+        srp,
+        &turnstile_process.url,
+        &this_client,
+        true,
+    );
 
     // Test with a temporary token
     let mut response = reqwest
@@ -671,8 +748,8 @@ fn test_update_client_phone_number() {
             "{}/client/{}",
             turnstile_process.url, this_client.client_id
         ))
-        .header("X-UMPYRE-APIKEY", this_client.token.clone())
-        .header("X-UMPYRE-APIKEY-TEMP", authenticate.token.clone())
+        .header("X-UMPYRE-TOKEN", this_client.jwt.token.clone())
+        .header("X-UMPYRE-TOKEN-TEMP", auth_verify.jwt.token.clone())
         .json(&new_body)
         .send()
         .unwrap();
@@ -725,7 +802,6 @@ pub struct SendMessage {
 
 #[test]
 fn test_send_message() {
-    use data_encoding::BASE64_NOPAD;
     use sodiumoxide::crypto::sign;
 
     let turnstile_process = Turnstile::new().wait_for_ping();
@@ -738,14 +814,14 @@ fn test_send_message() {
 
     assert_eq!(response.status(), reqwest::StatusCode::NOT_FOUND);
 
-    let (this_client, _password_hash, keypairs) = create_client(&turnstile_process, &reqwest);
+    let (this_client, _email, _srp, keypairs) = create_client(&turnstile_process, &reqwest);
 
     let mut response = reqwest
         .get(&format!(
             "{}/client/{}",
             turnstile_process.url, this_client.client_id
         ))
-        .header("X-UMPYRE-APIKEY", this_client.token.clone())
+        .header("X-UMPYRE-TOKEN", this_client.jwt.token.clone())
         .send()
         .unwrap();
 
@@ -802,7 +878,7 @@ fn test_send_message() {
     // Send the message
     let mut response = reqwest
         .post(&format!("{}/messages", turnstile_process.url))
-        .header("X-UMPYRE-APIKEY", this_client.token.clone())
+        .header("X-UMPYRE-TOKEN", this_client.jwt.token.clone())
         .json(&message)
         .send()
         .unwrap();
@@ -817,7 +893,7 @@ fn test_send_message() {
     // Check that the message is now in inbox
     let mut response = reqwest
         .get(&format!("{}/messages", turnstile_process.url))
-        .header("X-UMPYRE-APIKEY", this_client.token.clone())
+        .header("X-UMPYRE-TOKEN", this_client.jwt.token.clone())
         .send()
         .unwrap();
 
@@ -832,9 +908,6 @@ fn test_send_message() {
 
 #[test]
 fn test_get_client_anonymously() {
-    use data_encoding::BASE64_NOPAD;
-    use sodiumoxide::crypto::sign;
-
     let turnstile_process = Turnstile::new().wait_for_ping();
     let reqwest = reqwest::ClientBuilder::new().build().unwrap();
 
@@ -845,14 +918,14 @@ fn test_get_client_anonymously() {
 
     assert_eq!(response.status(), reqwest::StatusCode::NOT_FOUND);
 
-    let (this_client, _password_hash, keypairs) = create_client(&turnstile_process, &reqwest);
+    let (this_client, email, srp, keypairs) = create_client(&turnstile_process, &reqwest);
 
     let mut response = reqwest
         .get(&format!(
             "{}/client/{}",
             turnstile_process.url, this_client.client_id
         ))
-        .header("X-UMPYRE-APIKEY", this_client.token.clone())
+        .header("X-UMPYRE-TOKEN", this_client.jwt.token.clone())
         .send()
         .unwrap();
 
@@ -877,7 +950,7 @@ fn test_get_client_anonymously() {
             "{}/client/{}",
             turnstile_process.url, this_client.client_id
         ))
-        .header("X-UMPYRE-APIKEY", this_client.token.clone())
+        .header("X-UMPYRE-TOKEN", this_client.jwt.token.clone())
         .json(&body)
         .send()
         .unwrap();

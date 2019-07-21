@@ -139,17 +139,35 @@ impl Client {
     }
 
     #[instrument(INFO)]
-    pub fn authenticate(
+    pub fn auth_handshake(
         &self,
-        auth_request: rolodex_grpc::proto::AuthRequest,
-    ) -> Result<rolodex_grpc::proto::AuthResponse, RolodexError> {
+        auth_request: rolodex_grpc::proto::AuthHandshakeRequest,
+    ) -> Result<rolodex_grpc::proto::AuthHandshakeResponse, RolodexError> {
         let mut runtime = tokio::runtime::current_thread::Runtime::new()?;
 
         runtime.block_on(
             self.make_service()
                 .and_then(move |mut client: RpcClient| {
                     client
-                        .authenticate(Request::new(auth_request))
+                        .auth_handshake(Request::new(auth_request))
+                        .map_err(RolodexError::from)
+                })
+                .map(|response| response.get_ref().clone()),
+        )
+    }
+
+    #[instrument(INFO)]
+    pub fn auth_verify(
+        &self,
+        auth_request: rolodex_grpc::proto::AuthVerifyRequest,
+    ) -> Result<rolodex_grpc::proto::AuthVerifyResponse, RolodexError> {
+        let mut runtime = tokio::runtime::current_thread::Runtime::new()?;
+
+        runtime.block_on(
+            self.make_service()
+                .and_then(move |mut client: RpcClient| {
+                    client
+                        .auth_verify(Request::new(auth_request))
                         .map_err(RolodexError::from)
                 })
                 .map(|response| response.get_ref().clone()),

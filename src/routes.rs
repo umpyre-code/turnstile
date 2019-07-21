@@ -8,7 +8,6 @@ use crate::rolodex_client;
 use crate::switchroom_client;
 use crate::utils;
 
-use rocket::http::Cookies;
 use rocket::http::RawStr;
 use rocket::response::content;
 use rocket_contrib::json::Json;
@@ -16,15 +15,13 @@ use rocket_contrib::json::JsonError;
 
 use crate::responders::Cached;
 
-#[post("/client/authenticate", data = "<auth_request>", format = "json")]
-pub fn post_client_authenticate(
-    _ratelimited: guards::RateLimited,
+fn handle_auth_handshake(
     client_ip: guards::ClientIP,
     geo_headers: Option<guards::GeoHeaders>,
-    cookies: Cookies,
-    redis_writer: fairings::RedisWriter,
-    auth_request: Result<Json<models::AuthRequest>, JsonError>,
-) -> Result<Json<models::AuthResponse>, ResponseError> {
+    auth_request: &Result<Json<models::AuthHandshakeRequest>, JsonError>,
+) -> Result<Json<models::AuthHandshakeResponse>, ResponseError> {
+    use data_encoding::BASE64_NOPAD;
+
     let auth_request = match auth_request {
         Ok(auth_request) => auth_request,
         Err(err) => return Err(err.into()),
@@ -34,53 +31,115 @@ pub fn post_client_authenticate(
 
     let location = utils::make_location(client_ip, geo_headers);
 
-    let response = rolodex_client.authenticate(rolodex_grpc::proto::AuthRequest {
-        client_id: auth_request.client_id.clone(),
-        password_hash: auth_request.password_hash.clone(),
+    let response = rolodex_client.auth_handshake(rolodex_grpc::proto::AuthHandshakeRequest {
+        email: auth_request.email.clone(),
+        a_pub: BASE64_NOPAD.decode(auth_request.a_pub.as_bytes())?.to_vec(),
         location,
     })?;
 
-    let token = auth::handle_auth_token(cookies, redis_writer, &response.client_id)?;
+    Ok(Json(models::AuthHandshakeResponse {
+        salt: BASE64_NOPAD.encode(&response.salt),
+        b_pub: BASE64_NOPAD.encode(&response.b_pub),
+    }))
+}
 
-    Ok(Json(models::AuthResponse {
+fn handle_auth_verify(
+    client_ip: guards::ClientIP,
+    geo_headers: Option<guards::GeoHeaders>,
+    auth_request: &Result<Json<models::AuthVerifyRequest>, JsonError>,
+) -> Result<rolodex_grpc::proto::AuthVerifyResponse, ResponseError> {
+    use data_encoding::BASE64_NOPAD;
+
+    let auth_request = match auth_request {
+        Ok(auth_request) => auth_request,
+        Err(err) => return Err(err.into()),
+    };
+
+    let rolodex_client = rolodex_client::Client::new(&config::CONFIG);
+
+    let location = utils::make_location(client_ip, geo_headers);
+
+    let response = rolodex_client.auth_verify(rolodex_grpc::proto::AuthVerifyRequest {
+        email: auth_request.email.clone(),
+        a_pub: BASE64_NOPAD.decode(auth_request.a_pub.as_bytes())?.to_vec(),
+        client_proof: BASE64_NOPAD
+            .decode(auth_request.client_proof.as_bytes())?
+            .to_vec(),
+        location,
+    })?;
+
+    Ok(response)
+}
+
+#[post("/client/auth/handshake", data = "<auth_request>", format = "json")]
+pub fn post_client_auth_handshake(
+    _ratelimited: guards::RateLimited,
+    client_ip: guards::ClientIP,
+    geo_headers: Option<guards::GeoHeaders>,
+    _redis_writer: fairings::RedisWriter,
+    auth_request: Result<Json<models::AuthHandshakeRequest>, JsonError>,
+) -> Result<Json<models::AuthHandshakeResponse>, ResponseError> {
+    handle_auth_handshake(client_ip, geo_headers, &auth_request)
+}
+
+#[post("/client/auth/verify", data = "<auth_request>", format = "json")]
+pub fn post_client_auth_verify(
+    _ratelimited: guards::RateLimited,
+    client_ip: guards::ClientIP,
+    geo_headers: Option<guards::GeoHeaders>,
+    redis_writer: fairings::RedisWriter,
+    auth_request: Result<Json<models::AuthVerifyRequest>, JsonError>,
+) -> Result<Json<models::AuthVerifyResponse>, ResponseError> {
+    use data_encoding::BASE64_NOPAD;
+
+    let response = handle_auth_verify(client_ip, geo_headers, &auth_request)?;
+
+    let jwt = auth::generate_auth_token(&*redis_writer, &response.client_id)?;
+
+    Ok(Json(models::AuthVerifyResponse {
         client_id: response.client_id,
-        token,
+        server_proof: BASE64_NOPAD.encode(&response.server_proof),
+        jwt,
     }))
 }
 
 #[post(
-    "/client/authenticate-temporarily",
+    "/client/auth-temporarily/handshake",
     data = "<auth_request>",
     format = "json"
 )]
-pub fn post_client_authenticate_temporarily(
+pub fn post_client_auth_handshake_temporarily(
     _ratelimited: guards::RateLimited,
     client_ip: guards::ClientIP,
     geo_headers: Option<guards::GeoHeaders>,
-    cookies: Cookies,
+    _redis_writer: fairings::RedisWriter,
+    auth_request: Result<Json<models::AuthHandshakeRequest>, JsonError>,
+) -> Result<Json<models::AuthHandshakeResponse>, ResponseError> {
+    handle_auth_handshake(client_ip, geo_headers, &auth_request)
+}
+
+#[post(
+    "/client/auth-temporarily/verify",
+    data = "<auth_request>",
+    format = "json"
+)]
+pub fn post_client_auth_verify_temporarily(
+    _ratelimited: guards::RateLimited,
+    client_ip: guards::ClientIP,
+    geo_headers: Option<guards::GeoHeaders>,
     redis_writer: fairings::RedisWriter,
-    auth_request: Result<Json<models::AuthRequest>, JsonError>,
-) -> Result<Json<models::AuthResponse>, ResponseError> {
-    let auth_request = match auth_request {
-        Ok(auth_request) => auth_request,
-        Err(err) => return Err(err.into()),
-    };
+    auth_request: Result<Json<models::AuthVerifyRequest>, JsonError>,
+) -> Result<Json<models::AuthVerifyResponse>, ResponseError> {
+    use data_encoding::BASE64_NOPAD;
 
-    let rolodex_client = rolodex_client::Client::new(&config::CONFIG);
+    let response = handle_auth_verify(client_ip, geo_headers, &auth_request)?;
 
-    let location = utils::make_location(client_ip, geo_headers);
+    let jwt = auth::generate_auth_temporary_token(&*redis_writer, &response.client_id)?;
 
-    let response = rolodex_client.authenticate(rolodex_grpc::proto::AuthRequest {
-        client_id: auth_request.client_id.clone(),
-        password_hash: auth_request.password_hash.clone(),
-        location,
-    })?;
-
-    let token = auth::handle_auth_temporary_token(cookies, redis_writer, &response.client_id)?;
-
-    Ok(Json(models::AuthResponse {
+    Ok(Json(models::AuthVerifyResponse {
         client_id: response.client_id,
-        token,
+        server_proof: BASE64_NOPAD.encode(&response.server_proof),
+        jwt,
     }))
 }
 
@@ -89,10 +148,11 @@ pub fn post_client(
     _ratelimited: guards::RateLimited,
     client_ip: guards::ClientIP,
     geo_headers: Option<guards::GeoHeaders>,
-    cookies: Cookies,
     redis_writer: fairings::RedisWriter,
     new_client_request: Result<Json<models::NewClientRequest>, JsonError>,
 ) -> Result<Json<models::NewClientResponse>, ResponseError> {
+    use data_encoding::BASE64_NOPAD;
+
     let new_client_request = match new_client_request {
         Ok(new_client_request) => new_client_request,
         Err(err) => return Err(err.into()),
@@ -104,7 +164,12 @@ pub fn post_client(
 
     let response = rolodex_client.add_client(rolodex_grpc::proto::NewClientRequest {
         full_name: new_client_request.full_name.clone(),
-        password_hash: new_client_request.password_hash.clone(),
+        password_verifier: BASE64_NOPAD
+            .decode(new_client_request.password_verifier.as_bytes())?
+            .to_vec(),
+        password_salt: BASE64_NOPAD
+            .decode(new_client_request.password_salt.as_bytes())?
+            .to_vec(),
         email: new_client_request.email.clone(),
         phone_number: Some(rolodex_grpc::proto::PhoneNumber {
             country_code: new_client_request.phone_number.country_code.clone(),
@@ -115,11 +180,11 @@ pub fn post_client(
         location,
     })?;
 
-    let token = auth::handle_auth_token(cookies, redis_writer, &response.client_id)?;
+    let jwt = auth::generate_auth_token(&*redis_writer, &response.client_id)?;
 
     Ok(Json(models::NewClientResponse {
         client_id: response.client_id,
-        token,
+        jwt,
     }))
 }
 
@@ -268,7 +333,8 @@ pub fn put_client(
 
     let location = utils::make_location(client_ip, geo_headers);
 
-    if update_client_request.password_hash.is_some()
+    if (update_client_request.password_salt.is_some()
+        && update_client_request.password_verifier.is_some())
         || update_client_request.email.is_some()
         || update_client_request.phone_number.is_some()
     {
@@ -285,17 +351,24 @@ pub fn put_client(
             });
         }
 
-        if let Some(password_hash) = &update_client_request.password_hash {
-            // Update password hash
-            let response = rolodex_client.update_client_password(
-                rolodex_grpc::proto::UpdateClientPasswordRequest {
-                    client_id: client_id.clone(),
-                    password_hash: password_hash.clone(),
-                    location: location.clone(),
-                },
-            )?;
+        if let Some(password_salt) = &update_client_request.password_salt {
+            if let Some(password_verifier) = &update_client_request.password_verifier {
+                use data_encoding::BASE64_NOPAD;
 
-            check_result(response.result)?;
+                // Update password
+                let response = rolodex_client.update_client_password(
+                    rolodex_grpc::proto::UpdateClientPasswordRequest {
+                        client_id: client_id.clone(),
+                        password_verifier: BASE64_NOPAD
+                            .decode(password_verifier.as_bytes())?
+                            .to_vec(),
+                        password_salt: BASE64_NOPAD.decode(password_salt.as_bytes())?.to_vec(),
+                        location: location.clone(),
+                    },
+                )?;
+
+                check_result(response.result)?;
+            }
         }
 
         if let Some(email) = &update_client_request.email {
