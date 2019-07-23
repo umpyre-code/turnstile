@@ -34,7 +34,7 @@ tower-buffer = "0.1"
 tower-http = { git = "https://github.com/tower-rs/tower-http" }
 tower-hyper = "0.1"
 tower-reconnect = { git = "https://github.com/tower-rs/tower" }
-tower-request-modifier = { git = "https://github.com/tower-rs/tower-http" }
+tower-request-modifier = "0.1"
 uuid = { version = "0.7", features = ["serde", "v4"] }
 webpki = "0.19"
 yansi = "0.5"
