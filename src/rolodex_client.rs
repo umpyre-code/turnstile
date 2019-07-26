@@ -73,6 +73,20 @@ pub struct Client {
     uri: http::Uri,
 }
 
+macro_rules! with_client {
+    ( $svc:expr, $request:path, $payload:expr ) => {
+        tokio::runtime::current_thread::Runtime::new()
+            .unwrap()
+            .block_on(
+                $svc.make_service()
+                    .and_then(move |mut client: RpcClient| {
+                        $request(&mut client, Request::new($payload)).map_err(RolodexError::from)
+                    })
+                    .map(|response| response.get_ref().clone()),
+            )
+    };
+}
+
 impl Client {
     pub fn new(config: &config::Config) -> Self {
         Client {
@@ -107,17 +121,7 @@ impl Client {
         &self,
         new_client_request: rolodex_grpc::proto::NewClientRequest,
     ) -> Result<rolodex_grpc::proto::NewClientResponse, RolodexError> {
-        let mut runtime = tokio::runtime::current_thread::Runtime::new()?;
-
-        runtime.block_on(
-            self.make_service()
-                .and_then(move |mut client: RpcClient| {
-                    client
-                        .add_client(Request::new(new_client_request))
-                        .map_err(RolodexError::from)
-                })
-                .map(|response| response.get_ref().clone()),
-        )
+        with_client!(self, RpcClient::add_client, new_client_request)
     }
 
     #[instrument(INFO)]
@@ -125,17 +129,7 @@ impl Client {
         &self,
         get_client_request: rolodex_grpc::proto::GetClientRequest,
     ) -> Result<rolodex_grpc::proto::GetClientResponse, RolodexError> {
-        let mut runtime = tokio::runtime::current_thread::Runtime::new()?;
-
-        runtime.block_on(
-            self.make_service()
-                .and_then(move |mut client: RpcClient| {
-                    client
-                        .get_client(Request::new(get_client_request))
-                        .map_err(RolodexError::from)
-                })
-                .map(|response| response.get_ref().clone()),
-        )
+        with_client!(self, RpcClient::get_client, get_client_request)
     }
 
     #[instrument(INFO)]
@@ -143,17 +137,7 @@ impl Client {
         &self,
         auth_request: rolodex_grpc::proto::AuthHandshakeRequest,
     ) -> Result<rolodex_grpc::proto::AuthHandshakeResponse, RolodexError> {
-        let mut runtime = tokio::runtime::current_thread::Runtime::new()?;
-
-        runtime.block_on(
-            self.make_service()
-                .and_then(move |mut client: RpcClient| {
-                    client
-                        .auth_handshake(Request::new(auth_request))
-                        .map_err(RolodexError::from)
-                })
-                .map(|response| response.get_ref().clone()),
-        )
+        with_client!(self, RpcClient::auth_handshake, auth_request)
     }
 
     #[instrument(INFO)]
@@ -161,17 +145,7 @@ impl Client {
         &self,
         auth_request: rolodex_grpc::proto::AuthVerifyRequest,
     ) -> Result<rolodex_grpc::proto::AuthVerifyResponse, RolodexError> {
-        let mut runtime = tokio::runtime::current_thread::Runtime::new()?;
-
-        runtime.block_on(
-            self.make_service()
-                .and_then(move |mut client: RpcClient| {
-                    client
-                        .auth_verify(Request::new(auth_request))
-                        .map_err(RolodexError::from)
-                })
-                .map(|response| response.get_ref().clone()),
-        )
+        with_client!(self, RpcClient::auth_verify, auth_request)
     }
 
     #[instrument(INFO)]
@@ -179,17 +153,7 @@ impl Client {
         &self,
         update_request: rolodex_grpc::proto::UpdateClientRequest,
     ) -> Result<rolodex_grpc::proto::UpdateClientResponse, RolodexError> {
-        let mut runtime = tokio::runtime::current_thread::Runtime::new()?;
-
-        runtime.block_on(
-            self.make_service()
-                .and_then(move |mut client: RpcClient| {
-                    client
-                        .update_client(Request::new(update_request))
-                        .map_err(RolodexError::from)
-                })
-                .map(|response| response.get_ref().clone()),
-        )
+        with_client!(self, RpcClient::update_client, update_request)
     }
 
     #[instrument(INFO)]
@@ -197,17 +161,7 @@ impl Client {
         &self,
         update_request: rolodex_grpc::proto::UpdateClientPasswordRequest,
     ) -> Result<rolodex_grpc::proto::UpdateClientPasswordResponse, RolodexError> {
-        let mut runtime = tokio::runtime::current_thread::Runtime::new()?;
-
-        runtime.block_on(
-            self.make_service()
-                .and_then(move |mut client: RpcClient| {
-                    client
-                        .update_client_password(Request::new(update_request))
-                        .map_err(RolodexError::from)
-                })
-                .map(|response| response.get_ref().clone()),
-        )
+        with_client!(self, RpcClient::update_client_password, update_request)
     }
 
     #[instrument(INFO)]
@@ -215,17 +169,7 @@ impl Client {
         &self,
         update_request: rolodex_grpc::proto::UpdateClientEmailRequest,
     ) -> Result<rolodex_grpc::proto::UpdateClientEmailResponse, RolodexError> {
-        let mut runtime = tokio::runtime::current_thread::Runtime::new()?;
-
-        runtime.block_on(
-            self.make_service()
-                .and_then(move |mut client: RpcClient| {
-                    client
-                        .update_client_email(Request::new(update_request))
-                        .map_err(RolodexError::from)
-                })
-                .map(|response| response.get_ref().clone()),
-        )
+        with_client!(self, RpcClient::update_client_email, update_request)
     }
 
     #[instrument(INFO)]
@@ -233,34 +177,6 @@ impl Client {
         &self,
         update_request: rolodex_grpc::proto::UpdateClientPhoneNumberRequest,
     ) -> Result<rolodex_grpc::proto::UpdateClientPhoneNumberResponse, RolodexError> {
-        let mut runtime = tokio::runtime::current_thread::Runtime::new()?;
-
-        runtime.block_on(
-            self.make_service()
-                .and_then(move |mut client: RpcClient| {
-                    client
-                        .update_client_phone_number(Request::new(update_request))
-                        .map_err(RolodexError::from)
-                })
-                .map(|response| response.get_ref().clone()),
-        )
-    }
-
-    #[instrument(INFO)]
-    pub fn check_health(&self) -> Result<rolodex_grpc::proto::HealthCheckResponse, RolodexError> {
-        use rolodex_grpc::proto::*;
-        let mut runtime = tokio::runtime::current_thread::Runtime::new()?;
-
-        runtime.block_on(
-            self.make_service()
-                .and_then(move |mut client: RpcClient| {
-                    client
-                        .check(Request::new(HealthCheckRequest {
-                            service: "rolodex".into(),
-                        }))
-                        .map_err(RolodexError::from)
-                })
-                .map(|response| response.get_ref().clone()),
-        )
+        with_client!(self, RpcClient::update_client_phone_number, update_request)
     }
 }

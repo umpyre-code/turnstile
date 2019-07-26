@@ -73,6 +73,20 @@ pub struct Client {
     uri: http::Uri,
 }
 
+macro_rules! with_client {
+    ( $svc:expr, $request:path, $payload:expr ) => {
+        tokio::runtime::current_thread::Runtime::new()
+            .unwrap()
+            .block_on(
+                $svc.make_service()
+                    .and_then(move |mut client: RpcClient| {
+                        $request(&mut client, Request::new($payload)).map_err(SwitchroomError::from)
+                    })
+                    .map(|response| response.get_ref().clone()),
+            )
+    };
+}
+
 impl Client {
     pub fn new(config: &config::Config) -> Self {
         Client {
@@ -110,17 +124,7 @@ impl Client {
         &self,
         get_messages_request: switchroom_grpc::proto::GetMessagesRequest,
     ) -> Result<switchroom_grpc::proto::GetMessagesResponse, SwitchroomError> {
-        let mut runtime = tokio::runtime::current_thread::Runtime::new()?;
-
-        runtime.block_on(
-            self.make_service()
-                .and_then(move |mut client: RpcClient| {
-                    client
-                        .get_messages(Request::new(get_messages_request))
-                        .map_err(SwitchroomError::from)
-                })
-                .map(|response| response.get_ref().clone()),
-        )
+        with_client!(self, RpcClient::get_messages, get_messages_request)
     }
 
     #[instrument(INFO)]
@@ -128,36 +132,6 @@ impl Client {
         &self,
         message: switchroom_grpc::proto::Message,
     ) -> Result<switchroom_grpc::proto::Message, SwitchroomError> {
-        let mut runtime = tokio::runtime::current_thread::Runtime::new()?;
-
-        runtime.block_on(
-            self.make_service()
-                .and_then(move |mut client: RpcClient| {
-                    client
-                        .send_message(Request::new(message))
-                        .map_err(SwitchroomError::from)
-                })
-                .map(|response| response.get_ref().clone()),
-        )
-    }
-
-    #[instrument(INFO)]
-    pub fn check_health(
-        &self,
-    ) -> Result<switchroom_grpc::proto::HealthCheckResponse, SwitchroomError> {
-        use switchroom_grpc::proto::*;
-        let mut runtime = tokio::runtime::current_thread::Runtime::new()?;
-
-        runtime.block_on(
-            self.make_service()
-                .and_then(move |mut client: RpcClient| {
-                    client
-                        .check(Request::new(HealthCheckRequest {
-                            service: "switchroom".into(),
-                        }))
-                        .map_err(SwitchroomError::from)
-                })
-                .map(|response| response.get_ref().clone()),
-        )
+        with_client!(self, RpcClient::send_message, message)
     }
 }

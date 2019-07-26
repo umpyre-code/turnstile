@@ -425,14 +425,8 @@ pub fn put_client(
 }
 
 #[get("/ping")]
-pub fn get_ping(_ratelimited: guards::RateLimited) -> Result<String, ResponseError> {
-    let switchroom_client = switchroom_client::Client::new(&config::CONFIG);
-    switchroom_client.check_health()?;
-
-    let rolodex_client = rolodex_client::Client::new(&config::CONFIG);
-    rolodex_client.check_health()?;
-
-    Ok("pong".into())
+pub fn get_ping(_ratelimited: guards::RateLimited) -> String {
+    "pong".into()
 }
 
 impl From<switchroom_grpc::proto::GetMessagesResponse> for models::GetMessagesResponse {
