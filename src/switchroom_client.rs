@@ -140,4 +140,24 @@ impl Client {
                 .map(|response| response.get_ref().clone()),
         )
     }
+
+    #[instrument(INFO)]
+    pub fn check_health(
+        &self,
+    ) -> Result<switchroom_grpc::proto::HealthCheckResponse, SwitchroomError> {
+        use switchroom_grpc::proto::*;
+        let mut runtime = tokio::runtime::current_thread::Runtime::new()?;
+
+        runtime.block_on(
+            self.make_service()
+                .and_then(move |mut client: RpcClient| {
+                    client
+                        .check(Request::new(HealthCheckRequest {
+                            service: "switchroom".into(),
+                        }))
+                        .map_err(SwitchroomError::from)
+                })
+                .map(|response| response.get_ref().clone()),
+        )
+    }
 }

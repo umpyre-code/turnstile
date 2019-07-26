@@ -245,4 +245,22 @@ impl Client {
                 .map(|response| response.get_ref().clone()),
         )
     }
+
+    #[instrument(INFO)]
+    pub fn check_health(&self) -> Result<rolodex_grpc::proto::HealthCheckResponse, RolodexError> {
+        use rolodex_grpc::proto::*;
+        let mut runtime = tokio::runtime::current_thread::Runtime::new()?;
+
+        runtime.block_on(
+            self.make_service()
+                .and_then(move |mut client: RpcClient| {
+                    client
+                        .check(Request::new(HealthCheckRequest {
+                            service: "rolodex".into(),
+                        }))
+                        .map_err(RolodexError::from)
+                })
+                .map(|response| response.get_ref().clone()),
+        )
+    }
 }
