@@ -132,13 +132,13 @@ pub struct GetAccountBalanceResponse {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct PostStripeChargeRequest {
+pub struct StripeChargeRequest {
     pub amount_cents: i32,
     pub token: serde_json::Value,
 }
 
 #[derive(Debug, Serialize)]
-pub struct PostStripeChargeResponse {
+pub struct StripeChargeResponse {
     pub result: String,
     pub api_response: String,
     pub message: String,

@@ -683,7 +683,7 @@ pub fn get_account_balance(
     Ok(Json(response.into()))
 }
 
-impl From<beancounter_grpc::proto::StripeChargeResponse> for models::PostStripeChargeResponse {
+impl From<beancounter_grpc::proto::StripeChargeResponse> for models::StripeChargeResponse {
     fn from(response: beancounter_grpc::proto::StripeChargeResponse) -> Self {
         use beancounter_grpc::proto::stripe_charge_response::Result;
         Self {
@@ -709,10 +709,10 @@ impl From<beancounter_grpc::proto::StripeChargeResponse> for models::PostStripeC
 
 #[post("/account/charge", data = "<charge_request>", format = "json")]
 pub fn post_stripe_charge(
-    charge_request: Result<Json<models::PostStripeChargeRequest>, JsonError>,
+    charge_request: Result<Json<models::StripeChargeRequest>, JsonError>,
     calling_client: guards::Client,
     _ratelimited: guards::RateLimited,
-) -> Result<Json<models::PostStripeChargeResponse>, ResponseError> {
+) -> Result<Json<models::StripeChargeResponse>, ResponseError> {
     let charge_request = match charge_request {
         Ok(charge_request) => charge_request,
         Err(err) => return Err(err.into()),
