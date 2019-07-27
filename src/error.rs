@@ -1,3 +1,4 @@
+use crate::beancounter_client;
 use crate::rolodex_client;
 use crate::switchroom_client;
 use crate::token;
@@ -95,6 +96,32 @@ impl From<switchroom_client::SwitchroomError> for ResponseError {
                 }
             }
             _ => ResponseError::BadRequest {
+                response: content::Json(
+                    json!({
+                        "message:": err.to_string(),
+                    })
+                    .to_string(),
+                ),
+            },
+        }
+    }
+}
+
+impl From<beancounter_client::BeanCounterError> for ResponseError {
+    fn from(err: beancounter_client::BeanCounterError) -> Self {
+        match err {
+            beancounter_client::BeanCounterError::RequestFailure { code, message } => {
+                Self::BadRequest {
+                    response: content::Json(
+                        json!({
+                            "code": code as i32,
+                            "message": message,
+                        })
+                        .to_string(),
+                    ),
+                }
+            }
+            _ => Self::BadRequest {
                 response: content::Json(
                     json!({
                         "message:": err.to_string(),

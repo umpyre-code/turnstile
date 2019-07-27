@@ -21,6 +21,7 @@ extern crate time;
 extern crate uuid;
 
 mod auth;
+mod beancounter_client;
 mod catchers;
 mod config;
 mod error;
@@ -111,6 +112,7 @@ fn main() -> Result<(), std::io::Error> {
         .mount(
             "/",
             routes![
+                routes::get_account_balance,
                 routes::get_client_by_handle,
                 routes::get_client,
                 routes::get_messages,
@@ -121,6 +123,7 @@ fn main() -> Result<(), std::io::Error> {
                 routes::post_client_auth_verify,
                 routes::post_client,
                 routes::post_message,
+                routes::post_stripe_charge,
                 routes::put_client,
                 static_routes::openapi_html,
                 static_routes::openapi_yaml,

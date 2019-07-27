@@ -10,6 +10,7 @@ pub struct Config {
     pub service: Service,
     pub rolodex: GrpcService,
     pub switchroom: GrpcService,
+    pub beancounter: GrpcService,
     pub jwt: Jwt,
     pub metrics: Metrics,
     pub rate_limits: RateLimits,

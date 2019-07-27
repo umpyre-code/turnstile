@@ -5,6 +5,7 @@ authors = ["Brenden Matthews <brenden@brndn.io>"]
 edition = "2018"
 
 [dependencies]
+beancounter-grpc = { git = "ssh://git@github.com/umpyre-code/beancounter.git" }
 data-encoding = "2"
 env_logger = { version = "0.6", default-features = false }
 failure = "0.1"

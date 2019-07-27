@@ -1,4 +1,5 @@
 use crate::auth;
+use crate::beancounter_client;
 use crate::config;
 use crate::error::ResponseError;
 use crate::fairings;
@@ -646,6 +647,85 @@ pub fn post_message(
         }),
         signature: BASE64_NOPAD.decode(message.signature.as_ref()?.as_bytes())?,
     })?;
+
+    Ok(Json(response.into()))
+}
+
+impl From<beancounter_grpc::proto::GetBalanceResponse> for models::GetAccountBalanceResponse {
+    fn from(response: beancounter_grpc::proto::GetBalanceResponse) -> Self {
+        if let Some(balance) = response.balance {
+            Self {
+                balance: models::Balance {
+                    client_id: balance.client_id,
+                    balance_cents: balance.balance_cents,
+                    promo_cents: balance.promo_cents,
+                },
+            }
+        } else {
+            Self {
+                balance: models::Balance::default(),
+            }
+        }
+    }
+}
+
+#[get("/account/balance")]
+pub fn get_account_balance(
+    calling_client: guards::Client,
+    _ratelimited: guards::RateLimited,
+) -> Result<Json<models::GetAccountBalanceResponse>, ResponseError> {
+    let beancounter_client = beancounter_client::Client::new(&config::CONFIG);
+
+    let response = beancounter_client.get_balance(beancounter_grpc::proto::GetBalanceRequest {
+        client_id: calling_client.client_id,
+    })?;
+
+    Ok(Json(response.into()))
+}
+
+impl From<beancounter_grpc::proto::StripeChargeResponse> for models::PostStripeChargeResponse {
+    fn from(response: beancounter_grpc::proto::StripeChargeResponse) -> Self {
+        use beancounter_grpc::proto::stripe_charge_response::Result;
+        Self {
+            result: match Result::from_i32(response.result) {
+                Some(Result::Success) => "success",
+                Some(Result::Failure) => "failure",
+                _ => "unknown",
+            }
+            .into(),
+            api_response: response.api_response,
+            message: response.message,
+            balance: match response.balance {
+                Some(balance) => models::Balance {
+                    client_id: balance.client_id,
+                    balance_cents: balance.balance_cents,
+                    promo_cents: balance.promo_cents,
+                },
+                _ => models::Balance::default(),
+            },
+        }
+    }
+}
+
+#[post("/account/charge", data = "<charge_request>", format = "json")]
+pub fn post_stripe_charge(
+    charge_request: Result<Json<models::PostStripeChargeRequest>, JsonError>,
+    calling_client: guards::Client,
+    _ratelimited: guards::RateLimited,
+) -> Result<Json<models::PostStripeChargeResponse>, ResponseError> {
+    let charge_request = match charge_request {
+        Ok(charge_request) => charge_request,
+        Err(err) => return Err(err.into()),
+    };
+
+    let beancounter_client = beancounter_client::Client::new(&config::CONFIG);
+
+    let response =
+        beancounter_client.stripe_charge(beancounter_grpc::proto::StripeChargeRequest {
+            client_id: calling_client.client_id,
+            amount_cents: charge_request.amount_cents,
+            token: serde_json::to_string(&charge_request.token)?,
+        })?;
 
     Ok(Json(response.into()))
 }

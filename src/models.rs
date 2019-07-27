@@ -118,3 +118,29 @@ pub struct Timestamp {
 pub struct GetMessagesResponse {
     pub messages: Vec<Message>,
 }
+
+#[derive(Default, Debug, Serialize)]
+pub struct Balance {
+    pub client_id: String,
+    pub balance_cents: i64,
+    pub promo_cents: i64,
+}
+
+#[derive(Debug, Serialize)]
+pub struct GetAccountBalanceResponse {
+    pub balance: Balance,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct PostStripeChargeRequest {
+    pub amount_cents: i32,
+    pub token: serde_json::Value,
+}
+
+#[derive(Debug, Serialize)]
+pub struct PostStripeChargeResponse {
+    pub result: String,
+    pub api_response: String,
+    pub message: String,
+    pub balance: Balance,
+}
