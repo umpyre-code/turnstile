@@ -693,7 +693,7 @@ impl From<beancounter_grpc::proto::StripeChargeResponse> for models::StripeCharg
                 _ => "unknown",
             }
             .into(),
-            api_response: response.api_response,
+            api_response: serde_json::from_str(&response.api_response).unwrap(),
             message: response.message,
             balance: match response.balance {
                 Some(balance) => models::Balance {

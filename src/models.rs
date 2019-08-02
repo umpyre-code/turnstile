@@ -140,7 +140,7 @@ pub struct StripeChargeRequest {
 #[derive(Debug, Serialize)]
 pub struct StripeChargeResponse {
     pub result: String,
-    pub api_response: String,
+    pub api_response: serde_json::Value,
     pub message: String,
     pub balance: Balance,
 }
