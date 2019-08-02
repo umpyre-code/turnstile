@@ -696,12 +696,12 @@ impl From<beancounter_grpc::proto::StripeChargeResponse> for models::StripeCharg
             api_response: serde_json::from_str(&response.api_response).unwrap(),
             message: response.message,
             balance: match response.balance {
-                Some(balance) => models::Balance {
+                Some(balance) => Some(models::Balance {
                     client_id: balance.client_id,
                     balance_cents: balance.balance_cents,
                     promo_cents: balance.promo_cents,
-                },
-                _ => models::Balance::default(),
+                }),
+                _ => None,
             },
         }
     }

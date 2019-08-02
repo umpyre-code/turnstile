@@ -142,5 +142,5 @@ pub struct StripeChargeResponse {
     pub result: String,
     pub api_response: serde_json::Value,
     pub message: String,
-    pub balance: Balance,
+    pub balance: Option<Balance>,
 }
