@@ -651,15 +651,20 @@ pub fn post_message(
     Ok(Json(response.into()))
 }
 
+impl From<beancounter_grpc::proto::Balance> for models::Balance {
+    fn from(balance: beancounter_grpc::proto::Balance) -> Self {
+        Self {
+            client_id: balance.client_id,
+            balance_cents: balance.balance_cents,
+            promo_cents: balance.promo_cents,
+        }
+    }
+}
 impl From<beancounter_grpc::proto::GetBalanceResponse> for models::GetAccountBalanceResponse {
     fn from(response: beancounter_grpc::proto::GetBalanceResponse) -> Self {
         if let Some(balance) = response.balance {
             Self {
-                balance: models::Balance {
-                    client_id: balance.client_id,
-                    balance_cents: balance.balance_cents,
-                    promo_cents: balance.promo_cents,
-                },
+                balance: balance.into(),
             }
         } else {
             Self {
@@ -829,6 +834,70 @@ pub fn post_account_oauth(
             oauth_state: connect_oauth.oauth_state.clone(),
         },
     )?;
+
+    Ok(Json(response.into()))
+}
+
+#[post("/account/connect/prefs", data = "<connect_prefs>", format = "json")]
+pub fn post_account_connect_prefs(
+    connect_prefs: Result<Json<models::ConnectAccountPrefs>, JsonError>,
+    calling_client: guards::Client,
+    _ratelimited: guards::RateLimited,
+) -> Result<Json<models::ConnectAccountInfo>, ResponseError> {
+    let connect_prefs = match connect_prefs {
+        Ok(connect_prefs) => connect_prefs,
+        Err(err) => return Err(err.into()),
+    };
+
+    let beancounter_client = beancounter_client::Client::new(&config::CONFIG);
+
+    let response = beancounter_client.update_connect_prefs(
+        beancounter_grpc::proto::UpdateConnectAccountPrefsRequest {
+            client_id: calling_client.client_id,
+            preferences: Some(beancounter_grpc::proto::ConnectAccountPrefs {
+                enable_automatic_payouts: connect_prefs.enable_automatic_payouts,
+                automatic_payout_threshold_cents: connect_prefs.automatic_payout_threshold_cents,
+            }),
+        },
+    )?;
+
+    Ok(Json(response.connect_account.unwrap().into()))
+}
+
+impl From<beancounter_grpc::proto::ConnectPayoutResponse> for models::ConnectPayoutResponse {
+    fn from(response: beancounter_grpc::proto::ConnectPayoutResponse) -> Self {
+        use beancounter_grpc::proto::connect_payout_response::Result;
+        Self {
+            result: match Result::from_i32(response.result) {
+                Some(Result::Success) => "success",
+                Some(Result::InsufficientBalance) => "insufficient_balance",
+                Some(Result::InvalidAmount) => "invalid_amount",
+                _ => "unknown",
+            }
+            .into(),
+            balance: response.balance.unwrap().into(),
+        }
+    }
+}
+
+#[post("/account/connect/payout", data = "<connect_payout>", format = "json")]
+pub fn post_account_connect_payout(
+    connect_payout: Result<Json<models::ConnectPayoutRequest>, JsonError>,
+    calling_client: guards::Client,
+    _ratelimited: guards::RateLimited,
+) -> Result<Json<models::ConnectPayoutResponse>, ResponseError> {
+    let connect_payout = match connect_payout {
+        Ok(connect_payout) => connect_payout,
+        Err(err) => return Err(err.into()),
+    };
+
+    let beancounter_client = beancounter_client::Client::new(&config::CONFIG);
+
+    let response =
+        beancounter_client.connect_payout(beancounter_grpc::proto::ConnectPayoutRequest {
+            client_id: calling_client.client_id,
+            amount_cents: connect_payout.amount_cents,
+        })?;
 
     Ok(Json(response.into()))
 }

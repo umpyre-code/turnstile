@@ -151,4 +151,20 @@ impl Client {
     ) -> Result<beancounter_grpc::proto::CompleteConnectOauthResponse, BeanCounterError> {
         with_client!(self, RpcClient::complete_connect_oauth, request)
     }
+
+    #[instrument(INFO)]
+    pub fn update_connect_prefs(
+        &self,
+        request: beancounter_grpc::proto::UpdateConnectAccountPrefsRequest,
+    ) -> Result<beancounter_grpc::proto::UpdateConnectAccountPrefsResponse, BeanCounterError> {
+        with_client!(self, RpcClient::update_connect_account_prefs, request)
+    }
+
+    #[instrument(INFO)]
+    pub fn connect_payout(
+        &self,
+        request: beancounter_grpc::proto::ConnectPayoutRequest,
+    ) -> Result<beancounter_grpc::proto::ConnectPayoutResponse, BeanCounterError> {
+        with_client!(self, RpcClient::connect_payout, request)
+    }
 }

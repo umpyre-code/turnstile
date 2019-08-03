@@ -176,3 +176,14 @@ pub struct ConnectAccountInfo {
     pub oauth_url: Option<String>,
     pub preferences: ConnectAccountPrefs,
 }
+
+#[derive(Debug, Deserialize)]
+pub struct ConnectPayoutRequest {
+    pub amount_cents: i32,
+}
+
+#[derive(Debug, Serialize)]
+pub struct ConnectPayoutResponse {
+    pub result: String,
+    pub balance: Balance,
+}
