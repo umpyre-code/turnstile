@@ -118,6 +118,8 @@ fn main() -> Result<(), std::io::Error> {
                 routes::get_client,
                 routes::get_messages,
                 routes::get_ping,
+                routes::post_account_connect_payout,
+                routes::post_account_connect_prefs,
                 routes::post_account_oauth,
                 routes::post_client_auth_handshake_temporarily,
                 routes::post_client_auth_handshake,

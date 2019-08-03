@@ -40,7 +40,7 @@ RUN mkdir -p $HOME/.ssh \
   && ssh-add -k $HOME/.ssh/id_rsa \
   && cd src \
   && yarn install \
-  && cargo install --path . \
+  && cargo install --color never --path . \
   && cd .. \
   && rm -rf /usr/bin/sccache \
   && rm -rf src \
