@@ -113,10 +113,12 @@ fn main() -> Result<(), std::io::Error> {
             "/",
             routes![
                 routes::get_account_balance,
+                routes::get_account_connect,
                 routes::get_client_by_handle,
                 routes::get_client,
                 routes::get_messages,
                 routes::get_ping,
+                routes::post_account_oauth,
                 routes::post_client_auth_handshake_temporarily,
                 routes::post_client_auth_handshake,
                 routes::post_client_auth_verify_temporarily,

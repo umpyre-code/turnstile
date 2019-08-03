@@ -729,3 +729,106 @@ pub fn post_stripe_charge(
 
     Ok(Json(response.into()))
 }
+
+impl From<beancounter_grpc::proto::ConnectAccountPrefs> for models::ConnectAccountPrefs {
+    fn from(proto: beancounter_grpc::proto::ConnectAccountPrefs) -> Self {
+        Self {
+            enable_automatic_payouts: proto.enable_automatic_payouts,
+            automatic_payout_threshold_cents: proto.automatic_payout_threshold_cents,
+        }
+    }
+}
+
+impl From<beancounter_grpc::proto::ConnectAccountInfo> for models::ConnectAccountInfo {
+    fn from(proto: beancounter_grpc::proto::ConnectAccountInfo) -> Self {
+        use beancounter_grpc::proto::connect_account_info::Connect;
+        use beancounter_grpc::proto::connect_account_info::State;
+        Self {
+            state: match State::from_i32(proto.state) {
+                Some(State::Active) => "active",
+                Some(State::Inactive) => "inactive",
+                _ => "unknown",
+            }
+            .into(),
+            login_link_url: proto
+                .connect
+                .as_ref()
+                .map(|t| match t {
+                    Connect::LoginLinkUrl(url) => Some(url.clone()),
+                    _ => None,
+                })
+                .unwrap(),
+            oauth_url: proto
+                .connect
+                .as_ref()
+                .map(|t| match t {
+                    Connect::OauthUrl(url) => Some(url.clone()),
+                    _ => None,
+                })
+                .unwrap(),
+            preferences: proto.preferences.unwrap().into(),
+        }
+    }
+}
+
+impl From<beancounter_grpc::proto::GetConnectAccountResponse>
+    for models::GetConnectAccountResponse
+{
+    fn from(response: beancounter_grpc::proto::GetConnectAccountResponse) -> Self {
+        Self {
+            client_id: response.client_id,
+            connect_account: response.connect_account.unwrap().into(),
+        }
+    }
+}
+
+#[get("/account/connect")]
+pub fn get_account_connect(
+    calling_client: guards::Client,
+    _ratelimited: guards::RateLimited,
+) -> Result<Json<models::GetConnectAccountResponse>, ResponseError> {
+    let beancounter_client = beancounter_client::Client::new(&config::CONFIG);
+
+    let response = beancounter_client.get_connect_account(
+        beancounter_grpc::proto::GetConnectAccountRequest {
+            client_id: calling_client.client_id,
+        },
+    )?;
+
+    Ok(Json(response.into()))
+}
+
+impl From<beancounter_grpc::proto::CompleteConnectOauthResponse>
+    for models::CompleteConnectOauthResponse
+{
+    fn from(response: beancounter_grpc::proto::CompleteConnectOauthResponse) -> Self {
+        Self {
+            client_id: response.client_id,
+            connect_account: response.connect_account.unwrap().into(),
+        }
+    }
+}
+
+#[post("/account/oauth", data = "<connect_oauth>", format = "json")]
+pub fn post_account_oauth(
+    connect_oauth: Result<Json<models::CompleteConnectOauthRequest>, JsonError>,
+    calling_client: guards::Client,
+    _ratelimited: guards::RateLimited,
+) -> Result<Json<models::CompleteConnectOauthResponse>, ResponseError> {
+    let connect_oauth = match connect_oauth {
+        Ok(connect_oauth) => connect_oauth,
+        Err(err) => return Err(err.into()),
+    };
+
+    let beancounter_client = beancounter_client::Client::new(&config::CONFIG);
+
+    let response = beancounter_client.complete_connect_oauth(
+        beancounter_grpc::proto::CompleteConnectOauthRequest {
+            client_id: calling_client.client_id,
+            authorization_code: connect_oauth.authorization_code.clone(),
+            oauth_state: connect_oauth.oauth_state.clone(),
+        },
+    )?;
+
+    Ok(Json(response.into()))
+}

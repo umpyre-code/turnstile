@@ -135,4 +135,20 @@ impl Client {
     ) -> Result<beancounter_grpc::proto::StripeChargeResponse, BeanCounterError> {
         with_client!(self, RpcClient::stripe_charge, request)
     }
+
+    #[instrument(INFO)]
+    pub fn get_connect_account(
+        &self,
+        request: beancounter_grpc::proto::GetConnectAccountRequest,
+    ) -> Result<beancounter_grpc::proto::GetConnectAccountResponse, BeanCounterError> {
+        with_client!(self, RpcClient::get_connect_account, request)
+    }
+
+    #[instrument(INFO)]
+    pub fn complete_connect_oauth(
+        &self,
+        request: beancounter_grpc::proto::CompleteConnectOauthRequest,
+    ) -> Result<beancounter_grpc::proto::CompleteConnectOauthResponse, BeanCounterError> {
+        with_client!(self, RpcClient::complete_connect_oauth, request)
+    }
 }

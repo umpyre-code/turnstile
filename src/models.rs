@@ -144,3 +144,35 @@ pub struct StripeChargeResponse {
     pub message: String,
     pub balance: Option<Balance>,
 }
+
+#[derive(Debug, Serialize)]
+pub struct GetConnectAccountResponse {
+    pub client_id: String,
+    pub connect_account: ConnectAccountInfo,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CompleteConnectOauthRequest {
+    pub authorization_code: String,
+    pub oauth_state: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct CompleteConnectOauthResponse {
+    pub client_id: String,
+    pub connect_account: ConnectAccountInfo,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ConnectAccountPrefs {
+    pub enable_automatic_payouts: bool,
+    pub automatic_payout_threshold_cents: i64,
+}
+
+#[derive(Debug, Serialize)]
+pub struct ConnectAccountInfo {
+    pub state: String,
+    pub login_link_url: Option<String>,
+    pub oauth_url: Option<String>,
+    pub preferences: ConnectAccountPrefs,
+}
