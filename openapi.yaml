@@ -464,13 +464,15 @@ components:
       - jwt
     Message:
       type: object
+      description: >
+        The model representing a message. When hashing or signing
+        a message, all keys should be lexographically ordered, and empty/null
+        fields should be removed.
       properties:
         hash:
           type: string
           format: byte
           description: Base64 encoded 32-byte Blake2b hash of this message's body.
-            When sending messages, this field does not need to be specified (it will
-            be overwritten by the server if specified).
         from:
           type: string
           description: Client ID of sender.
@@ -480,8 +482,10 @@ components:
         body:
           type: string
           format: byte
-          description: Text body of message, encrypted using a libsodium Box with
-            base64 encoding.
+          description: >
+            Text body of message, encrypted using a libsodium Box
+            with base64 encoding. The message body is usually JSON, which
+            contains a markdown body in the `markdown` field.
         received_at:
           $ref: '#/components/schemas/Timestamp'
         sent_at:
