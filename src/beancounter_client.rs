@@ -90,7 +90,7 @@ macro_rules! with_client {
 
 impl Client {
     pub fn new(config: &config::Config) -> Self {
-        Client {
+        Self {
             uri: format!(
                 "http://{}:{}",
                 config.beancounter.host, config.beancounter.port
