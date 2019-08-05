@@ -417,6 +417,7 @@ pub fn put_client(
                 .profile
                 .clone()
                 .unwrap_or_else(|| String::from("")),
+            joined: 0, // ignored
         }),
         location,
     })?;
