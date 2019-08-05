@@ -12,7 +12,7 @@ steps:
   - |
    docker pull guangie88/rustfmt-clippy:nightly || true
 - name: gcr.io/cloud-builders/gsutil
-  args: ['-m', cp', '-r', 'gs://umpyre-sccache/.cache', '/root']
+  args: ['-m', 'cp', '-r', 'gs://umpyre-sccache/.cache', '/root']
 - name: 'gcr.io/cloud-builders/docker'
   entrypoint: 'bash'
   args: ['-c', 'docker build --build-arg SSH_KEY="$$SSH_KEY" --build-arg SCCACHE_KEY="$$SCCACHE_KEY"  -t gcr.io/$PROJECT_ID/github.com/umpyre-code/turnstile:latest -t gcr.io/$PROJECT_ID/github.com/umpyre-code/turnstile:$REVISION_ID --cache-from gcr.io/$PROJECT_ID/github.com/umpyre-code/turnstile:latest --cache-from rustlang/rust:nightly .']
