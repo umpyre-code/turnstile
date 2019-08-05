@@ -34,7 +34,8 @@ WORKDIR /app
 COPY . /app/src
 COPY entrypoint.sh /app
 
-RUN mkdir -p $HOME/.ssh \
+RUN sccache -s \
+  && mkdir -p $HOME/.ssh \
   && chmod 0700 $HOME/.ssh \
   && ssh-keyscan github.com > $HOME/.ssh/known_hosts \
   && echo "$SSH_KEY" > $HOME/.ssh/id_rsa \
@@ -48,7 +49,9 @@ RUN mkdir -p $HOME/.ssh \
   && cd .. \
   && rm -rf /usr/bin/sccache \
   && rm -rf src \
-  && rm -rf $CARGO_HOME/registry $CARGO_HOME/git
+  && rm -rf $CARGO_HOME/registry $CARGO_HOME/git \
+  && sccache -s
+
 
 # Remove keys
 RUN rm -rf /root/.ssh/ 
