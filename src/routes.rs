@@ -200,6 +200,7 @@ impl From<rolodex_grpc::proto::GetClientResponse> for models::GetClientResponse 
             signing_public_key: client.signing_public_key,
             handle: client.handle.into_option(),
             profile: client.profile.into_option(),
+            joined: client.joined,
         }
     }
 }

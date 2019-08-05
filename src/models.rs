@@ -63,6 +63,7 @@ pub struct GetClientResponse {
     pub signing_public_key: String,
     pub handle: Option<String>,
     pub profile: Option<String>,
+    pub joined: i64,
 }
 
 #[derive(Debug, Deserialize)]
