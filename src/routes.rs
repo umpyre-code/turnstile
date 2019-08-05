@@ -646,7 +646,7 @@ pub fn post_messages(
                 nanos: message.sent_at.nanos,
             }),
             signature: BASE64_NOPAD.decode(message.signature.as_ref()?.as_bytes())?,
-            value_cents: std::cmp::min(message.value_cents, 0),
+            value_cents: std::cmp::max(message.value_cents, 0),
         })?;
 
         sent_messages.push(response.into());
