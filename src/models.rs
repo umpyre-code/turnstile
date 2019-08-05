@@ -165,7 +165,7 @@ pub struct CompleteConnectOauthResponse {
     pub connect_account: ConnectAccountInfo,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Default, Debug, Serialize, Deserialize)]
 pub struct ConnectAccountPrefs {
     pub enable_automatic_payouts: bool,
     pub automatic_payout_threshold_cents: i64,

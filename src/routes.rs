@@ -786,11 +786,44 @@ impl From<beancounter_grpc::proto::GetConnectAccountResponse>
     }
 }
 
+fn eligible_for_connect(calling_client_id: &str) -> Result<bool, ResponseError> {
+    use chrono::prelude::*;
+
+    let rolodex_client = rolodex_client::Client::new(&config::CONFIG);
+
+    let response = rolodex_client.get_client(rolodex_grpc::proto::GetClientRequest {
+        id: Some(rolodex_grpc::proto::get_client_request::Id::ClientId(
+            calling_client_id.into(),
+        )),
+        calling_client_id: calling_client_id.into(),
+    })?;
+
+    // Client must have had an account for at least 7 days before becoming eligible
+    Ok((Utc::now() - Utc.timestamp(response.client?.joined, 0)).num_days() >= 7)
+}
+
+fn ineligible_connect_account() -> models::ConnectAccountInfo {
+    models::ConnectAccountInfo {
+        state: "ineligible".into(),
+        login_link_url: None,
+        oauth_url: None,
+        preferences: models::ConnectAccountPrefs::default(),
+    }
+}
+
 #[get("/account/connect")]
 pub fn get_account_connect(
     calling_client: guards::Client,
     _ratelimited: guards::RateLimited,
 ) -> Result<Json<models::GetConnectAccountResponse>, ResponseError> {
+    // Determine client's eligibility first
+    if !eligible_for_connect(&calling_client.client_id)? {
+        return Ok(Json(models::GetConnectAccountResponse {
+            client_id: calling_client.client_id,
+            connect_account: ineligible_connect_account(),
+        }));
+    }
+
     let beancounter_client = beancounter_client::Client::new(&config::CONFIG);
 
     let response = beancounter_client.get_connect_account(
@@ -819,6 +852,14 @@ pub fn post_account_oauth(
     calling_client: guards::Client,
     _ratelimited: guards::RateLimited,
 ) -> Result<Json<models::CompleteConnectOauthResponse>, ResponseError> {
+    // Determine client's eligibility first
+    if !eligible_for_connect(&calling_client.client_id)? {
+        return Ok(Json(models::CompleteConnectOauthResponse {
+            client_id: calling_client.client_id,
+            connect_account: ineligible_connect_account(),
+        }));
+    }
+
     let connect_oauth = match connect_oauth {
         Ok(connect_oauth) => connect_oauth,
         Err(err) => return Err(err.into()),

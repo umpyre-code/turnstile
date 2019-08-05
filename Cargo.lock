@@ -2533,6 +2533,7 @@ version = "0.1.0"
 dependencies = [
  "assert_cmd 0.11.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "beancounter-grpc 0.1.0 (git+ssh://git@github.com/umpyre-code/beancounter.git)",
+ "chrono 0.4.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "data-encoding 2.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "env_logger 0.6.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "failure 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",

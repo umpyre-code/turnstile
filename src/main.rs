@@ -16,6 +16,8 @@ extern crate yansi;
 extern crate log;
 #[macro_use]
 extern crate failure;
+
+extern crate chrono;
 extern crate rand;
 extern crate time;
 extern crate uuid;
