@@ -14,7 +14,7 @@ RUN cd /tmp \
   && rm -rf /tmp/sccache-*
 #ENV SCCACHE_GCS_BUCKET=umpyre-sccache
 #ENV SCCACHE_GCS_RW_MODE=READ_WRITE
-#ENV SCCACHE_GCS_KEY_PATH=/root/sccache.json
+ENV SCCACHE_GCS_KEY_PATH=/root/sccache.json
 ENV RUSTC_WRAPPER=sccache
 
 ADD https://github.com/a8m/envsubst/releases/download/v1.1.0/envsubst-Linux-x86_64 /usr/bin/envsubst
