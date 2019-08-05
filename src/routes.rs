@@ -659,6 +659,7 @@ impl From<beancounter_grpc::proto::Balance> for models::Balance {
             client_id: balance.client_id,
             balance_cents: balance.balance_cents,
             promo_cents: balance.promo_cents,
+            withdrawable_cents: balance.withdrawable_cents,
         }
     }
 }
@@ -703,11 +704,7 @@ impl From<beancounter_grpc::proto::StripeChargeResponse> for models::StripeCharg
             api_response: serde_json::from_str(&response.api_response).unwrap(),
             message: response.message,
             balance: match response.balance {
-                Some(balance) => Some(models::Balance {
-                    client_id: balance.client_id,
-                    balance_cents: balance.balance_cents,
-                    promo_cents: balance.promo_cents,
-                }),
+                Some(balance) => Some(balance.into()),
                 _ => None,
             },
         }

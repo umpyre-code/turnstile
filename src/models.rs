@@ -125,6 +125,7 @@ pub struct Balance {
     pub client_id: String,
     pub balance_cents: i64,
     pub promo_cents: i64,
+    pub withdrawable_cents: i64,
 }
 
 #[derive(Debug, Serialize)]
