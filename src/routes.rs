@@ -646,13 +646,13 @@ pub fn post_messages(
                 nanos: message.sent_at.nanos,
             }),
             signature: BASE64_NOPAD.decode(message.signature.as_ref()?.as_bytes())?,
-            value_cents: message.value_cents,
+            value_cents: std::cmp::min(message.value_cents, 0),
         })?;
 
         sent_messages.push(response.into());
     }
 
-    Ok(Json(sent_messages.into()))
+    Ok(Json(sent_messages))
 }
 
 impl From<beancounter_grpc::proto::Balance> for models::Balance {
