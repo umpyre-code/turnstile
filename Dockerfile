@@ -47,11 +47,10 @@ RUN sccache -s \
   && yarn install \
   && cargo install --path . \
   && cd .. \
+  && sccache -s \
   && rm -rf /usr/bin/sccache \
   && rm -rf src \
-  && rm -rf $CARGO_HOME/registry $CARGO_HOME/git \
-  && sccache -s
-
+  && rm -rf $CARGO_HOME/registry $CARGO_HOME/git
 
 # Remove keys
 RUN rm -rf /root/.ssh/ 
