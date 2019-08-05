@@ -14,8 +14,6 @@ use rocket::response::content;
 use rocket_contrib::json::Json;
 use rocket_contrib::json::JsonError;
 
-use crate::responders::Cached;
-
 fn handle_auth_handshake(
     client_ip: guards::ClientIP,
     geo_headers: Option<guards::GeoHeaders>,
@@ -210,7 +208,7 @@ pub fn get_client(
     client_id: String,
     calling_client: Option<guards::Client>,
     _ratelimited: guards::RateLimited,
-) -> Result<Cached<Json<models::GetClientResponse>>, ResponseError> {
+) -> Result<Json<models::GetClientResponse>, ResponseError> {
     let rolodex_client = rolodex_client::Client::new(&config::CONFIG);
 
     let response = rolodex_client.get_client(rolodex_grpc::proto::GetClientRequest {
@@ -224,7 +222,7 @@ pub fn get_client(
     });
 
     if response.is_ok() {
-        Ok(Cached::from(Json(response.unwrap().into()), 60))
+        Ok(Json(response.unwrap().into()))
     } else {
         Err(ResponseError::NotFound {
             response: content::Json(
@@ -243,7 +241,7 @@ pub fn get_client_by_handle(
     handle: String,
     calling_client: Option<guards::Client>,
     _ratelimited: guards::RateLimited,
-) -> Result<Cached<Json<models::GetClientResponse>>, ResponseError> {
+) -> Result<Json<models::GetClientResponse>, ResponseError> {
     let rolodex_client = rolodex_client::Client::new(&config::CONFIG);
 
     let response = rolodex_client.get_client(rolodex_grpc::proto::GetClientRequest {
@@ -257,7 +255,7 @@ pub fn get_client_by_handle(
     });
 
     if response.is_ok() {
-        Ok(Cached::from(Json(response.unwrap().into()), 60))
+        Ok(Json(response.unwrap().into()))
     } else {
         Err(ResponseError::NotFound {
             response: content::Json(
