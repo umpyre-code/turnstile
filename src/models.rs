@@ -107,6 +107,7 @@ pub struct Message {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub signature: Option<String>,
     pub to: String,
+    pub value_cents: i32,
 }
 
 #[derive(Debug, Deserialize, Serialize, Default, Clone)]

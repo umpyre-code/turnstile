@@ -486,6 +486,7 @@ impl From<&switchroom_grpc::proto::Message> for models::Message {
                 nanos: sent_at.nanos,
             },
             signature: Some(BASE64_NOPAD.encode(&message.signature)),
+            value_cents: message.value_cents,
         }
     }
 }
@@ -593,64 +594,71 @@ fn check_message_hash(message: &models::Message) -> Result<(), ResponseError> {
     }
 }
 
-#[post("/messages", data = "<message>", format = "json")]
-pub fn post_message(
-    message: Result<Json<models::Message>, JsonError>,
+#[post("/messages", data = "<messages>", format = "json")]
+pub fn post_messages(
+    messages: Result<Json<Vec<models::Message>>, JsonError>,
     calling_client: guards::Client,
     _ratelimited: guards::RateLimited,
-) -> Result<Json<models::Message>, ResponseError> {
+) -> Result<Json<Vec<models::Message>>, ResponseError> {
     use data_encoding::BASE64_NOPAD;
 
-    let message = match message {
-        Ok(message) => message,
+    let messages = match messages {
+        Ok(messages) => messages,
         Err(err) => return Err(err.into()),
     };
 
-    // Verify the message hash
-    check_message_hash(&message)?;
+    let mut sent_messages = vec![];
 
-    let rolodex_client = rolodex_client::Client::new(&config::CONFIG);
+    for message in messages.iter() {
+        // Verify the message hash
+        check_message_hash(&message)?;
 
-    // Verify the public key of the client sending this message matches what's
-    // in our DB. Keep the client struct so we can verify the signature as well.
-    let sending_client = check_box_public_keys(
-        &rolodex_client,
-        &calling_client.client_id,
-        &calling_client.client_id,
-        &message.sender_public_key,
-    )?;
+        let rolodex_client = rolodex_client::Client::new(&config::CONFIG);
 
-    // Verify the public key of the recipient matches what's in our DB
-    check_box_public_keys(
-        &rolodex_client,
-        &calling_client.client_id,
-        &message.to,
-        &message.recipient_public_key,
-    )?;
+        // Verify the public key of the client sending this message matches what's
+        // in our DB. Keep the client struct so we can verify the signature as well.
+        let sending_client = check_box_public_keys(
+            &rolodex_client,
+            &calling_client.client_id,
+            &calling_client.client_id,
+            &message.sender_public_key,
+        )?;
 
-    // Verify the message signature
-    check_message_signature(&sending_client, &message)?;
+        // Verify the public key of the recipient matches what's in our DB
+        check_box_public_keys(
+            &rolodex_client,
+            &calling_client.client_id,
+            &message.to,
+            &message.recipient_public_key,
+        )?;
 
-    let switchroom_client = switchroom_client::Client::new(&config::CONFIG);
+        // Verify the message signature
+        check_message_signature(&sending_client, &message)?;
 
-    let response = switchroom_client.send_message(switchroom_grpc::proto::Message {
-        to: message.to.clone(),
-        body: BASE64_NOPAD.decode(message.body.as_bytes())?,
-        from: calling_client.client_id.clone(),
-        hash: BASE64_NOPAD.decode(message.hash.as_ref()?.as_bytes())?,
-        received_at: None,
-        nonce: BASE64_NOPAD.decode(message.nonce.as_bytes())?,
-        sender_public_key: BASE64_NOPAD.decode(message.sender_public_key.as_bytes())?,
-        recipient_public_key: BASE64_NOPAD.decode(message.recipient_public_key.as_bytes())?,
-        pda: message.pda.clone(),
-        sent_at: Some(switchroom_grpc::proto::Timestamp {
-            seconds: message.sent_at.seconds,
-            nanos: message.sent_at.nanos,
-        }),
-        signature: BASE64_NOPAD.decode(message.signature.as_ref()?.as_bytes())?,
-    })?;
+        let switchroom_client = switchroom_client::Client::new(&config::CONFIG);
 
-    Ok(Json(response.into()))
+        let response = switchroom_client.send_message(switchroom_grpc::proto::Message {
+            to: message.to.clone(),
+            body: BASE64_NOPAD.decode(message.body.as_bytes())?,
+            from: calling_client.client_id.clone(),
+            hash: BASE64_NOPAD.decode(message.hash.as_ref()?.as_bytes())?,
+            received_at: None,
+            nonce: BASE64_NOPAD.decode(message.nonce.as_bytes())?,
+            sender_public_key: BASE64_NOPAD.decode(message.sender_public_key.as_bytes())?,
+            recipient_public_key: BASE64_NOPAD.decode(message.recipient_public_key.as_bytes())?,
+            pda: message.pda.clone(),
+            sent_at: Some(switchroom_grpc::proto::Timestamp {
+                seconds: message.sent_at.seconds,
+                nanos: message.sent_at.nanos,
+            }),
+            signature: BASE64_NOPAD.decode(message.signature.as_ref()?.as_bytes())?,
+            value_cents: message.value_cents,
+        })?;
+
+        sent_messages.push(response.into());
+    }
+
+    Ok(Json(sent_messages.into()))
 }
 
 impl From<beancounter_grpc::proto::Balance> for models::Balance {

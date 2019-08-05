@@ -128,7 +128,7 @@ fn main() -> Result<(), std::io::Error> {
                 routes::post_client_auth_verify_temporarily,
                 routes::post_client_auth_verify,
                 routes::post_client,
-                routes::post_message,
+                routes::post_messages,
                 routes::post_stripe_charge,
                 routes::put_client,
                 static_routes::openapi_html,
