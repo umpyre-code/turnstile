@@ -432,24 +432,12 @@ pub fn get_ping(_ratelimited: guards::RateLimited) -> String {
     "pong".into()
 }
 
-impl From<switchroom_grpc::proto::GetMessagesResponse> for models::GetMessagesResponse {
-    fn from(response: switchroom_grpc::proto::GetMessagesResponse) -> Self {
-        models::GetMessagesResponse {
-            messages: response
-                .messages
-                .iter()
-                .map(models::Message::from)
-                .collect(),
-        }
-    }
-}
-
 #[get("/messages?<sketch>")]
 pub fn get_messages(
     sketch: Option<&RawStr>,
     calling_client: guards::Client,
     _ratelimited: guards::RateLimited,
-) -> Result<Json<models::GetMessagesResponse>, ResponseError> {
+) -> Result<Json<Vec<models::Message>>, ResponseError> {
     let switchroom_client = switchroom_client::Client::new(&config::CONFIG);
 
     let response = switchroom_client.get_messages(switchroom_grpc::proto::GetMessagesRequest {
@@ -460,7 +448,13 @@ pub fn get_messages(
             .to_string(),
     })?;
 
-    Ok(Json(response.into()))
+    Ok(Json(
+        response
+            .messages
+            .iter()
+            .map(models::Message::from)
+            .collect(),
+    ))
 }
 
 impl From<&switchroom_grpc::proto::Message> for models::Message {

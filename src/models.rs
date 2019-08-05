@@ -116,11 +116,6 @@ pub struct Timestamp {
     pub seconds: i64,
 }
 
-#[derive(Debug, Serialize)]
-pub struct GetMessagesResponse {
-    pub messages: Vec<Message>,
-}
-
 #[derive(Default, Debug, Serialize)]
 pub struct Balance {
     pub client_id: String,
