@@ -4,6 +4,10 @@ use instrumented::{prometheus, register};
 use rocket::fairing::{Fairing, Info, Kind};
 use rocket::{Data, Request, Response};
 
+use crate::beancounter_client;
+use crate::rolodex_client;
+use crate::switchroom_client;
+
 lazy_static! {
     static ref REQUEST_COUNTER: prometheus::IntCounterVec = {
         let counter_opts = prometheus::Opts::new("http_requests", "HTTP Request counter");

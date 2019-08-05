@@ -131,6 +131,7 @@ fn main() -> Result<(), std::io::Error> {
                 routes::post_messages,
                 routes::post_stripe_charge,
                 routes::put_client,
+                routes::put_messages_settle,
                 static_routes::openapi_html,
                 static_routes::openapi_yaml,
             ],

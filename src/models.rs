@@ -185,3 +185,12 @@ pub struct ConnectPayoutResponse {
     pub result: String,
     pub balance: Balance,
 }
+
+#[derive(Debug, Serialize)]
+pub struct SettlePaymentResponse {
+    // The fee collected by Umpyre
+    pub fee_cents: i32,
+    // The payout amount
+    pub payment_cents: i32,
+    pub balance: Balance,
+}

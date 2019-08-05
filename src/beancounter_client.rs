@@ -167,4 +167,20 @@ impl Client {
     ) -> Result<beancounter_grpc::proto::ConnectPayoutResponse, BeanCounterError> {
         with_client!(self, RpcClient::connect_payout, request)
     }
+
+    #[instrument(INFO)]
+    pub fn add_payment(
+        &self,
+        request: beancounter_grpc::proto::AddPaymentRequest,
+    ) -> Result<beancounter_grpc::proto::AddPaymentResponse, BeanCounterError> {
+        with_client!(self, RpcClient::add_payment, request)
+    }
+
+    #[instrument(INFO)]
+    pub fn settle_payment(
+        &self,
+        request: beancounter_grpc::proto::SettlePaymentRequest,
+    ) -> Result<beancounter_grpc::proto::SettlePaymentResponse, BeanCounterError> {
+        with_client!(self, RpcClient::settle_payment, request)
+    }
 }

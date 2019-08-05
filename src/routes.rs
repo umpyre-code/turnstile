@@ -601,11 +601,13 @@ pub fn post_messages(
 
     let mut sent_messages = vec![];
 
+    let switchroom_client = switchroom_client::Client::new(&config::CONFIG);
+    let rolodex_client = rolodex_client::Client::new(&config::CONFIG);
+    let beancounter_client = beancounter_client::Client::new(&config::CONFIG);
+
     for message in messages.iter() {
         // Verify the message hash
         check_message_hash(&message)?;
-
-        let rolodex_client = rolodex_client::Client::new(&config::CONFIG);
 
         // Verify the public key of the client sending this message matches what's
         // in our DB. Keep the client struct so we can verify the signature as well.
@@ -627,13 +629,14 @@ pub fn post_messages(
         // Verify the message signature
         check_message_signature(&sending_client, &message)?;
 
-        let switchroom_client = switchroom_client::Client::new(&config::CONFIG);
+        let value_cents = std::cmp::max(message.value_cents, 0);
+        let message_hash = BASE64_NOPAD.decode(message.hash.as_ref()?.as_bytes())?;
 
         let response = switchroom_client.send_message(switchroom_grpc::proto::Message {
             to: message.to.clone(),
             body: BASE64_NOPAD.decode(message.body.as_bytes())?,
             from: calling_client.client_id.clone(),
-            hash: BASE64_NOPAD.decode(message.hash.as_ref()?.as_bytes())?,
+            hash: message_hash.clone(),
             received_at: None,
             nonce: BASE64_NOPAD.decode(message.nonce.as_bytes())?,
             sender_public_key: BASE64_NOPAD.decode(message.sender_public_key.as_bytes())?,
@@ -644,13 +647,53 @@ pub fn post_messages(
                 nanos: message.sent_at.nanos,
             }),
             signature: BASE64_NOPAD.decode(message.signature.as_ref()?.as_bytes())?,
-            value_cents: std::cmp::max(message.value_cents, 0),
+            value_cents,
         })?;
+
+        if value_cents > 0 {
+            let payment_response =
+                beancounter_client.add_payment(beancounter_grpc::proto::AddPaymentRequest {
+                    client_id_from: calling_client.client_id.clone(),
+                    client_id_to: message.to.clone(),
+                    message_hash,
+                    payment_cents: value_cents,
+                })?;
+
+            if payment_response.result
+                != beancounter_grpc::proto::add_payment_response::Result::Success as i32
+            {
+                return Err(ResponseError::BadRequest {
+                    response: content::Json(
+                        json!({
+                            "message:": "Adding payment failed",
+                            "result": payment_response.result,
+                        })
+                        .to_string(),
+                    ),
+                });
+            }
+        }
 
         sent_messages.push(response.into());
     }
 
     Ok(Json(sent_messages))
+}
+
+#[put("/messages/<hash>/settle")]
+pub fn put_messages_settle(
+    hash: String,
+    calling_client: guards::Client,
+    _ratelimited: guards::RateLimited,
+) -> Result<Json<models::SettlePaymentResponse>, ResponseError> {
+    Err(ResponseError::BadRequest {
+        response: content::Json(
+            json!({
+                "message:": "Bad request",
+            })
+            .to_string(),
+        ),
+    })
 }
 
 impl From<beancounter_grpc::proto::Balance> for models::Balance {
