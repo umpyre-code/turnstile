@@ -8,6 +8,6 @@ WORKDIR /app
 COPY target/release/turnstile /usr/bin
 COPY entrypoint.sh /app
 
-ENV RUST_LOG=turnstile=info
+ENV RUST_LOG=info
 
 ENTRYPOINT [ "/app/entrypoint.sh" ]
