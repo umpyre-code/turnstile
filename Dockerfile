@@ -1,32 +1,4 @@
-FROM guangie88/rustfmt-clippy:nightly
-
-ENV CARGO_HOME=/opt/.cargo
-
-# add sccache
-ENV SCCACHE_VERSION=0.2.9
-ADD https://github.com/mozilla/sccache/releases/download/${SCCACHE_VERSION}/sccache-${SCCACHE_VERSION}-x86_64-unknown-linux-musl.tar.gz /tmp
-RUN cd /tmp \
-  && tar xf sccache-${SCCACHE_VERSION}-x86_64-unknown-linux-musl.tar.gz \
-  && mv sccache-${SCCACHE_VERSION}-x86_64-unknown-linux-musl/sccache /usr/bin/sccache \
-  && rm -rf /tmp/sccache-*
-ENV SCCACHE_GCS_BUCKET=umpyre-sccache
-ENV SCCACHE_GCS_RW_MODE=READ_WRITE
-ENV SCCACHE_GCS_KEY_PATH=/root/sccache.json
-ENV SCCACHE_DIR=/workspace/sccache
-ENV RUSTC_WRAPPER=sccache
-
-ADD https://github.com/a8m/envsubst/releases/download/v1.1.0/envsubst-Linux-x86_64 /usr/bin/envsubst
-RUN chmod +x /usr/bin/envsubst
-
-# Install yarn, google cloud sdk, & nodejs (ugh)
-RUN apt-get update && apt-get install -yqq apt-transport-https lsb-release gnupg curl ssh \
-  && curl -sL https://deb.nodesource.com/setup_10.x | bash - \
-  && curl -sS https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add - \
-  && curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add - \
-  && echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list \
-  && echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" | tee /etc/apt/sources.list.d/google-cloud-sdk.list \
-  && apt-get update && apt-get install -yqq --allow-unauthenticated yarn google-cloud-sdk \
-  && apt-get clean && rm -rf /var/lib/apt/lists
+FROM gcr.io/umpyre/github.com/umpyre-code/rust:latest
 
 ARG SSH_KEY
 ARG SCCACHE_KEY
