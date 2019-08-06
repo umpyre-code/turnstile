@@ -24,7 +24,7 @@ chmod 600 $HOME/.ssh/id_rsa
 eval `ssh-agent`
 ssh-add -k $HOME/.ssh/id_rsa
 
-mkdir -p target
+mkdir -p target node_modules $CARGO_HOME/registry
 
 gcloud auth activate-service-account --key-file=$SCCACHE_GCS_KEY_PATH
 gsutil -m -q rsync -r gs://umpyre-sccache/sccache $SCCACHE_DIR || true
