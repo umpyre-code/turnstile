@@ -2,7 +2,7 @@
 set -e
 set -x
 
-echo "Running build for $BUILD_ID"
+echo "Running build for $REPO_NAME"
 # GCS w/ sccache currently does not work :/
 # export SCCACHE_GCS_BUCKET=umpyre-sccache
 # export SCCACHE_GCS_RW_MODE=READ_WRITE
@@ -26,7 +26,7 @@ ssh-add -k $HOME/.ssh/id_rsa
 
 gcloud auth activate-service-account --key-file=$SCCACHE_GCS_KEY_PATH
 gsutil -m -q rsync -r gs://umpyre-sccache/sccache $SCCACHE_DIR || true
-gsutil -m -q rsync -r gs://umpyre-sccache/$BUILD_ID/target target || true
+gsutil -m -q rsync -r gs://umpyre-sccache/$REPO_NAME/target target || true
 
 sccache -s
 
@@ -36,4 +36,4 @@ cargo build --release
 sccache -s
 
 gsutil -m -q rsync -r $SCCACHE_DIR gs://umpyre-sccache/sccache || true
-gsutil -m -q rsync -r target gs://umpyre-sccache/$BUILD_ID/target || true
+gsutil -m -q rsync -r target gs://umpyre-sccache/$REPO_NAME/target || true

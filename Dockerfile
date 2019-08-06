@@ -5,7 +5,7 @@ ARG SCCACHE_KEY
 
 WORKDIR /app
 
-COPY target/release/turnstile /usr/bin
+COPY ./target/release/turnstile /usr/bin
 COPY entrypoint.sh /app
 
 ENV RUST_LOG=info

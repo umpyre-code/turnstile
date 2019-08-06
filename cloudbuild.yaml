@@ -14,7 +14,7 @@ steps:
 - name: 'gcr.io/umpyre/github.com/umpyre-code/rust:latest'
   entrypoint: '/workspace/build.sh'
   env:
-   - 'BUILD_ID=$BUILD_ID'
+   - 'REPO_NAME=$REPO_NAME'
   secretEnv: ['SSH_KEY', 'SCCACHE_KEY']
 - name: 'gcr.io/cloud-builders/docker'
   entrypoint: 'bash'
