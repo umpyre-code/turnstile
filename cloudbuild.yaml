@@ -12,7 +12,7 @@ steps:
   - |
    docker pull guangie88/rustfmt-clippy:nightly || true
 - name: 'guangie88/rustfmt-clippy:nightly'
-  entrypoint: '/workspace/bulid.sh'
+  entrypoint: '/workspace/build.sh'
 - name: 'gcr.io/cloud-builders/docker'
   entrypoint: 'bash'
   args: ['-c', 'docker build -t gcr.io/$PROJECT_ID/github.com/umpyre-code/turnstile:latest -t gcr.io/$PROJECT_ID/github.com/umpyre-code/turnstile:$REVISION_ID --cache-from gcr.io/$PROJECT_ID/github.com/umpyre-code/turnstile:latest --cache-from guangie88/rustfmt-clippy:nightly .']
