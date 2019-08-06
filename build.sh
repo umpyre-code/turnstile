@@ -14,6 +14,6 @@ eval `ssh-agent`
 ssh-add -k $HOME/.ssh/id_rsa
 
 yarn install
-cargo install --path .
+cargo build --release
 
 sccache -s
