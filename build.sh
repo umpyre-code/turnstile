@@ -1,7 +1,5 @@
 #!/bin/bash
-
 set -e
-set -x
 
 sccache -s
 mkdir -p $HOME/.ssh
