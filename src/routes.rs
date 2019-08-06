@@ -681,20 +681,36 @@ pub fn post_messages(
     Ok(Json(sent_messages))
 }
 
-#[put("/messages/<hash>/settle")]
+impl From<beancounter_grpc::proto::SettlePaymentResponse> for models::SettlePaymentResponse {
+    fn from(response: beancounter_grpc::proto::SettlePaymentResponse) -> Self {
+        Self {
+            fee_cents: response.fee_cents,
+            payment_cents: response.payment_cents,
+            balance: response
+                .balance
+                .map(models::Balance::from)
+                .unwrap_or_else(models::Balance::default),
+        }
+    }
+}
+
+#[put("/messages/<message_hash>/settle")]
 pub fn put_messages_settle(
-    hash: String,
+    message_hash: String,
     calling_client: guards::Client,
     _ratelimited: guards::RateLimited,
 ) -> Result<Json<models::SettlePaymentResponse>, ResponseError> {
-    Err(ResponseError::BadRequest {
-        response: content::Json(
-            json!({
-                "message:": "Bad request",
-            })
-            .to_string(),
-        ),
-    })
+    use data_encoding::BASE64_NOPAD;
+
+    let beancounter_client = beancounter_client::Client::new(&config::CONFIG);
+
+    let response =
+        beancounter_client.settle_payment(beancounter_grpc::proto::SettlePaymentRequest {
+            client_id: calling_client.client_id,
+            message_hash: BASE64_NOPAD.decode(message_hash.as_bytes())?,
+        })?;
+
+    Ok(Json(response.into()))
 }
 
 impl From<beancounter_grpc::proto::Balance> for models::Balance {
@@ -707,16 +723,14 @@ impl From<beancounter_grpc::proto::Balance> for models::Balance {
         }
     }
 }
+
 impl From<beancounter_grpc::proto::GetBalanceResponse> for models::GetAccountBalanceResponse {
     fn from(response: beancounter_grpc::proto::GetBalanceResponse) -> Self {
-        if let Some(balance) = response.balance {
-            Self {
-                balance: balance.into(),
-            }
-        } else {
-            Self {
-                balance: models::Balance::default(),
-            }
+        Self {
+            balance: response
+                .balance
+                .map(models::Balance::from)
+                .unwrap_or_else(models::Balance::default),
         }
     }
 }
