@@ -24,13 +24,14 @@ chmod 600 $HOME/.ssh/id_rsa
 eval `ssh-agent`
 ssh-add -k $HOME/.ssh/id_rsa
 
-mkdir -p target node_modules $CARGO_HOME/registry
+mkdir -p target node_modules $CARGO_HOME/registry $CARGO_HOME/git
 
 gcloud auth activate-service-account --key-file=$SCCACHE_GCS_KEY_PATH
 gsutil -m -q rsync -r gs://umpyre-sccache/sccache $SCCACHE_DIR || true
 gsutil -m -q rsync -r gs://umpyre-sccache/$REPO_NAME/target target || true
 gsutil -m -q rsync -r gs://umpyre-sccache/$REPO_NAME/node_modules node_modules || true
 gsutil -m -q rsync -r gs://umpyre-sccache/$REPO_NAME/cargo-registry $CARGO_HOME/registry || true
+gsutil -m -q rsync -r gs://umpyre-sccache/$REPO_NAME/cargo-git $CARGO_HOME/git || true
 
 sccache -s
 
@@ -43,3 +44,4 @@ gsutil -m -q rsync -r $SCCACHE_DIR gs://umpyre-sccache/sccache || true
 gsutil -m -q rsync -r target gs://umpyre-sccache/$REPO_NAME/target || true
 gsutil -m -q rsync -r node_modules gs://umpyre-sccache/$REPO_NAME/node_modules || true
 gsutil -m -q rsync -r $CARGO_HOME/registry gs://umpyre-sccache/$REPO_NAME/cargo-registry || true
+gsutil -m -q rsync -r $CARGO_HOME/git gs://umpyre-sccache/$REPO_NAME/cargo-git || true
