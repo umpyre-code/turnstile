@@ -14,6 +14,12 @@ pub struct Config {
     pub jwt: Jwt,
     pub metrics: Metrics,
     pub rate_limits: RateLimits,
+    pub gcp: Gcp,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct Gcp {
+    pub cdn_url_maps: Vec<String>,
 }
 
 #[derive(Debug, Deserialize)]

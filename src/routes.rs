@@ -3,6 +3,7 @@ use crate::beancounter_client;
 use crate::config;
 use crate::error::ResponseError;
 use crate::fairings;
+use crate::gcp;
 use crate::guards;
 use crate::models;
 use crate::responders::Cached;
@@ -404,7 +405,7 @@ pub fn put_client(
 
     let response = rolodex_client.update_client(rolodex_grpc::proto::UpdateClientRequest {
         client: Some(rolodex_grpc::proto::Client {
-            client_id,
+            client_id: client_id.clone(),
             full_name: update_client_request.full_name.clone(),
             box_public_key: update_client_request.box_public_key.clone(),
             signing_public_key: update_client_request.signing_public_key.clone(),
@@ -422,6 +423,9 @@ pub fn put_client(
     })?;
 
     check_result(response.result)?;
+
+    // Finally, invalidate the CDN cache
+    gcp::invalidate_cdn_cache(&format!("/client/{}", client_id));
 
     Ok(Json(response.into()))
 }

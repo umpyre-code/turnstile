@@ -28,6 +28,7 @@ mod catchers;
 mod config;
 mod error;
 mod fairings;
+mod gcp;
 mod guards;
 mod models;
 mod optional;
