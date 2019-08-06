@@ -1,6 +1,5 @@
 FROM guangie88/rustfmt-clippy:nightly
 
-
 ENV CARGO_HOME=/opt/.cargo
 
 # add sccache

@@ -11,9 +11,11 @@ steps:
   - '-c'
   - |
    docker pull guangie88/rustfmt-clippy:nightly || true
+- name: 'guangie88/rustfmt-clippy:nightly'
+  entrypoint: 'bulid.sh'
 - name: 'gcr.io/cloud-builders/docker'
   entrypoint: 'bash'
-  args: ['-c', 'docker build  --build-arg SSH_KEY="$$SSH_KEY" --build-arg SCCACHE_KEY="$$SCCACHE_KEY"  -t gcr.io/$PROJECT_ID/github.com/umpyre-code/turnstile:latest -t gcr.io/$PROJECT_ID/github.com/umpyre-code/turnstile:$REVISION_ID --cache-from gcr.io/$PROJECT_ID/github.com/umpyre-code/turnstile:latest --cache-from rustlang/rust:nightly .']
+  args: ['-c', 'docker build -t gcr.io/$PROJECT_ID/github.com/umpyre-code/turnstile:latest -t gcr.io/$PROJECT_ID/github.com/umpyre-code/turnstile:$REVISION_ID --cache-from gcr.io/$PROJECT_ID/github.com/umpyre-code/turnstile:latest --cache-from guangie88/rustfmt-clippy:nightly .']
   secretEnv: ['SSH_KEY', 'SCCACHE_KEY']
 images: [
    'gcr.io/$PROJECT_ID/github.com/umpyre-code/turnstile:latest','gcr.io/$PROJECT_ID/github.com/umpyre-code/turnstile:$REVISION_ID',
