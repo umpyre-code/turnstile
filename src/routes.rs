@@ -8,6 +8,7 @@ use crate::models;
 use crate::rolodex_client;
 use crate::switchroom_client;
 use crate::utils;
+use crate::responders::Cached;
 
 use rocket::http::RawStr;
 use rocket::response::content;
@@ -208,7 +209,7 @@ pub fn get_client(
     client_id: String,
     calling_client: Option<guards::Client>,
     _ratelimited: guards::RateLimited,
-) -> Result<Json<models::GetClientResponse>, ResponseError> {
+) -> Result<Cached<Json<models::GetClientResponse>>, ResponseError> {
     let rolodex_client = rolodex_client::Client::new(&config::CONFIG);
 
     let response = rolodex_client.get_client(rolodex_grpc::proto::GetClientRequest {
@@ -222,7 +223,7 @@ pub fn get_client(
     });
 
     if response.is_ok() {
-        Ok(Json(response.unwrap().into()))
+        Ok(Cached::from(Json(response.unwrap().into()), 60))
     } else {
         Err(ResponseError::NotFound {
             response: content::Json(
@@ -241,7 +242,7 @@ pub fn get_client_by_handle(
     handle: String,
     calling_client: Option<guards::Client>,
     _ratelimited: guards::RateLimited,
-) -> Result<Json<models::GetClientResponse>, ResponseError> {
+) -> Result<Cached<Json<models::GetClientResponse>>, ResponseError> {
     let rolodex_client = rolodex_client::Client::new(&config::CONFIG);
 
     let response = rolodex_client.get_client(rolodex_grpc::proto::GetClientRequest {
@@ -255,7 +256,7 @@ pub fn get_client_by_handle(
     });
 
     if response.is_ok() {
-        Ok(Json(response.unwrap().into()))
+        Ok(Cached::from(Json(response.unwrap().into()), 60))
     } else {
         Err(ResponseError::NotFound {
             response: content::Json(
