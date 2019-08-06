@@ -6,6 +6,7 @@ set -x
 # export SCCACHE_GCS_RW_MODE=READ_WRITE
 export SCCACHE_GCS_KEY_PATH=/root/sccache.json
 export SCCACHE_DIR=/workspace/sccache
+mkdir -p $SCCACHE_DIR
 
 mkdir -p $HOME/.ssh
 chmod 0700 $HOME/.ssh
@@ -22,7 +23,7 @@ eval `ssh-agent`
 ssh-add -k $HOME/.ssh/id_rsa
 
 gcloud auth activate-service-account --key-file=$SCCACHE_GCS_KEY_PATH
-gsutil -m -q rsync -r gs://umpyre-sccache/sccache /workspace/sccache || true
+gsutil -m -q rsync -r gs://umpyre-sccache/sccache $SCCACHE_DIR || true
 
 sccache -s
 
@@ -31,4 +32,4 @@ cargo build --release
 
 sccache -s
 
-gsutil -m -q rsync -r /workspace/sccache gs://umpyre-sccache/sccache || true
+gsutil -m -q rsync -r $SCCACHE_DIR gs://umpyre-sccache/sccache || true
