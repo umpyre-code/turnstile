@@ -47,6 +47,7 @@ period = 10
 max_burst = 100
 
 [gcp]
+project = "umpyre"
 # These are the current values in staging
 cdn_url_maps = [
   "k8s-um-staging-turnstile--e37976232700233f",

@@ -19,6 +19,7 @@ pub struct Config {
 
 #[derive(Debug, Deserialize)]
 pub struct Gcp {
+    pub project: String,
     pub cdn_url_maps: Vec<String>,
 }
 
