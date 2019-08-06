@@ -438,7 +438,10 @@ pub fn put_client(
         .map(|h| !h.is_empty())
         .unwrap_or_else(|| false)
     {
-        gcp::invalidate_cdn_cache(&format!("/handle/{}", client_id));
+        gcp::invalidate_cdn_cache(&format!(
+            "/handle/{}",
+            update_client_request.handle.as_ref().unwrap()
+        ));
     }
 
     Ok(Json(response.into()))
