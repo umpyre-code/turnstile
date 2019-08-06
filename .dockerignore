@@ -13,4 +13,7 @@
 .env
 
 # Ignore node files
-node_modules
+/node_modules/
+
+# Ignore sccache dir, if it exists
+/sccache/

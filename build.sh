@@ -24,14 +24,14 @@ chmod 600 $HOME/.ssh/id_rsa
 eval `ssh-agent`
 ssh-add -k $HOME/.ssh/id_rsa
 
-mkdir -p target node_modules $CARGO_HOME/registry $CARGO_HOME/git
-
 gcloud auth activate-service-account --key-file=$SCCACHE_GCS_KEY_PATH
-time gsutil -m -q rsync -r gs://umpyre-sccache/sccache $SCCACHE_DIR || true
-time gsutil -m -q rsync -r gs://umpyre-sccache/$REPO_NAME/target target || true
-time gsutil -m -q rsync -r gs://umpyre-sccache/$REPO_NAME/node_modules node_modules || true
-time gsutil -m -q rsync -r gs://umpyre-sccache/$REPO_NAME/cargo-registry $CARGO_HOME/registry || true
-time gsutil -m -q rsync -r gs://umpyre-sccache/$REPO_NAME/cargo-git $CARGO_HOME/git || true
+gsutil cp gs://umpyre-sccache/$REPO_NAME/cache.tar.gz ./cache.tar.gz || true
+gsutil cp gs://umpyre-sccache/$REPO_NAME/cargo.tar.gz ./cargo.tar.gz || true
+
+tar xf cache.tar.gz || true
+rm -f cache.tar.gz
+tar xf cargo.tar.gz -C $CARGO_HOME || true
+rm -f cargo.tar.gz
 
 sccache -s
 
@@ -40,8 +40,10 @@ cargo build --release --out-dir=out -Z unstable-options
 
 sccache -s
 
-time gsutil -m -q rsync -r $SCCACHE_DIR gs://umpyre-sccache/sccache || true
-time gsutil -m -q rsync -r target gs://umpyre-sccache/$REPO_NAME/target || true
-time gsutil -m -q rsync -r node_modules gs://umpyre-sccache/$REPO_NAME/node_modules || true
-time gsutil -m -q rsync -r $CARGO_HOME/registry gs://umpyre-sccache/$REPO_NAME/cargo-registry || true
-time gsutil -m -q rsync -r $CARGO_HOME/git gs://umpyre-sccache/$REPO_NAME/cargo-git || true
+tar czf cache.tar.gz sccache target node_modules
+gsutil cp cache.tar.gz gs://umpyre-sccache/$REPO_NAME/cache.tar.gz || true
+rm -f cache.tar.gz
+cd $CARGO_HOME
+tar czf cargo.tar.gz registry git
+gsutil cp cargo.tar.gz gs://umpyre-sccache/$REPO_NAME/cargo.tar.gz || true
+rm -f cargo.tar.gz
