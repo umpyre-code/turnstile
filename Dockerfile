@@ -9,5 +9,6 @@ COPY target/release/turnstile /usr/bin
 COPY entrypoint.sh /app
 
 ENV RUST_LOG=info
+ENV RUST_BACKTRACE=full
 
 ENTRYPOINT [ "/app/entrypoint.sh" ]
