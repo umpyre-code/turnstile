@@ -5,10 +5,10 @@ use crate::error::ResponseError;
 use crate::fairings;
 use crate::guards;
 use crate::models;
+use crate::responders::Cached;
 use crate::rolodex_client;
 use crate::switchroom_client;
 use crate::utils;
-use crate::responders::Cached;
 
 use rocket::http::RawStr;
 use rocket::response::content;
