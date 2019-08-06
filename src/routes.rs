@@ -224,7 +224,10 @@ pub fn get_client(
     });
 
     if response.is_ok() {
-        Ok(Cached::from(Json(response.unwrap().into()), 60))
+        Ok(Cached::from(
+            Json(response.unwrap().into()),
+            7 * 24 * 60 * 60, // 7 days
+        ))
     } else {
         Err(ResponseError::NotFound {
             response: content::Json(
@@ -257,7 +260,10 @@ pub fn get_client_by_handle(
     });
 
     if response.is_ok() {
-        Ok(Cached::from(Json(response.unwrap().into()), 60))
+        Ok(Cached::from(
+            Json(response.unwrap().into()),
+            7 * 24 * 60 * 60, // 7 days
+        ))
     } else {
         Err(ResponseError::NotFound {
             response: content::Json(
@@ -426,6 +432,14 @@ pub fn put_client(
 
     // Finally, invalidate the CDN cache
     gcp::invalidate_cdn_cache(&format!("/client/{}", client_id));
+    if update_client_request
+        .handle
+        .as_ref()
+        .map(|h| !h.is_empty())
+        .unwrap_or_else(|| false)
+    {
+        gcp::invalidate_cdn_cache(&format!("/handle/{}", client_id));
+    }
 
     Ok(Json(response.into()))
 }
