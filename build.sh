@@ -26,12 +26,13 @@ ssh-add -k $HOME/.ssh/id_rsa
 
 gcloud auth activate-service-account --key-file=$SCCACHE_GCS_KEY_PATH
 gsutil -m -q rsync -r gs://umpyre-sccache/sccache $SCCACHE_DIR || true
+mkdir -p target
 gsutil -m -q rsync -r gs://umpyre-sccache/$REPO_NAME/target target || true
 
 sccache -s
 
 yarn install
-cargo build --release
+cargo build --release --out-dir=out -Z unstable-options
 
 sccache -s
 
