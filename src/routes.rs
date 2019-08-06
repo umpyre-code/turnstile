@@ -430,7 +430,7 @@ pub fn put_client(
 
     check_result(response.result)?;
 
-    // Finally, invalidate the CDN cache
+    // Finally, invalidate the CDN caches
     gcp::invalidate_cdn_cache(&format!("/client/{}", client_id));
     if update_client_request
         .handle
