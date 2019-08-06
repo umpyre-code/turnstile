@@ -28,6 +28,7 @@ gcloud auth activate-service-account --key-file=$SCCACHE_GCS_KEY_PATH
 gsutil -m -q rsync -r gs://umpyre-sccache/sccache $SCCACHE_DIR || true
 mkdir -p target
 gsutil -m -q rsync -r gs://umpyre-sccache/$REPO_NAME/target target || true
+gsutil -m -q rsync -r gs://umpyre-sccache/$REPO_NAME/node_modules node_modules || true
 
 sccache -s
 
@@ -38,3 +39,4 @@ sccache -s
 
 gsutil -m -q rsync -r $SCCACHE_DIR gs://umpyre-sccache/sccache || true
 gsutil -m -q rsync -r target gs://umpyre-sccache/$REPO_NAME/target || true
+gsutil -m -q rsync -r node_modules gs://umpyre-sccache/$REPO_NAME/node_modules || true
