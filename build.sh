@@ -24,6 +24,7 @@ ssh-add -k $HOME/.ssh/id_rsa
 
 gcloud auth activate-service-account --key-file=$SCCACHE_GCS_KEY_PATH
 gsutil -m -q rsync -r gs://umpyre-sccache/sccache $SCCACHE_DIR || true
+gsutil -m -q rsync -r gs://umpyre-sccache/turnstile/target target || true
 
 sccache -s
 
@@ -33,3 +34,4 @@ cargo build --release
 sccache -s
 
 gsutil -m -q rsync -r $SCCACHE_DIR gs://umpyre-sccache/sccache || true
+gsutil -m -q rsync -r target gs://umpyre-sccache/turnstile/target || true
