@@ -22,7 +22,7 @@ eval `ssh-agent`
 ssh-add -k $HOME/.ssh/id_rsa
 
 gcloud auth activate-service-account --key-file=$SCCACHE_GCS_KEY_PATH
-gsutil -m rsync -r gs://umpyre-sccache/sccache /workspace/sccache
+gsutil -m rsync -r gs://umpyre-sccache/sccache /workspace/sccache || true
 
 sccache -s
 
@@ -31,4 +31,4 @@ cargo build --release
 
 sccache -s
 
-gsutil -m rsync -r /workspace/sccache gs://umpyre-sccache/sccache
+gsutil -m rsync -r /workspace/sccache gs://umpyre-sccache/sccache || true
