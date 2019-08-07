@@ -17,7 +17,7 @@ impl From<models::UpdateClientResponse> for ClientProfileDocument {
 
 #[derive(ElasticType, Serialize, Deserialize)]
 pub struct ClientProfileDocument {
-    #[elastic(client_id)]
+    #[elastic(id)]
     pub client_id: String,
     pub full_name: String,
     pub handle: Option<String>,
