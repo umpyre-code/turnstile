@@ -100,6 +100,10 @@ fn main() -> Result<(), std::io::Error> {
         instrumented::init(&config::CONFIG.metrics.bind_to_address);
     }
 
+    // Create elasticsearch indexes if needed
+    let elastic_client = elasticsearch::ElasticSearchClient::new();
+    elastic_client.create_indexes();
+
     rocket::ignite()
         .attach(fairings::RequestTimer)
         .attach(fairings::Counter)

@@ -36,6 +36,24 @@ impl ElasticSearchClient {
         }
     }
 
+    pub fn create_indexes(&self) {
+        use elastic::prelude::StaticIndex;
+        if !self
+            .client
+            .index(ClientProfileDocument::static_index())
+            .exists()
+            .send()
+            .expect("couldn't check for elasticsearch index")
+            .exists()
+        {
+            self.client
+                .index(ClientProfileDocument::static_index())
+                .create()
+                .send()
+                .expect("couldn't create elasticsearch index");
+        }
+    }
+
     pub fn update(&self, doc: ClientProfileDocument) {
         self.client
             .document::<ClientProfileDocument>()
