@@ -21,7 +21,7 @@ fn handle_auth_handshake(
     geo_headers: Option<guards::GeoHeaders>,
     auth_request: &Result<Json<models::AuthHandshakeRequest>, JsonError>,
 ) -> Result<Json<models::AuthHandshakeResponse>, ResponseError> {
-    use data_encoding::BASE64_NOPAD;
+    use data_encoding::BASE64URL_NOPAD;
 
     let auth_request = match auth_request {
         Ok(auth_request) => auth_request,
@@ -34,13 +34,13 @@ fn handle_auth_handshake(
 
     let response = rolodex_client.auth_handshake(rolodex_grpc::proto::AuthHandshakeRequest {
         email: auth_request.email.clone(),
-        a_pub: BASE64_NOPAD.decode(auth_request.a_pub.as_bytes())?.to_vec(),
+        a_pub: BASE64URL_NOPAD.decode(auth_request.a_pub.as_bytes())?.to_vec(),
         location,
     })?;
 
     Ok(Json(models::AuthHandshakeResponse {
-        salt: BASE64_NOPAD.encode(&response.salt),
-        b_pub: BASE64_NOPAD.encode(&response.b_pub),
+        salt: BASE64URL_NOPAD.encode(&response.salt),
+        b_pub: BASE64URL_NOPAD.encode(&response.b_pub),
     }))
 }
 
@@ -49,7 +49,7 @@ fn handle_auth_verify(
     geo_headers: Option<guards::GeoHeaders>,
     auth_request: &Result<Json<models::AuthVerifyRequest>, JsonError>,
 ) -> Result<rolodex_grpc::proto::AuthVerifyResponse, ResponseError> {
-    use data_encoding::BASE64_NOPAD;
+    use data_encoding::BASE64URL_NOPAD;
 
     let auth_request = match auth_request {
         Ok(auth_request) => auth_request,
@@ -62,8 +62,8 @@ fn handle_auth_verify(
 
     let response = rolodex_client.auth_verify(rolodex_grpc::proto::AuthVerifyRequest {
         email: auth_request.email.clone(),
-        a_pub: BASE64_NOPAD.decode(auth_request.a_pub.as_bytes())?.to_vec(),
-        client_proof: BASE64_NOPAD
+        a_pub: BASE64URL_NOPAD.decode(auth_request.a_pub.as_bytes())?.to_vec(),
+        client_proof: BASE64URL_NOPAD
             .decode(auth_request.client_proof.as_bytes())?
             .to_vec(),
         location,
@@ -91,7 +91,7 @@ pub fn post_client_auth_verify(
     redis_writer: fairings::RedisWriter,
     auth_request: Result<Json<models::AuthVerifyRequest>, JsonError>,
 ) -> Result<Json<models::AuthVerifyResponse>, ResponseError> {
-    use data_encoding::BASE64_NOPAD;
+    use data_encoding::BASE64URL_NOPAD;
 
     let response = handle_auth_verify(client_ip, geo_headers, &auth_request)?;
 
@@ -99,7 +99,7 @@ pub fn post_client_auth_verify(
 
     Ok(Json(models::AuthVerifyResponse {
         client_id: response.client_id,
-        server_proof: BASE64_NOPAD.encode(&response.server_proof),
+        server_proof: BASE64URL_NOPAD.encode(&response.server_proof),
         jwt,
     }))
 }
@@ -131,7 +131,7 @@ pub fn post_client_auth_verify_temporarily(
     redis_writer: fairings::RedisWriter,
     auth_request: Result<Json<models::AuthVerifyRequest>, JsonError>,
 ) -> Result<Json<models::AuthVerifyResponse>, ResponseError> {
-    use data_encoding::BASE64_NOPAD;
+    use data_encoding::BASE64URL_NOPAD;
 
     let response = handle_auth_verify(client_ip, geo_headers, &auth_request)?;
 
@@ -139,7 +139,7 @@ pub fn post_client_auth_verify_temporarily(
 
     Ok(Json(models::AuthVerifyResponse {
         client_id: response.client_id,
-        server_proof: BASE64_NOPAD.encode(&response.server_proof),
+        server_proof: BASE64URL_NOPAD.encode(&response.server_proof),
         jwt,
     }))
 }
@@ -152,7 +152,7 @@ pub fn post_client(
     redis_writer: fairings::RedisWriter,
     new_client_request: Result<Json<models::NewClientRequest>, JsonError>,
 ) -> Result<Json<models::NewClientResponse>, ResponseError> {
-    use data_encoding::BASE64_NOPAD;
+    use data_encoding::BASE64URL_NOPAD;
 
     let new_client_request = match new_client_request {
         Ok(new_client_request) => new_client_request,
@@ -165,10 +165,10 @@ pub fn post_client(
 
     let response = rolodex_client.add_client(rolodex_grpc::proto::NewClientRequest {
         full_name: new_client_request.full_name.clone(),
-        password_verifier: BASE64_NOPAD
+        password_verifier: BASE64URL_NOPAD
             .decode(new_client_request.password_verifier.as_bytes())?
             .to_vec(),
-        password_salt: BASE64_NOPAD
+        password_salt: BASE64URL_NOPAD
             .decode(new_client_request.password_salt.as_bytes())?
             .to_vec(),
         email: new_client_request.email.clone(),
@@ -361,16 +361,16 @@ pub fn put_client(
 
         if let Some(password_salt) = &update_client_request.password_salt {
             if let Some(password_verifier) = &update_client_request.password_verifier {
-                use data_encoding::BASE64_NOPAD;
+                use data_encoding::BASE64URL_NOPAD;
 
                 // Update password
                 let response = rolodex_client.update_client_password(
                     rolodex_grpc::proto::UpdateClientPasswordRequest {
                         client_id: client_id.clone(),
-                        password_verifier: BASE64_NOPAD
+                        password_verifier: BASE64URL_NOPAD
                             .decode(password_verifier.as_bytes())?
                             .to_vec(),
-                        password_salt: BASE64_NOPAD.decode(password_salt.as_bytes())?.to_vec(),
+                        password_salt: BASE64URL_NOPAD.decode(password_salt.as_bytes())?.to_vec(),
                         location: location.clone(),
                     },
                 )?;
@@ -479,27 +479,27 @@ pub fn get_messages(
 
 impl From<&switchroom_grpc::proto::Message> for models::Message {
     fn from(message: &switchroom_grpc::proto::Message) -> Self {
-        use data_encoding::BASE64_NOPAD;
+        use data_encoding::BASE64URL_NOPAD;
         let received_at = message.received_at.as_ref().unwrap();
         let sent_at = message.sent_at.as_ref().unwrap();
         models::Message {
             to: message.to.clone(),
             from: message.from.clone(),
-            body: BASE64_NOPAD.encode(&message.body),
-            hash: Some(BASE64_NOPAD.encode(&message.hash)),
+            body: BASE64URL_NOPAD.encode(&message.body),
+            hash: Some(BASE64URL_NOPAD.encode(&message.hash)),
             received_at: Some(models::Timestamp {
                 seconds: received_at.seconds,
                 nanos: received_at.nanos,
             }),
-            nonce: BASE64_NOPAD.encode(&message.nonce),
-            sender_public_key: BASE64_NOPAD.encode(&message.sender_public_key),
-            recipient_public_key: BASE64_NOPAD.encode(&message.recipient_public_key),
+            nonce: BASE64URL_NOPAD.encode(&message.nonce),
+            sender_public_key: BASE64URL_NOPAD.encode(&message.sender_public_key),
+            recipient_public_key: BASE64URL_NOPAD.encode(&message.recipient_public_key),
             pda: message.pda.clone(),
             sent_at: models::Timestamp {
                 seconds: sent_at.seconds,
                 nanos: sent_at.nanos,
             },
-            signature: Some(BASE64_NOPAD.encode(&message.signature)),
+            signature: Some(BASE64URL_NOPAD.encode(&message.signature)),
             value_cents: message.value_cents,
         }
     }
@@ -545,14 +545,14 @@ fn check_message_signature(
     client: &rolodex_grpc::proto::Client,
     message: &models::Message,
 ) -> Result<(), ResponseError> {
-    use data_encoding::BASE64_NOPAD;
+    use data_encoding::BASE64URL_NOPAD;
     use sodiumoxide::crypto::sign;
 
     let pk =
-        sign::PublicKey::from_slice(&BASE64_NOPAD.decode(client.signing_public_key.as_bytes())?)?;
+        sign::PublicKey::from_slice(&BASE64URL_NOPAD.decode(client.signing_public_key.as_bytes())?)?;
 
     let signature =
-        sign::Signature::from_slice(&BASE64_NOPAD.decode(message.signature.as_ref()?.as_bytes())?)?;
+        sign::Signature::from_slice(&BASE64URL_NOPAD.decode(message.signature.as_ref()?.as_bytes())?)?;
 
     let message_json = serde_json::to_string(&models::Message {
         signature: None,
@@ -575,7 +575,7 @@ fn check_message_signature(
 }
 
 fn check_message_hash(message: &models::Message) -> Result<(), ResponseError> {
-    use data_encoding::BASE64_NOPAD;
+    use data_encoding::BASE64URL_NOPAD;
     use sodiumoxide::crypto::generichash;
 
     let mut hasher = generichash::State::new(32, None).unwrap();
@@ -588,7 +588,7 @@ fn check_message_hash(message: &models::Message) -> Result<(), ResponseError> {
 
     hasher.update(message_json.as_bytes()).unwrap();
     let digest = hasher.finalize().unwrap();
-    let expected_hash = BASE64_NOPAD.encode(digest.as_ref());
+    let expected_hash = BASE64URL_NOPAD.encode(digest.as_ref());
     let empty_string = String::from("");
     let hash = message.hash.as_ref().unwrap_or(&empty_string);
 
@@ -614,7 +614,7 @@ pub fn post_messages(
     calling_client: guards::Client,
     _ratelimited: guards::RateLimited,
 ) -> Result<Json<Vec<models::Message>>, ResponseError> {
-    use data_encoding::BASE64_NOPAD;
+    use data_encoding::BASE64URL_NOPAD;
 
     let messages = match messages {
         Ok(messages) => messages,
@@ -652,23 +652,23 @@ pub fn post_messages(
         check_message_signature(&sending_client, &message)?;
 
         let value_cents = std::cmp::max(message.value_cents, 0);
-        let message_hash = BASE64_NOPAD.decode(message.hash.as_ref()?.as_bytes())?;
+        let message_hash = BASE64URL_NOPAD.decode(message.hash.as_ref()?.as_bytes())?;
 
         let response = switchroom_client.send_message(switchroom_grpc::proto::Message {
             to: message.to.clone(),
-            body: BASE64_NOPAD.decode(message.body.as_bytes())?,
+            body: BASE64URL_NOPAD.decode(message.body.as_bytes())?,
             from: calling_client.client_id.clone(),
             hash: message_hash.clone(),
             received_at: None,
-            nonce: BASE64_NOPAD.decode(message.nonce.as_bytes())?,
-            sender_public_key: BASE64_NOPAD.decode(message.sender_public_key.as_bytes())?,
-            recipient_public_key: BASE64_NOPAD.decode(message.recipient_public_key.as_bytes())?,
+            nonce: BASE64URL_NOPAD.decode(message.nonce.as_bytes())?,
+            sender_public_key: BASE64URL_NOPAD.decode(message.sender_public_key.as_bytes())?,
+            recipient_public_key: BASE64URL_NOPAD.decode(message.recipient_public_key.as_bytes())?,
             pda: message.pda.clone(),
             sent_at: Some(switchroom_grpc::proto::Timestamp {
                 seconds: message.sent_at.seconds,
                 nanos: message.sent_at.nanos,
             }),
-            signature: BASE64_NOPAD.decode(message.signature.as_ref()?.as_bytes())?,
+            signature: BASE64URL_NOPAD.decode(message.signature.as_ref()?.as_bytes())?,
             value_cents,
         })?;
 
@@ -721,14 +721,14 @@ pub fn put_messages_settle(
     calling_client: guards::Client,
     _ratelimited: guards::RateLimited,
 ) -> Result<Json<models::SettlePaymentResponse>, ResponseError> {
-    use data_encoding::BASE64_NOPAD;
+    use data_encoding::BASE64URL_NOPAD;
 
     let beancounter_client = beancounter_client::Client::new(&config::CONFIG);
 
     let response =
         beancounter_client.settle_payment(beancounter_grpc::proto::SettlePaymentRequest {
             client_id: calling_client.client_id,
-            message_hash: BASE64_NOPAD.decode(message_hash.as_bytes())?,
+            message_hash: BASE64URL_NOPAD.decode(message_hash.as_bytes())?,
         })?;
 
     Ok(Json(response.into()))
