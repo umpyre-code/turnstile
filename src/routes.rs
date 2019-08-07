@@ -1,6 +1,7 @@
 use crate::auth;
 use crate::beancounter_client;
 use crate::config;
+use crate::elasticsearch;
 use crate::error::ResponseError;
 use crate::fairings;
 use crate::gcp;
@@ -34,7 +35,9 @@ fn handle_auth_handshake(
 
     let response = rolodex_client.auth_handshake(rolodex_grpc::proto::AuthHandshakeRequest {
         email: auth_request.email.clone(),
-        a_pub: BASE64URL_NOPAD.decode(auth_request.a_pub.as_bytes())?.to_vec(),
+        a_pub: BASE64URL_NOPAD
+            .decode(auth_request.a_pub.as_bytes())?
+            .to_vec(),
         location,
     })?;
 
@@ -62,7 +65,9 @@ fn handle_auth_verify(
 
     let response = rolodex_client.auth_verify(rolodex_grpc::proto::AuthVerifyRequest {
         email: auth_request.email.clone(),
-        a_pub: BASE64URL_NOPAD.decode(auth_request.a_pub.as_bytes())?.to_vec(),
+        a_pub: BASE64URL_NOPAD
+            .decode(auth_request.a_pub.as_bytes())?
+            .to_vec(),
         client_proof: BASE64URL_NOPAD
             .decode(auth_request.client_proof.as_bytes())?
             .to_vec(),
@@ -182,6 +187,18 @@ pub fn post_client(
     })?;
 
     let jwt = auth::generate_auth_token(&*redis_writer, &response.client_id)?;
+
+    // Update the index in elasticsearch. This is launched on a separate thread
+    // so it doesn't block.
+    let elastic_doc = elasticsearch::ClientProfileDocument {
+        client_id: response.client_id.clone(),
+        full_name: new_client_request.full_name.clone(),
+        handle: None,
+    };
+    std::thread::spawn(move || {
+        let elastic = elasticsearch::ElasticSearchClient::new();
+        elastic.update(elastic_doc);
+    });
 
     Ok(Json(models::NewClientResponse {
         client_id: response.client_id,
@@ -444,7 +461,17 @@ pub fn put_client(
         ));
     }
 
-    Ok(Json(response.into()))
+    let response: models::UpdateClientResponse = response.into();
+
+    // Update the index in elasticsearch. This is launched on a separate thread
+    // so it doesn't block.
+    let elastic_doc: elasticsearch::ClientProfileDocument = response.clone().into();
+    std::thread::spawn(move || {
+        let elastic = elasticsearch::ElasticSearchClient::new();
+        elastic.update(elastic_doc);
+    });
+
+    Ok(Json(response))
 }
 
 #[get("/ping")]
@@ -548,11 +575,13 @@ fn check_message_signature(
     use data_encoding::BASE64URL_NOPAD;
     use sodiumoxide::crypto::sign;
 
-    let pk =
-        sign::PublicKey::from_slice(&BASE64URL_NOPAD.decode(client.signing_public_key.as_bytes())?)?;
+    let pk = sign::PublicKey::from_slice(
+        &BASE64URL_NOPAD.decode(client.signing_public_key.as_bytes())?,
+    )?;
 
-    let signature =
-        sign::Signature::from_slice(&BASE64URL_NOPAD.decode(message.signature.as_ref()?.as_bytes())?)?;
+    let signature = sign::Signature::from_slice(
+        &BASE64URL_NOPAD.decode(message.signature.as_ref()?.as_bytes())?,
+    )?;
 
     let message_json = serde_json::to_string(&models::Message {
         signature: None,
@@ -662,7 +691,8 @@ pub fn post_messages(
             received_at: None,
             nonce: BASE64URL_NOPAD.decode(message.nonce.as_bytes())?,
             sender_public_key: BASE64URL_NOPAD.decode(message.sender_public_key.as_bytes())?,
-            recipient_public_key: BASE64URL_NOPAD.decode(message.recipient_public_key.as_bytes())?,
+            recipient_public_key: BASE64URL_NOPAD
+                .decode(message.recipient_public_key.as_bytes())?,
             pda: message.pda.clone(),
             sent_at: Some(switchroom_grpc::proto::Timestamp {
                 seconds: message.sent_at.seconds,

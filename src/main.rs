@@ -1,6 +1,8 @@
 #![feature(proc_macro_hygiene, decl_macro, try_trait)]
 
 #[macro_use]
+extern crate elastic_derive;
+#[macro_use]
 extern crate rocket;
 #[macro_use]
 extern crate rocket_contrib;
@@ -8,24 +10,26 @@ extern crate rocket_contrib;
 extern crate serde_derive;
 #[macro_use]
 extern crate lazy_static;
-extern crate env_logger;
-extern crate http;
-extern crate instrumented;
-extern crate yansi;
 #[macro_use]
 extern crate log;
 #[macro_use]
 extern crate failure;
 
 extern crate chrono;
+extern crate elastic;
+extern crate env_logger;
+extern crate http;
+extern crate instrumented;
 extern crate rand;
 extern crate time;
 extern crate uuid;
+extern crate yansi;
 
 mod auth;
 mod beancounter_client;
 mod catchers;
 mod config;
+mod elasticsearch;
 mod error;
 mod fairings;
 mod gcp;

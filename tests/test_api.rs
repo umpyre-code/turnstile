@@ -139,7 +139,8 @@ fn decrypt_body(keypairs: &KeyPairs, body: &str, nonce: &str) -> String {
             .unwrap(),
     )
     .unwrap();
-    let nonce = box_::Nonce::from_slice(&BASE64URL_NOPAD.decode(nonce.as_bytes()).unwrap()).unwrap();
+    let nonce =
+        box_::Nonce::from_slice(&BASE64URL_NOPAD.decode(nonce.as_bytes()).unwrap()).unwrap();
 
     String::from_utf8(
         box_::open(

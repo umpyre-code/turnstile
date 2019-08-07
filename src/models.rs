@@ -79,7 +79,7 @@ pub struct UpdateClientRequest {
     pub profile: Option<String>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct UpdateClientResponse {
     pub box_public_key: String,
     pub client_id: String,

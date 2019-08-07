@@ -53,3 +53,6 @@ cdn_url_maps = [
   "k8s-um-staging-turnstile--e37976232700233f",
   "k8s-um-staging-turnstile-ipv6--e37976232700233f"
 ]
+
+[elasticsearch]
+url = "http://elasticsearch-master:9200"

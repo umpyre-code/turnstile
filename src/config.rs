@@ -15,6 +15,12 @@ pub struct Config {
     pub metrics: Metrics,
     pub rate_limits: RateLimits,
     pub gcp: Gcp,
+    pub elasticsearch: ElasticSearch,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ElasticSearch {
+    pub url: String,
 }
 
 #[derive(Debug, Deserialize)]
