@@ -226,7 +226,7 @@ pub fn get_client(
     if response.is_ok() {
         Ok(Cached::from(
             Json(response.unwrap().into()),
-            7 * 24 * 60 * 60, // 7 days
+            24 * 60 * 60, // 24h
         ))
     } else {
         Err(ResponseError::NotFound {
@@ -262,7 +262,7 @@ pub fn get_client_by_handle(
     if response.is_ok() {
         Ok(Cached::from(
             Json(response.unwrap().into()),
-            7 * 24 * 60 * 60, // 7 days
+            24 * 60 * 60, // 24h
         ))
     } else {
         Err(ResponseError::NotFound {

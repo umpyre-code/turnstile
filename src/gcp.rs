@@ -1,11 +1,14 @@
 use crate::config;
 
 pub fn invalidate_cdn_cache(path: &str) {
+    use std::io;
+    use std::io::Write;
     use std::process::Command;
+
     let url_maps = &config::CONFIG.gcp.cdn_url_maps;
 
     for url_map in url_maps.iter() {
-        Command::new("gcloud")
+        let output = Command::new("gcloud")
             .args(&[
                 "compute",
                 "url-maps",
@@ -17,7 +20,9 @@ pub fn invalidate_cdn_cache(path: &str) {
                 &config::CONFIG.gcp.project,
                 "--async",
             ])
-            .spawn()
+            .output()
             .expect("failed to execute gcloud");
+        io::stdout().write_all(&output.stdout).unwrap();
+        io::stderr().write_all(&output.stderr).unwrap();
     }
 }
