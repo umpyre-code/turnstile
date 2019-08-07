@@ -8,7 +8,7 @@ WORKDIR /app
 ADD out/* /usr/bin/
 ADD entrypoint.sh /app
 
-ENV RUST_LOG=info
+ENV RUST_LOG=turnstile=info
 ENV RUST_BACKTRACE=full
 
 ENTRYPOINT [ "/app/entrypoint.sh" ]
