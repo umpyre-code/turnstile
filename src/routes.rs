@@ -190,11 +190,11 @@ pub fn post_client(
 
     // Update the index in elasticsearch. This is launched on a separate thread
     // so it doesn't block.
-    let elastic_doc = elasticsearch::ClientProfileDocument {
-        client_id: response.client_id.clone(),
-        full_name: new_client_request.full_name.clone(),
-        handle: None,
-    };
+    let elastic_doc = elasticsearch::ClientProfileDocument::new(
+        &response.client_id,
+        &new_client_request.full_name,
+        "",
+    );
     std::thread::spawn(move || {
         let elastic = elasticsearch::ElasticSearchClient::new();
         elastic.update(elastic_doc);

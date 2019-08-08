@@ -1,6 +1,8 @@
 extern crate elastic;
 
 use elastic::client::prelude::*;
+use elastic::types::prelude::*;
+use std::collections::BTreeMap;
 
 use crate::config;
 use crate::models;
@@ -9,9 +11,36 @@ impl From<models::UpdateClientResponse> for ClientProfileDocument {
     fn from(client: models::UpdateClientResponse) -> Self {
         Self {
             client_id: client.client_id,
-            full_name: client.full_name,
-            handle: client.handle,
+            full_name: Text::<StringMapping>::new(client.full_name),
+            handle: Text::<StringMapping>::new(client.handle.unwrap_or_else(|| String::from(""))),
         }
+    }
+}
+
+impl ClientProfileDocument {
+    pub fn new(client_id: &str, full_name: &str, handle: &str) -> Self {
+        Self {
+            client_id: client_id.into(),
+            full_name: Text::<StringMapping>::new(full_name),
+            handle: Text::<StringMapping>::new(handle),
+        }
+    }
+}
+
+#[derive(Default)]
+pub struct StringMapping;
+
+impl elastic::types::string::text::mapping::TextMapping for StringMapping {
+    fn fields() -> Option<BTreeMap<&'static str, StringField>> {
+        let mut fields = BTreeMap::new();
+
+        // Add a `completion` suggester as a sub field
+        fields.insert(
+            "suggest",
+            StringField::Completion(ElasticCompletionFieldMapping::default()),
+        );
+
+        Some(fields)
     }
 }
 
@@ -19,8 +48,8 @@ impl From<models::UpdateClientResponse> for ClientProfileDocument {
 pub struct ClientProfileDocument {
     #[elastic(id)]
     pub client_id: String,
-    pub full_name: String,
-    pub handle: Option<String>,
+    pub full_name: Text<StringMapping>,
+    pub handle: Text<StringMapping>,
 }
 
 pub struct ElasticSearchClient {
@@ -37,7 +66,6 @@ impl ElasticSearchClient {
     }
 
     pub fn create_indexes(&self) {
-        use elastic::prelude::StaticIndex;
         if !self
             .client
             .index(ClientProfileDocument::static_index())
@@ -65,5 +93,47 @@ impl ElasticSearchClient {
             .index(doc)
             .send()
             .expect("failed to index doc");
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_type_mapping() {
+        let mapping = serde_json::to_value(&ClientProfileDocument::index_mapping()).unwrap();
+
+        let expected = serde_json::json!({
+            "properties":{
+                "client_id":{
+                    "fields":{
+                        "keyword":{
+                            "ignore_above": 256,
+                            "type":"keyword"
+                        }
+                    },
+                    "type":"text"
+                },
+                "full_name":{
+                    "fields":{
+                        "suggest":{
+                            "type":"completion"
+                        }
+                    },
+                    "type":"text"
+                },
+                "handle":{
+                    "fields":{
+                        "suggest":{
+                            "type":"completion"
+                        }
+                    },
+                    "type":"text"
+                }
+            }
+        });
+
+        assert_eq!(expected, mapping);
     }
 }
