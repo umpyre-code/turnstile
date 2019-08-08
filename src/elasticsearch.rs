@@ -68,6 +68,42 @@ pub struct ElasticSearchClient {
     client: SyncClient,
 }
 
+#[derive(Deserialize, Debug)]
+pub struct SuggestResponse<T> {
+    took: u64,
+    timed_out: bool,
+    #[serde(rename = "_shards")]
+    shards: elastic::client::responses::common::Shards,
+    suggest: SuggestWrapper<T>,
+    status: Option<u16>,
+}
+
+#[derive(Deserialize, Debug)]
+struct SuggestWrapper<T> {
+    suggest: Vec<Suggest<T>>,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct Suggest<T> {
+    #[serde(rename = "_index")]
+    index: String,
+    #[serde(rename = "_type")]
+    ty: String,
+    #[serde(rename = "_id")]
+    id: String,
+    #[serde(rename = "_version")]
+    version: Option<u32>,
+    #[serde(rename = "_score")]
+    score: Option<f32>,
+    #[serde(rename = "_source")]
+    source: Option<T>,
+    #[serde(rename = "_routing")]
+    routing: Option<String>,
+    highlight: Option<serde_json::Value>,
+}
+
+impl<T> elastic::http::receiver::IsOkOnSuccess for SuggestResponse<T> {}
+
 impl ElasticSearchClient {
     pub fn new() -> Self {
         let builder =
@@ -134,26 +170,34 @@ impl ElasticSearchClient {
         &self,
         prefix: &str,
     ) -> Result<Vec<ClientProfileDocument>, elastic::Error> {
-        let res: SearchResponse<ClientProfileDocument> = self
+        let res = self
             .client
-            .search()
-            .index(ClientProfileDocument::static_index())
-            .body(serde_json::json!({
-                "suggest": {
-                    "suggest" : {
-                        "prefix" : prefix,
-                        "completion" : {
-                            "field" : "suggest.suggest"
+            .request(elastic::endpoints::SearchRequest::for_index(
+                ClientProfileDocument::static_index(),
+                serde_json::json!({
+                    "suggest": {
+                        "suggest" : {
+                            "prefix" : prefix,
+                            "completion" : {
+                                "field" : "suggest.suggest"
+                            }
                         }
-                    }
-                },
-                // Limit to 20 documents
-                "from": 0,
-                "size": 20,
-            }))
-            .send()?;
+                    },
+                    // Limit to 20 documents
+                    "from": 0,
+                    "size": 20,
+                }),
+            ))
+            .send()?
+            .into_response::<SuggestResponse<ClientProfileDocument>>()?;
 
-        Ok(res.documents().cloned().collect())
+        Ok(res
+            .suggest
+            .suggest
+            .iter()
+            .filter_map(|s| s.source.as_ref())
+            .cloned()
+            .collect())
     }
 }
 
