@@ -85,6 +85,14 @@ struct SuggestWrapper<T> {
 
 #[derive(Deserialize, Debug)]
 pub struct Suggest<T> {
+    pub text: String,
+    pub offset: i64,
+    pub length: i64,
+    pub options: Vec<SuggestOption<T>>,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct SuggestOption<T> {
     #[serde(rename = "_index")]
     index: String,
     #[serde(rename = "_type")]
@@ -195,6 +203,8 @@ impl ElasticSearchClient {
             .suggest
             .suggest
             .iter()
+            .map(|s| s.options.iter())
+            .flatten()
             .filter_map(|s| s.source.as_ref())
             .cloned()
             .collect())
