@@ -147,7 +147,7 @@ impl ElasticSearchClient {
                         }
                     }
                 },
-                // Limit to 20 results
+                // Limit to 20 documents
                 "from": 0,
                 "size": 20,
             }))
