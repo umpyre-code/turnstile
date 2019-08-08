@@ -1050,3 +1050,29 @@ pub fn post_account_connect_payout(
 
     Ok(Json(response.into()))
 }
+
+impl From<elastic::Error> for ResponseError {
+    fn from(err: elastic::Error) -> Self {
+        Self::BadRequest {
+            response: content::Json(
+                json!({
+                    "message:": "Search failed",
+                    "err":err.to_string()
+                })
+                .to_string(),
+            ),
+        }
+    }
+}
+
+#[post("/client/search/<prefix>")]
+pub fn post_client_search(
+    prefix: String,
+    _calling_client: Option<guards::Client>,
+    _ratelimited: guards::RateLimited,
+) -> Result<Cached<Json<Vec<elasticsearch::ClientProfileDocument>>>, ResponseError> {
+    let elastic = elasticsearch::ElasticSearchClient::new();
+    let response = elastic.search_suggest(&prefix)?;
+
+    Ok(Cached::from(Json(response), 60))
+}

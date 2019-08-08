@@ -36,7 +36,7 @@ impl ClientProfileDocument {
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct StringMapping;
 
 impl elastic::types::string::text::mapping::TextMapping for StringMapping {
@@ -53,7 +53,7 @@ impl elastic::types::string::text::mapping::TextMapping for StringMapping {
     }
 }
 
-#[derive(ElasticType, Serialize, Deserialize)]
+#[derive(ElasticType, Clone, Serialize, Deserialize)]
 #[elastic(index = "client_profiles")]
 pub struct ClientProfileDocument {
     #[elastic(id)]
@@ -127,6 +127,30 @@ impl ElasticSearchClient {
             .send()
             .expect("failed to index doc");
     }
+
+    pub fn search_suggest(
+        &self,
+        prefix: &str,
+    ) -> Result<Vec<ClientProfileDocument>, elastic::Error> {
+        let res: SearchResponse<ClientProfileDocument> = self
+            .client
+            .search()
+            .index(ClientProfileDocument::static_index())
+            .index("_all")
+            .body(serde_json::json!({
+                "suggest": {
+                    "suggest" : {
+                        "prefix" : prefix,
+                        "completion" : {
+                            "field" : "suggest.suggest"
+                        }
+                    }
+                }
+            }))
+            .send()?;
+
+        Ok(res.documents().map(|d| d.clone()).collect())
+    }
 }
 
 #[cfg(test)]
@@ -138,41 +162,41 @@ mod tests {
         let mapping = serde_json::to_value(&ClientProfileDocument::index_mapping()).unwrap();
 
         let expected = serde_json::json!({
-            "properties": {
-                "client_id": {
-                "fields": {
-                    "keyword": {
-                    "ignore_above": 256,
-                    "type": "keyword"
-                    }
+            "properties":{
+                "client_id":{
+                    "fields":{
+                        "keyword":{
+                            "ignore_above":256,
+                            "type":"keyword"
+                        }
+                    },
+                    "type":"text"
                 },
-                "type": "text"
+                "full_name":{
+                    "fields":{
+                        "keyword":{
+                            "ignore_above":256,
+                            "type":"keyword"
+                        }
+                    },
+                    "type":"text"
                 },
-                "full_name": {
-                "fields": {
-                    "keyword": {
-                    "ignore_above": 256,
-                    "type": "keyword"
-                    }
+                "handle":{
+                    "fields":{
+                        "keyword":{
+                            "ignore_above":256,
+                            "type":"keyword"
+                        }
+                    },
+                    "type":"text"
                 },
-                "type": "text"
-                },
-                "handle": {
-                "fields": {
-                    "keyword": {
-                    "ignore_above": 256,
-                    "type": "keyword"
-                    }
-                },
-                "type": "text"
-                },
-                "suggest": {
-                "fields": {
-                    "suggest": {
-                    "type": "completion"
-                    }
-                },
-                "type": "text"
+                "suggest":{
+                    "fields":{
+                        "suggest":{
+                            "type":"completion"
+                        }
+                    },
+                    "type":"text"
                 }
             }
         });
