@@ -9,10 +9,15 @@ use crate::models;
 
 impl From<models::UpdateClientResponse> for ClientProfileDocument {
     fn from(client: models::UpdateClientResponse) -> Self {
+        let handle = client.handle.unwrap_or_else(|| String::from(""));
         Self {
             client_id: client.client_id,
-            full_name: Text::<StringMapping>::new(client.full_name),
-            handle: Text::<StringMapping>::new(client.handle.unwrap_or_else(|| String::from(""))),
+            full_name: client.full_name.clone(),
+            handle: handle.clone(),
+            suggest: vec![
+                Text::<StringMapping>::new(client.full_name),
+                Text::<StringMapping>::new(handle),
+            ],
         }
     }
 }
@@ -21,8 +26,12 @@ impl ClientProfileDocument {
     pub fn new(client_id: &str, full_name: &str, handle: &str) -> Self {
         Self {
             client_id: client_id.into(),
-            full_name: Text::<StringMapping>::new(full_name),
-            handle: Text::<StringMapping>::new(handle),
+            full_name: full_name.into(),
+            handle: handle.into(),
+            suggest: vec![
+                Text::<StringMapping>::new(full_name),
+                Text::<StringMapping>::new(handle),
+            ],
         }
     }
 }
@@ -49,8 +58,9 @@ impl elastic::types::string::text::mapping::TextMapping for StringMapping {
 pub struct ClientProfileDocument {
     #[elastic(id)]
     pub client_id: String,
-    pub full_name: Text<StringMapping>,
-    pub handle: Text<StringMapping>,
+    pub full_name: String,
+    pub handle: String,
+    pub suggest: Vec<Text<StringMapping>>,
 }
 
 pub struct ElasticSearchClient {
