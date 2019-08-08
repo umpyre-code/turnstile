@@ -146,11 +146,14 @@ impl ElasticSearchClient {
                             "field" : "suggest.suggest"
                         }
                     }
-                }
+                },
+                // Limit to 20 results
+                "from": 0,
+                "size": 20,
             }))
             .send()?;
 
-        Ok(res.documents().map(|d| d.clone()).collect())
+        Ok(res.documents().cloned().collect())
     }
 }
 
