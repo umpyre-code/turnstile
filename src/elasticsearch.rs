@@ -45,6 +45,7 @@ impl elastic::types::string::text::mapping::TextMapping for StringMapping {
 }
 
 #[derive(ElasticType, Serialize, Deserialize)]
+#[elastic(index = "client_profiles")]
 pub struct ClientProfileDocument {
     #[elastic(id)]
     pub client_id: String,
@@ -65,7 +66,29 @@ impl ElasticSearchClient {
         }
     }
 
-    pub fn create_indexes(&self) {
+    pub fn create_indices(&self) {
+        let index_template = serde_json::json!({
+          "index_patterns": ["client_profiles"],
+          "settings": {
+            "number_of_shards": 9,
+            "number_of_replicas" : 2
+          },
+          "mappings": {
+            "_source": {
+              "enabled": true
+            }
+          }
+        });
+
+        // Apply index template
+        self.client
+            .request(elastic::endpoints::IndicesPutTemplateRequest::for_name(
+                "client_profiles_template",
+                index_template,
+            ))
+            .send()
+            .expect("couldn't update index template");
+
         if !self
             .client
             .index(ClientProfileDocument::static_index())

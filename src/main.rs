@@ -102,7 +102,7 @@ fn main() -> Result<(), std::io::Error> {
 
     // Create elasticsearch indexes if needed
     let elastic_client = elasticsearch::ElasticSearchClient::new();
-    elastic_client.create_indexes();
+    elastic_client.create_indices();
 
     rocket::ignite()
         .attach(fairings::RequestTimer)
