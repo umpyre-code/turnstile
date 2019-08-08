@@ -138,31 +138,41 @@ mod tests {
         let mapping = serde_json::to_value(&ClientProfileDocument::index_mapping()).unwrap();
 
         let expected = serde_json::json!({
-            "properties":{
-                "client_id":{
-                    "fields":{
-                        "keyword":{
-                            "ignore_above": 256,
-                            "type":"keyword"
-                        }
-                    },
-                    "type":"text"
+            "properties": {
+                "client_id": {
+                "fields": {
+                    "keyword": {
+                    "ignore_above": 256,
+                    "type": "keyword"
+                    }
                 },
-                "full_name":{
-                    "fields":{
-                        "suggest":{
-                            "type":"completion"
-                        }
-                    },
-                    "type":"text"
+                "type": "text"
                 },
-                "handle":{
-                    "fields":{
-                        "suggest":{
-                            "type":"completion"
-                        }
-                    },
-                    "type":"text"
+                "full_name": {
+                "fields": {
+                    "keyword": {
+                    "ignore_above": 256,
+                    "type": "keyword"
+                    }
+                },
+                "type": "text"
+                },
+                "handle": {
+                "fields": {
+                    "keyword": {
+                    "ignore_above": 256,
+                    "type": "keyword"
+                    }
+                },
+                "type": "text"
+                },
+                "suggest": {
+                "fields": {
+                    "suggest": {
+                    "type": "completion"
+                    }
+                },
+                "type": "text"
                 }
             }
         });
