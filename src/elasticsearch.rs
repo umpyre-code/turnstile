@@ -2,6 +2,7 @@ extern crate elastic;
 
 use elastic::client::prelude::*;
 use elastic::types::prelude::*;
+use instrumented::instrument;
 use std::collections::BTreeMap;
 
 use crate::config;
@@ -36,7 +37,7 @@ impl ClientProfileDocument {
     }
 }
 
-#[derive(Default, Clone)]
+#[derive(Default, Debug, Clone)]
 pub struct StringMapping;
 
 impl elastic::types::string::text::mapping::TextMapping for StringMapping {
@@ -53,7 +54,7 @@ impl elastic::types::string::text::mapping::TextMapping for StringMapping {
     }
 }
 
-#[derive(ElasticType, Clone, Serialize, Deserialize)]
+#[derive(ElasticType, Clone, Debug, Serialize, Deserialize)]
 #[elastic(index = "client_profiles")]
 pub struct ClientProfileDocument {
     #[elastic(id)]
@@ -128,6 +129,7 @@ impl ElasticSearchClient {
             .expect("failed to index doc");
     }
 
+    #[instrument(INFO)]
     pub fn search_suggest(
         &self,
         prefix: &str,
@@ -136,7 +138,6 @@ impl ElasticSearchClient {
             .client
             .search()
             .index(ClientProfileDocument::static_index())
-            .index("_all")
             .body(serde_json::json!({
                 "suggest": {
                     "suggest" : {
