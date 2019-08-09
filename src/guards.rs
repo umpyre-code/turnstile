@@ -14,14 +14,14 @@ fn get_auth_client<'a, 'r, C: MakeClient + Send + Sync + Clone + 'static>(
 ) -> rocket::request::Outcome<C, ()> {
     // Store the client object in local request cache to avoid multiple lookups
     let client = request.local_cache(|| {
-        let redis_reader = request.guard::<RedisReader>().unwrap();
+        let mut redis_reader = request.guard::<RedisReader>().unwrap();
 
         request
             .headers()
             .get_one(token_name) // API key comes from headers
             .map(std::string::ToString::to_string)
             .and_then(|token: String| {
-                if let Ok(client_id) = auth::verify_auth_token_get_sub(&*redis_reader, &token) {
+                if let Ok(client_id) = auth::verify_auth_token_get_sub(&mut *redis_reader, &token) {
                     Some(C::make_client(client_id))
                 } else {
                     None
@@ -93,13 +93,13 @@ pub struct RateLimited {
 }
 
 fn ratelimit_from_request<'a, 'r>(request: &'a rocket::request::Request<'r>) -> RateLimit {
-    use rocket_contrib::databases::redis;
+    use crate::redis::db::redis;
     use std::str::FromStr;
 
     request
         .local_cache(|| {
-            let redis_writer = request.guard::<RedisWriter>().unwrap();
-            let redis = &*redis_writer;
+            let mut redis_writer = request.guard::<RedisWriter>().unwrap();
+            let redis = &mut *redis_writer;
 
             let client = request.guard::<Client>();
 
@@ -144,7 +144,7 @@ fn ratelimit_from_request<'a, 'r>(request: &'a rocket::request::Request<'r>) -> 
                     .arg(ratelimit_config.max_burst)
                     .arg(ratelimit_config.tokens)
                     .arg(ratelimit_config.period)
-                    .query(redis)
+                    .query(&mut redis.0)
                     .unwrap();
 
             let limited = limited == 1;

@@ -1,4 +1,5 @@
 use crate::beancounter_client;
+use crate::redis;
 use crate::rolodex_client;
 use crate::switchroom_client;
 use crate::token;
@@ -179,8 +180,8 @@ impl From<&JsonError<'_>> for ResponseError {
     }
 }
 
-impl From<rocket_contrib::databases::redis::RedisError> for ResponseError {
-    fn from(err: rocket_contrib::databases::redis::RedisError) -> Self {
+impl From<redis::db::RedisError> for ResponseError {
+    fn from(err: redis::db::RedisError) -> Self {
         ResponseError::BadRequest {
             response: content::Json(
                 json!({

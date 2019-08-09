@@ -158,7 +158,7 @@ impl Fairing for RateLimitHeaders {
 }
 
 #[database("redis_reader")]
-pub struct RedisReader(rocket_contrib::databases::redis::Connection);
+pub struct RedisReader(crate::redis::db::ReaderConnection);
 
 #[database("redis_writer")]
-pub struct RedisWriter(rocket_contrib::databases::redis::Connection);
+pub struct RedisWriter(crate::redis::db::WriterConnection);

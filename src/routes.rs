@@ -93,14 +93,14 @@ pub fn post_client_auth_verify(
     _ratelimited: guards::RateLimited,
     client_ip: guards::ClientIP,
     geo_headers: Option<guards::GeoHeaders>,
-    redis_writer: fairings::RedisWriter,
+    mut redis_writer: fairings::RedisWriter,
     auth_request: Result<Json<models::AuthVerifyRequest>, JsonError>,
 ) -> Result<Json<models::AuthVerifyResponse>, ResponseError> {
     use data_encoding::BASE64URL_NOPAD;
 
     let response = handle_auth_verify(client_ip, geo_headers, &auth_request)?;
 
-    let jwt = auth::generate_auth_token(&*redis_writer, &response.client_id)?;
+    let jwt = auth::generate_auth_token(&mut *redis_writer, &response.client_id)?;
 
     Ok(Json(models::AuthVerifyResponse {
         client_id: response.client_id,
@@ -118,7 +118,6 @@ pub fn post_client_auth_handshake_temporarily(
     _ratelimited: guards::RateLimited,
     client_ip: guards::ClientIP,
     geo_headers: Option<guards::GeoHeaders>,
-    _redis_writer: fairings::RedisWriter,
     auth_request: Result<Json<models::AuthHandshakeRequest>, JsonError>,
 ) -> Result<Json<models::AuthHandshakeResponse>, ResponseError> {
     handle_auth_handshake(client_ip, geo_headers, &auth_request)
@@ -133,14 +132,14 @@ pub fn post_client_auth_verify_temporarily(
     _ratelimited: guards::RateLimited,
     client_ip: guards::ClientIP,
     geo_headers: Option<guards::GeoHeaders>,
-    redis_writer: fairings::RedisWriter,
+    mut redis_writer: fairings::RedisWriter,
     auth_request: Result<Json<models::AuthVerifyRequest>, JsonError>,
 ) -> Result<Json<models::AuthVerifyResponse>, ResponseError> {
     use data_encoding::BASE64URL_NOPAD;
 
     let response = handle_auth_verify(client_ip, geo_headers, &auth_request)?;
 
-    let jwt = auth::generate_auth_temporary_token(&*redis_writer, &response.client_id)?;
+    let jwt = auth::generate_auth_temporary_token(&mut *redis_writer, &response.client_id)?;
 
     Ok(Json(models::AuthVerifyResponse {
         client_id: response.client_id,
@@ -154,7 +153,7 @@ pub fn post_client(
     _ratelimited: guards::RateLimited,
     client_ip: guards::ClientIP,
     geo_headers: Option<guards::GeoHeaders>,
-    redis_writer: fairings::RedisWriter,
+    mut redis_writer: fairings::RedisWriter,
     new_client_request: Result<Json<models::NewClientRequest>, JsonError>,
 ) -> Result<Json<models::NewClientResponse>, ResponseError> {
     use data_encoding::BASE64URL_NOPAD;
@@ -186,7 +185,7 @@ pub fn post_client(
         location,
     })?;
 
-    let jwt = auth::generate_auth_token(&*redis_writer, &response.client_id)?;
+    let jwt = auth::generate_auth_token(&mut *redis_writer, &response.client_id)?;
 
     // Update the index in elasticsearch. This is launched on a separate thread
     // so it doesn't block.
