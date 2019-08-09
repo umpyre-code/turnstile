@@ -205,10 +205,10 @@ pub fn post_client(
     }))
 }
 
-impl From<rolodex_grpc::proto::GetClientResponse> for models::GetClientResponse {
-    fn from(response: rolodex_grpc::proto::GetClientResponse) -> Self {
+impl From<Option<rolodex_grpc::proto::Client>> for models::GetClientResponse {
+    fn from(client: Option<rolodex_grpc::proto::Client>) -> Self {
         use crate::optional::Optional;
-        let client = response.client.unwrap();
+        let client = client.unwrap();
         models::GetClientResponse {
             client_id: client.client_id,
             full_name: client.full_name,
@@ -218,6 +218,12 @@ impl From<rolodex_grpc::proto::GetClientResponse> for models::GetClientResponse 
             profile: client.profile.into_option(),
             joined: client.joined,
         }
+    }
+}
+
+impl From<rolodex_grpc::proto::GetClientResponse> for models::GetClientResponse {
+    fn from(response: rolodex_grpc::proto::GetClientResponse) -> Self {
+        response.client.into()
     }
 }
 
@@ -439,7 +445,10 @@ pub fn put_client(
                 .profile
                 .clone()
                 .unwrap_or_else(|| String::from("")),
-            joined: 0, // ignored
+
+            // these fields are ignored but required by the proto definition
+            joined: 0,                 // ignored
+            phone_sms_verified: false, // ignored
         }),
         location,
     })?;
@@ -537,11 +546,10 @@ impl From<switchroom_grpc::proto::Message> for models::Message {
     }
 }
 
-fn check_box_public_keys(
+fn get_client_for(
     rolodex_client: &rolodex_client::Client,
     calling_client_id: &str,
     client_id: &str,
-    expected_box_public_key: &str,
 ) -> Result<rolodex_grpc::proto::Client, ResponseError> {
     let response = rolodex_client.get_client(rolodex_grpc::proto::GetClientRequest {
         id: Some(rolodex_grpc::proto::get_client_request::Id::ClientId(
@@ -549,10 +557,15 @@ fn check_box_public_keys(
         )),
         calling_client_id: calling_client_id.into(),
     })?;
+    Ok(response.client?)
+}
 
-    let client = response.client?;
+fn check_box_public_keys(
+    client: &rolodex_grpc::proto::Client,
+    expected_box_public_key: &str,
+) -> Result<(), ResponseError> {
     if expected_box_public_key.eq(&client.box_public_key) {
-        Ok(client)
+        Ok(())
     } else {
         Err(ResponseError::BadRequest {
             response: content::Json(
@@ -655,29 +668,38 @@ pub fn post_messages(
     let rolodex_client = rolodex_client::Client::new(&config::CONFIG);
     let beancounter_client = beancounter_client::Client::new(&config::CONFIG);
 
+    let sender_client = get_client_for(
+        &rolodex_client,
+        &calling_client.client_id,
+        &calling_client.client_id,
+    )?;
+
+    if config::CONFIG.service.require_sms_verification && !sender_client.phone_sms_verified {
+        return Err(ResponseError::PhoneNotVerified {
+            response: content::Json(
+                json!({
+                    "message:": "Client's phone number has not been verified",
+                })
+                .to_string(),
+            ),
+        });
+    }
+
     for message in messages.iter() {
         // Verify the message hash
         check_message_hash(&message)?;
 
         // Verify the public key of the client sending this message matches what's
         // in our DB. Keep the client struct so we can verify the signature as well.
-        let sending_client = check_box_public_keys(
-            &rolodex_client,
-            &calling_client.client_id,
-            &calling_client.client_id,
-            &message.sender_public_key,
-        )?;
+        check_box_public_keys(&sender_client, &message.sender_public_key)?;
 
         // Verify the public key of the recipient matches what's in our DB
-        check_box_public_keys(
-            &rolodex_client,
-            &calling_client.client_id,
-            &message.to,
-            &message.recipient_public_key,
-        )?;
+        let recipient_client =
+            get_client_for(&rolodex_client, &message.to, &calling_client.client_id)?;
+        check_box_public_keys(&recipient_client, &message.recipient_public_key)?;
 
         // Verify the message signature
-        check_message_signature(&sending_client, &message)?;
+        check_message_signature(&sender_client, &message)?;
 
         let value_cents = std::cmp::max(message.value_cents, 0);
         let message_hash = BASE64URL_NOPAD.decode(message.hash.as_ref()?.as_bytes())?;
@@ -1074,4 +1096,47 @@ pub fn post_client_search(
     let response = elastic.search_suggest(&prefix)?;
 
     Ok(Cached::from(Json(response), 60))
+}
+
+#[post("/client/verify_phone/<code>")]
+pub fn post_client_verify_phone(
+    code: i32,
+    calling_client: guards::Client,
+    client_ip: guards::ClientIP,
+    geo_headers: Option<guards::GeoHeaders>,
+    _ratelimited: guards::RateLimited,
+) -> Result<Json<models::VerifyPhoneResponse>, ResponseError> {
+    let location = utils::make_location(client_ip, geo_headers);
+    let rolodex_client = rolodex_client::Client::new(&config::CONFIG);
+
+    let response = rolodex_client.verify_phone(rolodex_grpc::proto::VerifyPhoneRequest {
+        client_id: calling_client.client_id.clone(),
+        code,
+        location,
+    })?;
+
+    if response.result == rolodex_grpc::proto::Result::Success as i32 {
+        Ok(Json(models::VerifyPhoneResponse {
+            result: "success".to_owned(),
+            client: Some(response.client.into()),
+        }))
+    } else {
+        Ok(Json(models::VerifyPhoneResponse {
+            result: "invalid code".to_owned(),
+            client: None,
+        }))
+    }
+}
+
+#[post("/client/verify_phone")]
+pub fn post_client_verify_phone_new_code(
+    calling_client: guards::Client,
+    _ratelimited: guards::RateLimited,
+) -> Result<Json<models::SendVerificationCodeResponse>, ResponseError> {
+    let rolodex_client = rolodex_client::Client::new(&config::CONFIG);
+    rolodex_client.send_verification_code(rolodex_grpc::proto::SendVerificationCodeRequest {
+        client_id: calling_client.client_id.clone(),
+    })?;
+
+    Ok(Json(models::SendVerificationCodeResponse {}))
 }

@@ -179,4 +179,20 @@ impl Client {
     ) -> Result<rolodex_grpc::proto::UpdateClientPhoneNumberResponse, RolodexError> {
         with_client!(self, RpcClient::update_client_phone_number, update_request)
     }
+
+    #[instrument(INFO)]
+    pub fn verify_phone(
+        &self,
+        request: rolodex_grpc::proto::VerifyPhoneRequest,
+    ) -> Result<rolodex_grpc::proto::VerifyPhoneResponse, RolodexError> {
+        with_client!(self, RpcClient::verify_phone, request)
+    }
+
+    #[instrument(INFO)]
+    pub fn send_verification_code(
+        &self,
+        request: rolodex_grpc::proto::SendVerificationCodeRequest,
+    ) -> Result<rolodex_grpc::proto::SendVerificationCodeResponse, RolodexError> {
+        with_client!(self, RpcClient::send_verification_code, request)
+    }
 }

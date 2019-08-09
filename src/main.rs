@@ -139,6 +139,8 @@ fn main() -> Result<(), std::io::Error> {
                 routes::post_client_auth_verify_temporarily,
                 routes::post_client_auth_verify,
                 routes::post_client_search,
+                routes::post_client_verify_phone_new_code,
+                routes::post_client_verify_phone,
                 routes::post_client,
                 routes::post_messages,
                 routes::post_stripe_charge,

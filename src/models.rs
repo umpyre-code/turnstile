@@ -194,3 +194,12 @@ pub struct SettlePaymentResponse {
     pub payment_cents: i32,
     pub balance: Balance,
 }
+
+#[derive(Debug, Serialize)]
+pub struct VerifyPhoneResponse {
+    pub result: String,
+    pub client: Option<GetClientResponse>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct SendVerificationCodeResponse {}

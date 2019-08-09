@@ -33,6 +33,7 @@ pub struct Gcp {
 pub struct Service {
     pub site_uri: String,
     pub enable_hsts: bool,
+    pub require_sms_verification: bool,
 }
 
 #[derive(Debug, Deserialize)]
