@@ -21,7 +21,10 @@ pub mod db {
             let mut manager = RedisClusterConnectionManager::new(
                 vec![url.to_owned()]
                     .iter()
-                    .map(|c| c.into_connection_info().unwrap())
+                    .map(|c| {
+                        c.into_connection_info()
+                            .expect("couldn't convert url to connection info")
+                    })
                     .collect(),
             )?;
             manager.set_readonly(false);
@@ -36,7 +39,10 @@ pub mod db {
             let mut manager = RedisClusterConnectionManager::new(
                 vec![url.to_owned()]
                     .iter()
-                    .map(|c| c.into_connection_info().unwrap())
+                    .map(|c| {
+                        c.into_connection_info()
+                            .expect("couldn't convert url to connection info")
+                    })
                     .collect(),
             )?;
             manager.set_readonly(true);
