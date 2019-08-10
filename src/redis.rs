@@ -3,7 +3,7 @@ use rocket_contrib::databases::{r2d2, DatabaseConfig, DbError, Poolable};
 
 pub mod db {
     pub use r2d2_redis_cluster::redis_cluster_rs::redis;
-    pub use r2d2_redis_cluster::redis_cluster_rs::redis::RedisError;
+    pub use r2d2_redis_cluster::redis_cluster_rs::redis::{RedisError, RedisResult};
     use r2d2_redis_cluster::redis_cluster_rs::Connection as ClusterConnection;
     use r2d2_redis_cluster::RedisClusterConnectionManager;
 

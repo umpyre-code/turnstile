@@ -93,8 +93,7 @@ pub struct RateLimited {
 }
 
 fn ratelimit_from_request<'a, 'r>(request: &'a rocket::request::Request<'r>) -> RateLimit {
-    use crate::redis::db::redis;
-    use r2d2_redis_cluster::redis_cluster_rs::redis::RedisResult;
+    use crate::redis::db::{redis, RedisResult};
     use std::str::FromStr;
 
     request
