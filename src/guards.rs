@@ -94,6 +94,7 @@ pub struct RateLimited {
 
 fn ratelimit_from_request<'a, 'r>(request: &'a rocket::request::Request<'r>) -> RateLimit {
     use crate::redis::db::redis;
+    use r2d2_redis_cluster::redis_cluster_rs::redis::RedisResult;
     use std::str::FromStr;
 
     request
@@ -138,14 +139,16 @@ fn ratelimit_from_request<'a, 'r>(request: &'a rocket::request::Request<'r>) -> 
             trace!("throttle key={:?}", key);
             let key = format!("throttle:{}", key);
 
-            let (limited, limit, remaining, retry_after, reset): (i32, i32, i32, i32, i32) =
+            let result: RedisResult<(i32, i32, i32, i32, i32)> =
                 redis::cmd("CL.THROTTLE")
                     .arg(&key)
                     .arg(ratelimit_config.max_burst)
                     .arg(ratelimit_config.tokens)
                     .arg(ratelimit_config.period)
-                    .query(&mut redis.0)
-                    .unwrap();
+                    .query(&mut redis.0);
+
+match result {
+            Ok((limited, limit, remaining, retry_after, reset)) =>{
 
             let limited = limited == 1;
 
@@ -163,6 +166,19 @@ fn ratelimit_from_request<'a, 'r>(request: &'a rocket::request::Request<'r>) -> 
                 retry_after,
                 reset,
             }
+            },
+            Err(err) => {
+                error!("redis error: {:?}", err);
+            RateLimit {
+                key,
+             limited: false,
+                limit: 0,
+                remaining: 0,
+                retry_after: 0,
+                reset: 0,
+            }
+            }
+        }
         })
         .clone()
 }
