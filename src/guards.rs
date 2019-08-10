@@ -146,38 +146,36 @@ fn ratelimit_from_request<'a, 'r>(request: &'a rocket::request::Request<'r>) -> 
                     .arg(ratelimit_config.period)
                     .query(&mut redis.0);
 
-match result {
-            Ok((limited, limit, remaining, retry_after, reset)) =>{
+            match result {
+                Ok((limited, limit, remaining, retry_after, reset)) =>{
+                    let limited = limited == 1;
+                    if limited {
+                        info!("Request from {} being rate limited: limit={} remaining={} retry_after={} reset={}",
+                        key,
+                        limit, remaining, retry_after, reset);
+                    }
 
-            let limited = limited == 1;
-
-            if limited {
-                info!("Request from {} being rate limited: limit={} remaining={} retry_after={} reset={}",
-                key,
-                limit, remaining, retry_after, reset);
+                    RateLimit {
+                        key,
+                        limited,
+                        limit,
+                        remaining,
+                        retry_after,
+                        reset,
+                    }
+                },
+                Err(err) => {
+                    error!("redis error: {:?}", err);
+                    RateLimit {
+                        key,
+                        limited: false,
+                        limit: 0,
+                        remaining: 0,
+                        retry_after: 0,
+                        reset: 0,
+                    }
+                }
             }
-
-            RateLimit {
-                key,
-                limited,
-                limit,
-                remaining,
-                retry_after,
-                reset,
-            }
-            },
-            Err(err) => {
-                error!("redis error: {:?}", err);
-            RateLimit {
-                key,
-             limited: false,
-                limit: 0,
-                remaining: 0,
-                retry_after: 0,
-                reset: 0,
-            }
-            }
-        }
         })
         .clone()
 }
