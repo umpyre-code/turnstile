@@ -16,6 +16,7 @@ pub mod db {
 
     impl WriterConnectionManager {
         pub fn new(url: &str) -> Result<Self> {
+            info!("Starting redis writer manager for {}", url);
             let mut manager = RedisClusterConnectionManager::new(vec![url])?;
             manager.set_readonly(false);
             Ok(Self(manager))
@@ -24,6 +25,7 @@ pub mod db {
 
     impl ReaderConnectionManager {
         pub fn new(url: &str) -> Result<Self> {
+            info!("Starting redis reader manager for {}", url);
             let mut manager = RedisClusterConnectionManager::new(vec![url])?;
             manager.set_readonly(true);
             Ok(Self(manager))
