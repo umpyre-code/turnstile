@@ -16,8 +16,14 @@ pub mod db {
 
     impl WriterConnectionManager {
         pub fn new(url: &str) -> Result<Self> {
+            use r2d2_redis_cluster::redis_cluster_rs::redis::IntoConnectionInfo;
             info!("Starting redis writer manager for {}", url);
-            let mut manager = RedisClusterConnectionManager::new(vec![url])?;
+            let mut manager = RedisClusterConnectionManager::new(
+                vec![url.to_owned()]
+                    .iter()
+                    .map(|c| c.into_connection_info().unwrap())
+                    .collect(),
+            )?;
             manager.set_readonly(false);
             Ok(Self(manager))
         }
@@ -26,7 +32,12 @@ pub mod db {
     impl ReaderConnectionManager {
         pub fn new(url: &str) -> Result<Self> {
             info!("Starting redis reader manager for {}", url);
-            let mut manager = RedisClusterConnectionManager::new(vec![url])?;
+            let mut manager = RedisClusterConnectionManager::new(
+                vec![url.to_owned()]
+                    .iter()
+                    .map(|c| c.into_connection_info().unwrap())
+                    .collect(),
+            )?;
             manager.set_readonly(true);
             Ok(Self(manager))
         }
