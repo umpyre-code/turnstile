@@ -8,7 +8,7 @@ fn generate_and_store_token(
     client_id: &str,
     expiry: u64,
 ) -> Result<models::Jwt, ResponseError> {
-    use r2d2_redis_cluster::Commands;
+    use r2d2_redis_cluster::redis_cluster_rs::Commands;
 
     // generate token (JWT)
     let jwt = token::generate(&client_id, expiry);
@@ -64,20 +64,49 @@ pub fn verify_auth_token_get_sub(
     Ok(jwt.sub)
 }
 
+pub fn delete_tokens_for(
+    redis_writer: &mut db::WriterConnection,
+    client_id: &str,
+) -> Result<(), ResponseError> {
+    use r2d2_redis_cluster::redis_cluster_rs::{pipe, Commands, PipelineCommands};
+
+    let redis = &mut *redis_writer;
+    // Fetch all keys for this client
+    let keys: (Vec<String>) = redis.0.keys(format!("token:{}:*", client_id))?;
+
+    let mut pipe = pipe();
+
+    for key in keys.iter() {
+        pipe.del(key);
+    }
+    pipe.query(&mut redis.0)?;
+
+    Ok(())
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
 
-    fn get_redis_conn() -> rocket_contrib::databases::redis::Connection {
-        let client = rocket_contrib::databases::redis::Client::open("redis://127.0.0.1/").unwrap();
+    fn get_redis_conn() -> db::WriterConnection {
+        let client = crate::redis::WriterConnection::new("redis://127.0.0.1/").unwrap();
         client.get_connection().unwrap()
     }
 
     #[test]
     fn test_auth_token() {
         let redis_conn = get_redis_conn();
-        let jwt = generate_auth_token(&redis_conn, "bob").unwrap();
-        let sub = verify_auth_token_get_sub(&redis_conn, &jwt.token).unwrap();
+        let jwt = generate_auth_token(&mut redis_conn, "bob").unwrap();
+        let sub = verify_auth_token_get_sub(&mut redis_conn, &jwt.token).unwrap();
         assert_eq!(&sub, "bob");
+    }
+
+    #[test]
+    fn test_delete_tokens() {
+        let redis_conn = get_redis_conn();
+        let jwt = generate_auth_token(&mut redis_conn, "bob").unwrap();
+        let sub = verify_auth_token_get_sub(&mut redis_conn, &jwt.token).unwrap();
+        assert_eq!(&sub, "bob");
+        delete_tokens_for(&redis_conn, "bob");
     }
 }

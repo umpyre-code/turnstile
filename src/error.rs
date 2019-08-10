@@ -12,6 +12,8 @@ pub enum ResponseError {
     #[response(status = 400, content_type = "json")]
     BadRequest { response: content::Json<String> },
     #[response(status = 401, content_type = "json")]
+    Unauthorized { response: content::Json<String> },
+    #[response(status = 403, content_type = "json")]
     Forbidden { response: content::Json<String> },
     #[response(status = 404, content_type = "json")]
     NotFound { response: content::Json<String> },

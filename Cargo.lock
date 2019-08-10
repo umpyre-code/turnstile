@@ -1932,7 +1932,7 @@ dependencies = [
 [[package]]
 name = "rolodex-grpc"
 version = "0.1.0"
-source = "git+ssh://git@github.com/umpyre-code/rolodex.git#8934744f8b12920a4c5c11616b10dfe9524913bf"
+source = "git+ssh://git@github.com/umpyre-code/rolodex.git#bc6a6ded4d734dd0f5598ca35e978e4cff6c57fb"
 dependencies = [
  "bytes 0.4.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "prost 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2520,7 +2520,7 @@ dependencies = [
  "tokio-sync 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "tower-layer 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "tower-service 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "tracing 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
+ "tracing 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -2711,18 +2711,19 @@ dependencies = [
 
 [[package]]
 name = "tracing"
-version = "0.1.4"
+version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "cfg-if 0.1.9 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
- "tracing-attributes 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "spin 0.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "tracing-attributes 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "tracing-core 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "tracing-attributes"
-version = "0.1.0"
+version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "proc-macro2 0.4.30 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -3342,8 +3343,8 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum tower-service 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)" = "2cc0c98637d23732f8de6dfd16494c9f1559c3b9e20b4a46462c8f9b9e827bfa"
 "checksum tower-timeout 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)" = "5c06bbc2fbd056f810940a8c6f0cc194557d36da3c22999a755a7a6612447da9"
 "checksum tower-util 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "4792342fac093db5d2558655055a89a04ca909663467a4310c7739d9f8b64698"
-"checksum tracing 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)" = "fe5e24cbd9925d756e1e4633ba2506a95c94956381b335c86e55be9a564667d7"
-"checksum tracing-attributes 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "05a0a764441f2c92deab349d4577cd13c8aea7c9dfcd3a6f7a5e4ba375cdb27f"
+"checksum tracing 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)" = "e2b3dd549612b88fd19635628c1e6773f557ac419eece8deaefab1295928324d"
+"checksum tracing-attributes 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)" = "af9da7f5256f2d11e322c9f10ba848a3eefae64f0272df5e7100dcda53892801"
 "checksum tracing-core 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)" = "a092e91612f25f6571c7bff934e1157b708f2b09e229fdc7760e791e1d2fd74f"
 "checksum traitobject 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "efd1f82c56340fdf16f2a953d7bda4f8fdffba13d93b00844c25572110b26079"
 "checksum treeline 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "a7f741b240f1a48843f9b8e0444fb55fb2a4ff67293b50a9179dfd5ea67f8d41"

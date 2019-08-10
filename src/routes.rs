@@ -232,6 +232,7 @@ pub fn get_client(
     client_id: String,
     calling_client: Option<guards::Client>,
     _ratelimited: guards::RateLimited,
+    mut redis_writer: fairings::RedisWriter,
 ) -> Result<Cached<Json<models::GetClientResponse>>, ResponseError> {
     let rolodex_client = rolodex_client::Client::new(&config::CONFIG);
 
@@ -239,8 +240,8 @@ pub fn get_client(
         id: Some(rolodex_grpc::proto::get_client_request::Id::ClientId(
             client_id.clone(),
         )),
-        calling_client_id: match calling_client {
-            Some(client) => client.client_id,
+        calling_client_id: match calling_client.as_ref() {
+            Some(client) => client.client_id.clone(),
             _ => "".to_string(),
         },
     });
@@ -250,6 +251,19 @@ pub fn get_client(
             Json(response.unwrap().into()),
             24 * 60 * 60, // 24h
         ))
+    } else if calling_client.is_some() && calling_client.unwrap().client_id == client_id {
+        // If the calling client credentials are valid, but this client doesn't
+        // exist anymore, that means it was removed from the backend. Delete
+        // tokens from redis and return 403.
+        auth::delete_tokens_for(&mut redis_writer, &client_id)?;
+        Err(ResponseError::Unauthorized {
+            response: content::Json(
+                json!({
+                    "message:": "Client no longer valid",
+                })
+                .to_string(),
+            ),
+        })
     } else {
         Err(ResponseError::NotFound {
             response: content::Json(
