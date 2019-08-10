@@ -688,7 +688,7 @@ pub fn post_messages(
         &calling_client.client_id,
     )?;
 
-    if config::CONFIG.service.require_sms_verification && !sender_client.phone_sms_verified {
+    if !sender_client.phone_sms_verified {
         return Err(ResponseError::PhoneNotVerified {
             response: content::Json(
                 json!({
