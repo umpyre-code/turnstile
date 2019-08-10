@@ -19,7 +19,7 @@ pub mod db {
             use r2d2_redis_cluster::redis_cluster_rs::redis::IntoConnectionInfo;
             info!("Starting redis writer manager for {}", url);
             let mut manager = RedisClusterConnectionManager::new(
-                vec![url.to_owned()]
+                vec![format!("redis://{}", url)]
                     .iter()
                     .map(|c| {
                         c.into_connection_info()
@@ -37,7 +37,7 @@ pub mod db {
             use r2d2_redis_cluster::redis_cluster_rs::redis::IntoConnectionInfo;
             info!("Starting redis reader manager for {}", url);
             let mut manager = RedisClusterConnectionManager::new(
-                vec![url.to_owned()]
+                vec![format!("redis://{}", url)]
                     .iter()
                     .map(|c| {
                         c.into_connection_info()
