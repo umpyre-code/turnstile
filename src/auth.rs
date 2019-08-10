@@ -87,26 +87,44 @@ pub fn delete_tokens_for(
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::redis::db::{ReaderConnectionManager, WriterConnectionManager};
 
-    fn get_redis_conn() -> db::WriterConnection {
-        let client = crate::redis::WriterConnection::new("redis://127.0.0.1/").unwrap();
-        client.get_connection().unwrap()
+    fn get_writer_redis_pool() -> r2d2_redis_cluster::r2d2::Pool<WriterConnectionManager> {
+        use r2d2_redis_cluster::r2d2::Pool;
+        let manager = WriterConnectionManager::new("127.0.0.1:6379").unwrap();
+        let pool = Pool::builder().build(manager).unwrap();
+
+        pool
+    }
+
+    fn get_reader_redis_pool() -> r2d2_redis_cluster::r2d2::Pool<ReaderConnectionManager> {
+        use r2d2_redis_cluster::r2d2::Pool;
+        let manager = ReaderConnectionManager::new("127.0.0.1:6379").unwrap();
+        let pool = Pool::builder().build(manager).unwrap();
+
+        pool
     }
 
     #[test]
     fn test_auth_token() {
-        let redis_conn = get_redis_conn();
-        let jwt = generate_auth_token(&mut redis_conn, "bob").unwrap();
-        let sub = verify_auth_token_get_sub(&mut redis_conn, &jwt.token).unwrap();
+        let writer_pool = get_writer_redis_pool();
+        let reader_pool = get_reader_redis_pool();
+        let mut writer = writer_pool.get().unwrap();
+        let mut reader = reader_pool.get().unwrap();
+        let jwt = generate_auth_token(&mut writer, "bob").unwrap();
+        let sub = verify_auth_token_get_sub(&mut reader, &jwt.token).unwrap();
         assert_eq!(&sub, "bob");
     }
 
     #[test]
     fn test_delete_tokens() {
-        let redis_conn = get_redis_conn();
-        let jwt = generate_auth_token(&mut redis_conn, "bob").unwrap();
-        let sub = verify_auth_token_get_sub(&mut redis_conn, &jwt.token).unwrap();
+        let writer_pool = get_writer_redis_pool();
+        let reader_pool = get_reader_redis_pool();
+        let mut writer = writer_pool.get().unwrap();
+        let mut reader = reader_pool.get().unwrap();
+        let jwt = generate_auth_token(&mut writer, "bob").unwrap();
+        let sub = verify_auth_token_get_sub(&mut reader, &jwt.token).unwrap();
         assert_eq!(&sub, "bob");
-        delete_tokens_for(&redis_conn, "bob");
+        delete_tokens_for(&mut writer, "bob").expect("couldn't delete tokens");
     }
 }

@@ -109,3 +109,17 @@ impl Poolable for db::ReaderConnection {
             .map_err(DbError::PoolError)
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_redis_url_parse() {
+        use r2d2_redis_cluster::redis_cluster_rs::redis::IntoConnectionInfo;
+        let _url = "redis://localhost:6379"
+            .to_string()
+            .into_connection_info()
+            .unwrap();
+    }
+}
