@@ -732,7 +732,7 @@ pub fn post_messages(
 
         // Verify the public key of the recipient matches what's in our DB
         let recipient_client =
-            get_client_for(&rolodex_client, &message.to, &calling_client.client_id)?;
+            get_client_for(&rolodex_client, &calling_client.client_id, &message.to)?;
         check_box_public_keys(&recipient_client, &message.recipient_public_key)?;
 
         // Verify the message signature
