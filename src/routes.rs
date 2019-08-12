@@ -228,18 +228,35 @@ impl From<rolodex_grpc::proto::GetClientResponse> for models::GetClientResponse 
     }
 }
 
-#[get("/client/<client_id>")]
+#[get("/client/<arg_client_id>")]
 pub fn get_client(
-    client_id: String,
+    arg_client_id: String,
     calling_client: Option<guards::Client>,
     _ratelimited: guards::RateLimited,
     mut redis_writer: fairings::RedisWriter,
 ) -> Result<Cached<Json<models::GetClientResponse>>, ResponseError> {
     let rolodex_client = rolodex_client::Client::new(&config::CONFIG);
 
+    let fetch_client_id = if arg_client_id == "self" {
+        if calling_client.is_none() {
+            return Err(ResponseError::Unauthorized {
+                response: content::Json(
+                    json!({
+                        "message:": "Authentication required",
+                    })
+                    .to_string(),
+                ),
+            });
+        } else {
+            calling_client.as_ref().unwrap().client_id.clone()
+        }
+    } else {
+        arg_client_id.clone()
+    };
+
     let response = rolodex_client.get_client(rolodex_grpc::proto::GetClientRequest {
         id: Some(rolodex_grpc::proto::get_client_request::Id::ClientId(
-            client_id.clone(),
+            fetch_client_id.clone(),
         )),
         calling_client_id: match calling_client.as_ref() {
             Some(client) => client.client_id.clone(),
@@ -248,15 +265,18 @@ pub fn get_client(
     });
 
     if response.is_ok() {
-        Ok(Cached::from(
-            Json(response.unwrap().into()),
-            24 * 60 * 60, // 24h
-        ))
-    } else if calling_client.is_some() && calling_client.unwrap().client_id == client_id {
+        // if this is the magic '/client/self' endpoint, don't cache it
+        let cache_seconds = if arg_client_id == "self" {
+            0
+        } else {
+            24 * 60 * 60 // 24h
+        };
+        Ok(Cached::from(Json(response.unwrap().into()), cache_seconds))
+    } else if calling_client.is_some() && calling_client.unwrap().client_id == fetch_client_id {
         // If the calling client credentials are valid, but this client doesn't
         // exist anymore, that means it was removed from the backend. Delete
         // tokens from redis and return 403.
-        auth::delete_tokens_for(&mut redis_writer, &client_id)?;
+        auth::delete_tokens_for(&mut redis_writer, &fetch_client_id)?;
         Err(ResponseError::Unauthorized {
             response: content::Json(
                 json!({
@@ -270,7 +290,7 @@ pub fn get_client(
             response: content::Json(
                 json!({
                     "message:": "Client not found",
-                    "client_id": client_id
+                    "client_id": arg_client_id
                 })
                 .to_string(),
             ),
