@@ -45,8 +45,6 @@ pub struct NewClientRequest {
     pub password_salt: String,
     pub phone_number: PhoneNumber,
     pub signing_public_key: String,
-    pub joined: i64,
-    pub phone_sms_verified: bool,
 }
 
 #[derive(Debug, Serialize)]
