@@ -45,6 +45,8 @@ pub struct NewClientRequest {
     pub password_salt: String,
     pub phone_number: PhoneNumber,
     pub signing_public_key: String,
+    pub joined: i64,
+    pub phone_sms_verified: bool,
 }
 
 #[derive(Debug, Serialize)]
@@ -64,6 +66,7 @@ pub struct GetClientResponse {
     pub handle: Option<String>,
     pub profile: Option<String>,
     pub joined: i64,
+    pub phone_sms_verified: bool,
 }
 
 #[derive(Debug, Deserialize)]
@@ -77,6 +80,8 @@ pub struct UpdateClientRequest {
     pub signing_public_key: String,
     pub handle: Option<String>,
     pub profile: Option<String>,
+    pub joined: i64,
+    pub phone_sms_verified: bool,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -87,6 +92,8 @@ pub struct UpdateClientResponse {
     pub signing_public_key: String,
     pub handle: Option<String>,
     pub profile: Option<String>,
+    pub joined: i64,
+    pub phone_sms_verified: bool,
 }
 
 #[derive(Debug, Deserialize, Serialize, Default, Clone)]

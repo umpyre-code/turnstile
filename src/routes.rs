@@ -217,6 +217,7 @@ impl From<Option<rolodex_grpc::proto::Client>> for models::GetClientResponse {
             handle: client.handle.into_option(),
             profile: client.profile.into_option(),
             joined: client.joined,
+            phone_sms_verified: client.phone_sms_verified,
         }
     }
 }
@@ -324,6 +325,8 @@ impl From<rolodex_grpc::proto::UpdateClientResponse> for models::UpdateClientRes
             signing_public_key: client.signing_public_key,
             handle: client.handle.into_option(),
             profile: client.profile.into_option(),
+            joined: client.joined,
+            phone_sms_verified: client.phone_sms_verified,
         }
     }
 }
