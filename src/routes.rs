@@ -1133,6 +1133,8 @@ pub fn post_client_verify_phone(
     })?;
 
     if response.result == rolodex_grpc::proto::Result::Success as i32 {
+        // Invalidate the CDN caches
+        gcp::invalidate_cdn_cache(&format!("/client/{}", calling_client.client_id));
         Ok(Json(models::VerifyPhoneResponse {
             result: "success".to_owned(),
             client: Some(response.client.into()),
