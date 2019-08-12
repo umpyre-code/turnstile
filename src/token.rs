@@ -44,7 +44,7 @@ fn generate_inner(jwt_config: &config::Jwt, sub: &str, expiry: u64) -> Jwt {
         iat: now,
         iss: jwt_config.iss.clone(),
         jti: jti.clone(),
-        nbf: now + 300,
+        nbf: now,
         sub: sub.clone(),
     };
 
