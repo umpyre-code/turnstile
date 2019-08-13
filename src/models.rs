@@ -20,7 +20,6 @@ pub struct AuthVerifyRequest {
 #[derive(Debug, Serialize)]
 pub struct Jwt {
     pub token: String,
-    pub secret: String,
 }
 
 #[derive(Debug, Serialize)]
@@ -51,7 +50,6 @@ pub struct NewClientRequest {
 #[serde(rename_all = "snake_case")]
 pub struct NewClientResponse {
     pub client_id: String,
-    pub jwt: Jwt,
 }
 
 #[derive(Debug, Serialize)]

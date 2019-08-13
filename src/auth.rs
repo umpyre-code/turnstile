@@ -7,44 +7,45 @@ fn generate_and_store_token(
     redis_writer: &mut db::WriterConnection,
     client_id: &str,
     expiry: u64,
+    secret: &[u8],
 ) -> Result<models::Jwt, ResponseError> {
     use r2d2_redis_cluster::redis_cluster_rs::Commands;
 
     // generate token (JWT)
-    let jwt = token::generate(&client_id, expiry);
+    let jwt = token::generate(&client_id, expiry, secret);
 
     // store token in Redis
     let redis = &mut *redis_writer;
     redis.0.set_ex(
         &format!("token:{}:{}", client_id, jwt.jti),
-        &jwt.secret,
+        secret,
         expiry as usize,
     )?;
 
-    Ok(models::Jwt {
-        token: jwt.token,
-        secret: jwt.secret,
-    })
+    Ok(models::Jwt { token: jwt.token })
 }
 
 pub fn generate_auth_token(
     redis_writer: &mut db::WriterConnection,
     client_id: &str,
+    secret: &[u8],
 ) -> Result<models::Jwt, ResponseError> {
     // 5 year expiry
     let expiry = 5 * 365 * 24 * 3600;
 
-    generate_and_store_token(redis_writer, client_id, expiry)
+    generate_and_store_token(redis_writer, client_id, expiry, secret)
 }
 
 pub fn generate_auth_temporary_token(
     redis_writer: &mut db::WriterConnection,
     client_id: &str,
+
+    secret: &[u8],
 ) -> Result<models::Jwt, ResponseError> {
     // 1 hour expiry
     let expiry = 3600;
 
-    generate_and_store_token(redis_writer, client_id, expiry)
+    generate_and_store_token(redis_writer, client_id, expiry, secret)
 }
 
 pub fn verify_auth_token_get_sub(
@@ -55,7 +56,7 @@ pub fn verify_auth_token_get_sub(
 
     let jwt = token::decode_sub(token)?;
 
-    let secret: String = redis_reader
+    let secret: Vec<u8> = redis_reader
         .0
         .get(&format!("token:{}:{}", jwt.sub, jwt.jti))?;
 

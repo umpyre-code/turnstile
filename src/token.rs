@@ -16,18 +16,15 @@ struct Claims {
 
 pub struct Jwt {
     pub jti: String,
-    pub secret: String,
     pub sub: String,
     pub token: String,
 }
 
-pub fn generate(sub: &str, expiry: u64) -> Jwt {
-    generate_inner(&config::CONFIG.jwt, sub, expiry)
+pub fn generate(sub: &str, expiry: u64, secret: &[u8]) -> Jwt {
+    generate_inner(&config::CONFIG.jwt, sub, expiry, secret)
 }
 
-fn generate_inner(jwt_config: &config::Jwt, sub: &str, expiry: u64) -> Jwt {
-    use rand::distributions::Alphanumeric;
-    use rand::{thread_rng, Rng};
+fn generate_inner(jwt_config: &config::Jwt, sub: &str, expiry: u64, secret: &[u8]) -> Jwt {
     use std::time::SystemTime;
     use uuid::Uuid;
 
@@ -48,15 +45,8 @@ fn generate_inner(jwt_config: &config::Jwt, sub: &str, expiry: u64) -> Jwt {
         sub: sub.clone(),
     };
 
-    let secret: String = thread_rng().sample_iter(&Alphanumeric).take(50).collect();
-
-    match encode(&Header::default(), &claims, secret.as_bytes()) {
-        Ok(token) => Jwt {
-            token,
-            jti,
-            secret,
-            sub,
-        },
+    match encode(&Header::default(), &claims, secret) {
+        Ok(token) => Jwt { token, jti, sub },
         Err(err) => panic!("error generating jwt: {:?}", err),
     }
 }
@@ -91,14 +81,14 @@ impl From<()> for TokenError {
     }
 }
 
-pub fn decode_and_verify(token: &str, secret: &str) -> Result<Jwt, TokenError> {
+pub fn decode_and_verify(token: &str, secret: &[u8]) -> Result<Jwt, TokenError> {
     decode_and_verify_inner(&config::CONFIG.jwt, token, secret)
 }
 
 fn decode_and_verify_inner(
     jwt_config: &config::Jwt,
     token: &str,
-    secret: &str,
+    secret: &[u8],
 ) -> Result<Jwt, TokenError> {
     let validation = Validation {
         iss: Some(jwt_config.iss.clone()),
@@ -107,10 +97,9 @@ fn decode_and_verify_inner(
         ..Default::default()
     };
 
-    match jsonwebtoken::decode::<Claims>(token, secret.as_bytes(), &validation) {
+    match jsonwebtoken::decode::<Claims>(token, secret, &validation) {
         Ok(c) => Ok(Jwt {
             jti: c.claims.jti,
-            secret: secret.to_string(),
             sub: c.claims.sub,
             token: token.to_string(),
         }),
@@ -124,7 +113,6 @@ pub fn decode_sub(token: &str) -> Result<Jwt, TokenError> {
     match jsonwebtoken::dangerous_unsafe_decode::<Claims>(token) {
         Ok(c) => Ok(Jwt {
             jti: c.claims.jti,
-            secret: "".to_string(),
             sub: c.claims.sub,
             token: token.to_string(),
         }),
@@ -147,10 +135,11 @@ mod test {
         // run 10 times
         for _ in 0..10 {
             let sub = "test string";
-            let jwt = generate_inner(&jwt_config, &sub, 1000);
+            let secret = vec![0, 1, 2];
+            let jwt = generate_inner(&jwt_config, &sub, 1000, &secret);
             let result = decode_sub(&jwt.token);
             assert_eq!(result.unwrap().sub, sub);
-            let result = decode_and_verify_inner(&jwt_config, &jwt.token, &jwt.secret);
+            let result = decode_and_verify_inner(&jwt_config, &jwt.token, &secret);
             assert_eq!(result.unwrap().sub, sub);
         }
     }

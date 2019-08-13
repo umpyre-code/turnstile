@@ -100,7 +100,11 @@ pub fn post_client_auth_verify(
 
     let response = handle_auth_verify(client_ip, geo_headers, &auth_request)?;
 
-    let jwt = auth::generate_auth_token(&mut *redis_writer, &response.client_id)?;
+    let jwt = auth::generate_auth_token(
+        &mut *redis_writer,
+        &response.client_id,
+        &response.session_key,
+    )?;
 
     Ok(Json(models::AuthVerifyResponse {
         client_id: response.client_id,
@@ -139,7 +143,11 @@ pub fn post_client_auth_verify_temporarily(
 
     let response = handle_auth_verify(client_ip, geo_headers, &auth_request)?;
 
-    let jwt = auth::generate_auth_temporary_token(&mut *redis_writer, &response.client_id)?;
+    let jwt = auth::generate_auth_temporary_token(
+        &mut *redis_writer,
+        &response.client_id,
+        &response.session_key,
+    )?;
 
     Ok(Json(models::AuthVerifyResponse {
         client_id: response.client_id,
@@ -185,8 +193,6 @@ pub fn post_client(
         location,
     })?;
 
-    let jwt = auth::generate_auth_token(&mut *redis_writer, &response.client_id)?;
-
     // Update the index in elasticsearch. This is launched on a separate thread
     // so it doesn't block.
     let elastic_doc = elasticsearch::ClientProfileDocument::new(
@@ -201,7 +207,6 @@ pub fn post_client(
 
     Ok(Json(models::NewClientResponse {
         client_id: response.client_id,
-        jwt,
     }))
 }
 
