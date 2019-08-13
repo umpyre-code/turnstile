@@ -31,8 +31,8 @@ pub fn generate_auth_token(
     redis_writer: &mut db::WriterConnection,
     client_id: &str,
 ) -> Result<models::Jwt, ResponseError> {
-    // 1 year expiry
-    let expiry = 365 * 24 * 3600;
+    // 5 year expiry
+    let expiry = 5 * 365 * 24 * 3600;
 
     generate_and_store_token(redis_writer, client_id, expiry)
 }
