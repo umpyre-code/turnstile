@@ -104,7 +104,7 @@ dependencies = [
 [[package]]
 name = "beancounter-grpc"
 version = "0.1.0"
-source = "git+ssh://git@github.com/umpyre-code/beancounter.git#f20b7cd76e80bc8f110f3a353062627f6d2689b3"
+source = "git+ssh://git@github.com/umpyre-code/beancounter.git#0af44e446e1460c335506efd47aab6bfa1bd75a1"
 dependencies = [
  "bytes 0.4.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "chrono 0.4.7 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -839,7 +839,7 @@ dependencies = [
 [[package]]
 name = "instrumented"
 version = "0.1.0"
-source = "git+ssh://git@github.com/umpyre-code/instrumented.git#ae2cd8a3d92446f1720be862f58e53e25361fdbf"
+source = "git+ssh://git@github.com/umpyre-code/instrumented.git#f55c4a4f232438b8080b4a109ca4b4d15f785f24"
 dependencies = [
  "hyper 0.12.33 (registry+https://github.com/rust-lang/crates.io-index)",
  "instrumented-codegen 0.1.0 (git+ssh://git@github.com/umpyre-code/instrumented.git)",
@@ -852,7 +852,7 @@ dependencies = [
 [[package]]
 name = "instrumented-codegen"
 version = "0.1.0"
-source = "git+ssh://git@github.com/umpyre-code/instrumented.git#ae2cd8a3d92446f1720be862f58e53e25361fdbf"
+source = "git+ssh://git@github.com/umpyre-code/instrumented.git#f55c4a4f232438b8080b4a109ca4b4d15f785f24"
 dependencies = [
  "darling 0.9.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "proc-macro2 0.4.30 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2192,7 +2192,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "switchroom-grpc"
 version = "0.1.0"
-source = "git+ssh://git@github.com/umpyre-code/switchroom.git#f395709905187efb82cfa871f538045f9c267ac5"
+source = "git+ssh://git@github.com/umpyre-code/switchroom.git#9a9224518f1811a683b073df128e8f014c51dac5"
 dependencies = [
  "bytes 0.4.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "prost 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
