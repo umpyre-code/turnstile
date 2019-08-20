@@ -7,14 +7,28 @@ use rocket::{Data, Request, Response};
 lazy_static! {
     static ref REQUEST_COUNTER: prometheus::IntCounterVec = {
         let counter_opts = prometheus::Opts::new("http_requests", "HTTP Request counter");
-        let counter = prometheus::IntCounterVec::new(counter_opts, &["method"]).unwrap();
+        let counter = prometheus::IntCounterVec::new(
+            counter_opts,
+            &["method", "browser_name", "browser_os", "browser_version"],
+        )
+        .unwrap();
         register(Box::new(counter.clone())).unwrap();
         counter
     };
     static ref RESPONSE_COUNTER: prometheus::IntCounterVec = {
         let counter_opts = prometheus::Opts::new("http_responses", "HTTP Request counter");
-        let counter =
-            prometheus::IntCounterVec::new(counter_opts, &["route", "method", "code"]).unwrap();
+        let counter = prometheus::IntCounterVec::new(
+            counter_opts,
+            &[
+                "route",
+                "method",
+                "code",
+                "browser_name",
+                "browser_os",
+                "browser_version",
+            ],
+        )
+        .unwrap();
         register(Box::new(counter.clone())).unwrap();
         counter
     };
@@ -23,8 +37,18 @@ lazy_static! {
             "request_handler_time_secs",
             "Histogram of handler call times observed in seconds",
         );
-        let histogram =
-            prometheus::HistogramVec::new(histogram_opts, &["route", "method", "code"]).unwrap();
+        let histogram = prometheus::HistogramVec::new(
+            histogram_opts,
+            &[
+                "route",
+                "method",
+                "code",
+                "browser_name",
+                "browser_os",
+                "browser_version",
+            ],
+        )
+        .unwrap();
 
         register(Box::new(histogram.clone())).unwrap();
 
@@ -35,13 +59,36 @@ lazy_static! {
             "http_response_length",
             "Histogram of response length in bytes",
         );
-        let histogram =
-            prometheus::HistogramVec::new(histogram_opts, &["route", "method", "code"]).unwrap();
+        let histogram = prometheus::HistogramVec::new(
+            histogram_opts,
+            &[
+                "route",
+                "method",
+                "code",
+                "browser_name",
+                "browser_os",
+                "browser_version",
+            ],
+        )
+        .unwrap();
 
         register(Box::new(histogram.clone())).unwrap();
 
         histogram
     };
+}
+
+fn get_ua<'a>(request: &'a Request) -> (&'a str, &'a str, &'a str) {
+    use woothee::parser::Parser;
+    let ua_string = request
+        .headers()
+        .get_one("User-Agent")
+        .unwrap_or_else(|| "");
+    let ua = Parser::new().parse(ua_string);
+    match ua {
+        Some(ua) => (ua.name, ua.os, ua.version),
+        None => ("UNKNOWN", "UNKNOWN", "UNKNOWN"),
+    }
 }
 
 /// Fairing for timing requests.
@@ -73,6 +120,8 @@ impl Fairing for RequestTimer {
             "none"
         };
 
+        let (browser_name, browser_os, browser_version) = get_ua(request);
+
         let start_time = request.local_cache(|| TimerStart(None));
         if let Some(duration) = start_time.0.map(|s| s.elapsed()) {
             let us = duration.as_secs() * 1_000_000 + u64::from(duration.subsec_micros());
@@ -83,6 +132,9 @@ impl Fairing for RequestTimer {
                     route,
                     request.method().as_str(),
                     &format!("{}", response.status().code),
+                    browser_name,
+                    browser_os,
+                    browser_version,
                 ])
                 .observe(s);
         }
@@ -93,6 +145,9 @@ impl Fairing for RequestTimer {
                     route,
                     request.method().as_str(),
                     &format!("{}", response.status().code),
+                    browser_name,
+                    browser_os,
+                    browser_version,
                 ])
                 .observe(size as f64);
         }
@@ -111,8 +166,15 @@ impl Fairing for Counter {
     }
 
     fn on_request(&self, request: &mut Request, _: &Data) {
+        let (browser_name, browser_os, browser_version) = get_ua(request);
+
         REQUEST_COUNTER
-            .with_label_values(&[request.method().as_str()])
+            .with_label_values(&[
+                request.method().as_str(),
+                browser_name,
+                browser_os,
+                browser_version,
+            ])
             .inc();
     }
 
@@ -122,11 +184,17 @@ impl Fairing for Counter {
         } else {
             "none"
         };
+
+        let (browser_name, browser_os, browser_version) = get_ua(request);
+
         RESPONSE_COUNTER
             .with_label_values(&[
                 route,
                 request.method().as_str(),
                 &format!("{}", response.status().code),
+                browser_name,
+                browser_os,
+                browser_version,
             ])
             .inc();
     }
