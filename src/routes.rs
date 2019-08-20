@@ -774,18 +774,13 @@ pub fn post_messages(
                     payment_cents: value_cents,
                 })?;
 
+            // If there's an error, we return success anyway, as if everything's
+            // okay. It shouldn't bubble up to the client. This, of course,
+            // means we pay out of our own pocket when there are exceptions.
             if payment_response.result
                 != beancounter_grpc::proto::add_payment_response::Result::Success as i32
             {
-                return Err(ResponseError::BadRequest {
-                    response: content::Json(
-                        json!({
-                            "message:": "Adding payment failed",
-                            "result": payment_response.result,
-                        })
-                        .to_string(),
-                    ),
-                });
+                error!("Adding payment failed: {:?}", payment_response.result);
             }
         }
 
