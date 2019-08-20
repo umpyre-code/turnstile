@@ -161,7 +161,6 @@ pub fn post_client(
     _ratelimited: guards::RateLimited,
     client_ip: guards::ClientIP,
     geo_headers: Option<guards::GeoHeaders>,
-    mut redis_writer: fairings::RedisWriter,
     new_client_request: Result<Json<models::NewClientRequest>, JsonError>,
 ) -> Result<Json<models::NewClientResponse>, ResponseError> {
     use data_encoding::BASE64URL_NOPAD;
