@@ -20,7 +20,7 @@ lazy_static! {
     };
     static ref HANDLER_TIMER: prometheus::HistogramVec = {
         let histogram_opts = prometheus::HistogramOpts::new(
-            "request_handler_time",
+            "request_handler_time_secs",
             "Histogram of handler call times observed in seconds",
         );
         let histogram =
