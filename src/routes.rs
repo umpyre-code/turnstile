@@ -603,17 +603,17 @@ fn get_client_for(
 
 fn check_box_public_keys(
     client: &rolodex_grpc::proto::Client,
-    expected_box_public_key: &str,
+    box_public_key: &str,
 ) -> Result<(), ResponseError> {
-    if expected_box_public_key.eq(&client.box_public_key) {
+    if box_public_key.eq(&client.box_public_key) {
         Ok(())
     } else {
         Err(ResponseError::BadRequest {
             response: content::Json(
                 json!({
                     "message:": "Invalid box public key (didn't match the one on record)",
-                    "expected": expected_box_public_key,
-                    "found": client.box_public_key
+                    "found": box_public_key,
+                    "expected": client.box_public_key
                 })
                 .to_string(),
             ),
