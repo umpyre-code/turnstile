@@ -273,7 +273,7 @@ pub fn get_client(
         let cache_seconds = if arg_client_id == "self" {
             0
         } else {
-            24 * 60 * 60 // 24h
+            60 * 60 // 1h
         };
         Ok(Cached::from(Json(response.unwrap().into()), cache_seconds))
     } else if calling_client.is_some() && calling_client.unwrap().client_id == fetch_client_id {
@@ -323,7 +323,7 @@ pub fn get_client_by_handle(
     if response.is_ok() {
         Ok(Cached::from(
             Json(response.unwrap().into()),
-            24 * 60 * 60, // 24h
+            60 * 60, // 1h
         ))
     } else {
         Err(ResponseError::NotFound {
