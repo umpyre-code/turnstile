@@ -6,7 +6,7 @@ use rocket::{Data, Request, Response};
 
 lazy_static! {
     static ref REQUEST_COUNTER: prometheus::IntCounterVec = {
-        let counter_opts = prometheus::Opts::new("http_requests", "HTTP Request counter");
+        let counter_opts = prometheus::Opts::new("http_requests_total", "HTTP Request counter");
         let counter = prometheus::IntCounterVec::new(
             counter_opts,
             &["method", "browser_name", "browser_os", "browser_version"],
@@ -16,7 +16,7 @@ lazy_static! {
         counter
     };
     static ref RESPONSE_COUNTER: prometheus::IntCounterVec = {
-        let counter_opts = prometheus::Opts::new("http_responses", "HTTP Request counter");
+        let counter_opts = prometheus::Opts::new("http_responses_total", "HTTP Request counter");
         let counter = prometheus::IntCounterVec::new(
             counter_opts,
             &[
@@ -34,7 +34,7 @@ lazy_static! {
     };
     static ref HANDLER_TIMER: prometheus::HistogramVec = {
         let histogram_opts = prometheus::HistogramOpts::new(
-            "request_handler_time_secs",
+            "request_handler_time_seconds",
             "Histogram of handler call times observed in seconds",
         );
         let histogram = prometheus::HistogramVec::new(
@@ -56,7 +56,7 @@ lazy_static! {
     };
     static ref RESPONSE_LENGTH: prometheus::HistogramVec = {
         let histogram_opts = prometheus::HistogramOpts::new(
-            "http_response_length",
+            "http_response_bytes",
             "Histogram of response length in bytes",
         );
         let histogram = prometheus::HistogramVec::new(
