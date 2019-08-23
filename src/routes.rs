@@ -222,6 +222,7 @@ impl From<Option<rolodex_grpc::proto::Client>> for models::GetClientResponse {
             profile: client.profile.into_option(),
             joined: client.joined,
             phone_sms_verified: client.phone_sms_verified,
+            ral: client.ral,
         }
     }
 }
@@ -351,6 +352,7 @@ impl From<rolodex_grpc::proto::UpdateClientResponse> for models::UpdateClientRes
             profile: client.profile.into_option(),
             joined: client.joined,
             phone_sms_verified: client.phone_sms_verified,
+            ral: client.ral,
         }
     }
 }
@@ -368,6 +370,44 @@ fn check_result(result: i32) -> Result<(), ResponseError> {
     } else {
         Ok(())
     }
+}
+
+#[derive(FromForm)]
+pub struct UpdateClientRalRequest {
+    ral: i32,
+}
+
+#[put("/client/<client_id>/ral", data = "<update_client_ral_request>")]
+pub fn put_client_ral(
+    client_id: String,
+    calling_client: guards::Client,
+    _ratelimited: guards::RateLimited,
+    update_client_ral_request: rocket::request::Form<UpdateClientRalRequest>,
+) -> Result<Json<models::UpdateClientResponse>, ResponseError> {
+    let rolodex_client = rolodex_client::Client::new(&config::CONFIG);
+
+    if client_id != calling_client.client_id {
+        return Err(ResponseError::Forbidden {
+            response: content::Json(
+                json!({
+                    "message:": "Not authorized to modify the specified client account",
+                })
+                .to_string(),
+            ),
+        });
+    }
+
+    let response =
+        rolodex_client.update_client_ral(rolodex_grpc::proto::UpdateClientRalRequest {
+            client_id: client_id.clone(),
+            ral: update_client_ral_request.ral,
+        })?;
+
+    check_result(response.result)?;
+
+    let response: models::UpdateClientResponse = response.into();
+
+    Ok(Json(response))
 }
 
 #[put(
@@ -490,6 +530,7 @@ pub fn put_client(
             // these fields are ignored but required by the proto definition
             joined: 0,                 // ignored
             phone_sms_verified: false, // ignored
+            ral: update_client_request.ral,
         }),
         location,
     })?;

@@ -104,7 +104,7 @@ dependencies = [
 [[package]]
 name = "beancounter-grpc"
 version = "0.1.0"
-source = "git+ssh://git@github.com/umpyre-code/beancounter.git#b388e2a1beed0d26c0c14a8ef98c426e7478efd9"
+source = "git+ssh://git@github.com/umpyre-code/beancounter.git#4ac64eb23cb72ad12944b53596b452b6e0337db7"
 dependencies = [
  "bytes 0.4.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "chrono 0.4.7 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1939,7 +1939,7 @@ dependencies = [
 [[package]]
 name = "rolodex-grpc"
 version = "0.1.0"
-source = "git+ssh://git@github.com/umpyre-code/rolodex.git#1543c2c62ee4fa07ab48cf83c69bd2ba0682fb89"
+source = "git+ssh://git@github.com/umpyre-code/rolodex.git#5b8a969f9c5077f82eb6681abfe4475f093239b1"
 dependencies = [
  "bytes 0.4.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "prost 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",

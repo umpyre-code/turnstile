@@ -157,10 +157,18 @@ impl Client {
     }
 
     #[instrument(INFO)]
+    pub fn update_client_ral(
+        &self,
+        update_request: rolodex_grpc::proto::UpdateClientRalRequest,
+    ) -> Result<rolodex_grpc::proto::UpdateClientResponse, RolodexError> {
+        with_client!(self, RpcClient::update_client_ral, update_request)
+    }
+
+    #[instrument(INFO)]
     pub fn update_client_password(
         &self,
         update_request: rolodex_grpc::proto::UpdateClientPasswordRequest,
-    ) -> Result<rolodex_grpc::proto::UpdateClientPasswordResponse, RolodexError> {
+    ) -> Result<rolodex_grpc::proto::UpdateClientResponse, RolodexError> {
         with_client!(self, RpcClient::update_client_password, update_request)
     }
 
@@ -168,7 +176,7 @@ impl Client {
     pub fn update_client_email(
         &self,
         update_request: rolodex_grpc::proto::UpdateClientEmailRequest,
-    ) -> Result<rolodex_grpc::proto::UpdateClientEmailResponse, RolodexError> {
+    ) -> Result<rolodex_grpc::proto::UpdateClientResponse, RolodexError> {
         with_client!(self, RpcClient::update_client_email, update_request)
     }
 
@@ -176,7 +184,7 @@ impl Client {
     pub fn update_client_phone_number(
         &self,
         update_request: rolodex_grpc::proto::UpdateClientPhoneNumberRequest,
-    ) -> Result<rolodex_grpc::proto::UpdateClientPhoneNumberResponse, RolodexError> {
+    ) -> Result<rolodex_grpc::proto::UpdateClientResponse, RolodexError> {
         with_client!(self, RpcClient::update_client_phone_number, update_request)
     }
 
