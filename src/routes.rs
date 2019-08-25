@@ -372,44 +372,6 @@ fn check_result(result: i32) -> Result<(), ResponseError> {
     }
 }
 
-#[derive(FromForm)]
-pub struct UpdateClientRalRequest {
-    ral: i32,
-}
-
-#[put("/client/<client_id>/ral", data = "<update_client_ral_request>")]
-pub fn put_client_ral(
-    client_id: String,
-    calling_client: guards::Client,
-    _ratelimited: guards::RateLimited,
-    update_client_ral_request: rocket::request::Form<UpdateClientRalRequest>,
-) -> Result<Json<models::UpdateClientResponse>, ResponseError> {
-    let rolodex_client = rolodex_client::Client::new(&config::CONFIG);
-
-    if client_id != calling_client.client_id {
-        return Err(ResponseError::Forbidden {
-            response: content::Json(
-                json!({
-                    "message:": "Not authorized to modify the specified client account",
-                })
-                .to_string(),
-            ),
-        });
-    }
-
-    let response =
-        rolodex_client.update_client_ral(rolodex_grpc::proto::UpdateClientRalRequest {
-            client_id: client_id.clone(),
-            ral: update_client_ral_request.ral,
-        })?;
-
-    check_result(response.result)?;
-
-    let response: models::UpdateClientResponse = response.into();
-
-    Ok(Json(response))
-}
-
 #[put(
     "/client/<client_id>",
     data = "<update_client_request>",
@@ -855,9 +817,19 @@ pub fn put_messages_settle(
 
     let response =
         beancounter_client.settle_payment(beancounter_grpc::proto::SettlePaymentRequest {
-            client_id: calling_client.client_id,
+            client_id: calling_client.client_id.clone(),
             message_hash: BASE64URL_NOPAD.decode(message_hash.as_bytes())?,
         })?;
+
+    if response.ral >= 0 {
+        let rolodex_client = rolodex_client::Client::new(&config::CONFIG);
+
+        let _response =
+            rolodex_client.update_client_ral(rolodex_grpc::proto::UpdateClientRalRequest {
+                client_id: calling_client.client_id.clone(),
+                ral: response.ral,
+            });
+    }
 
     Ok(Json(response.into()))
 }
