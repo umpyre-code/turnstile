@@ -9,8 +9,8 @@ default-run = "turnstile"
 beancounter-grpc = { git = "ssh://git@github.com/umpyre-code/beancounter.git" }
 chrono = "0.4"
 data-encoding = "2"
-elastic = "~0.21.0-pre.5"
-elastic_derive = "~0.21.0-pre.5"
+elastic = "0.21.0-pre.5"
+elastic_derive = "0.21.0-pre.5"
 env_logger = { version = "0.6", default-features = false }
 failure = "0.1"
 futures = "0.1"
@@ -49,6 +49,7 @@ yansi = "0.5"
 [patch.crates-io]
 rocket = { git = "https://github.com/brndnmtthws/Rocket.git" }
 rocket_http = { git = "https://github.com/brndnmtthws/Rocket.git" }
+prometheus = { git = "https://github.com/brndnmtthws/rust-prometheus.git", branch = "superbranch" }
 
 [dependencies.rocket_contrib]
 git = "https://github.com/brndnmtthws/Rocket.git"
