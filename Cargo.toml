@@ -10,7 +10,7 @@ beancounter-grpc = { git = "ssh://git@github.com/umpyre-code/beancounter.git" }
 chrono = "0.4"
 data-encoding = "2"
 elastic = "0.21.0-pre.5"
-elastic_derive = "0.21.0-pre.5"
+elastic_derive = { git = "https://github.com/brndnmtthws/elastic.git" }
 env_logger = { version = "0.6", default-features = false }
 failure = "0.1"
 futures = "0.1"
