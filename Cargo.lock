@@ -104,7 +104,7 @@ dependencies = [
 [[package]]
 name = "beancounter-grpc"
 version = "0.1.0"
-source = "git+ssh://git@github.com/umpyre-code/beancounter.git#eed322ff28b661c07da10c5dc14e61e202013ccf"
+source = "git+ssh://git@github.com/umpyre-code/beancounter.git#98f15076f2a4332edc417688c624720151671177"
 dependencies = [
  "bytes 0.4.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "chrono 0.4.7 (registry+https://github.com/rust-lang/crates.io-index)",
