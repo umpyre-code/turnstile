@@ -424,12 +424,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "elastic"
 version = "0.21.0-pre.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
+source = "git+https://github.com/brndnmtthws/elastic.git#9f3712af094c892ba9ef961fb4ea97e09f25a56e"
 dependencies = [
  "bytes 0.4.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "chrono 0.4.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "crossbeam-channel 0.3.9 (registry+https://github.com/rust-lang/crates.io-index)",
- "elastic_derive 0.21.0-pre.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "elastic_derive 0.21.0-pre.5 (git+https://github.com/brndnmtthws/elastic.git)",
  "error-chain 0.11.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "fluent_builder 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures 0.1.28 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -456,21 +456,6 @@ source = "git+https://github.com/brndnmtthws/elastic.git#9f3712af094c892ba9ef961
 dependencies = [
  "chrono 0.4.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "nom 3.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "quick-error 1.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "quote 0.3.15 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde 1.0.99 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde_derive_internals 0.15.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde_json 1.0.40 (registry+https://github.com/rust-lang/crates.io-index)",
- "syn 0.11.11 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "elastic_derive"
-version = "0.21.0-pre.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-dependencies = [
- "chrono 0.4.7 (registry+https://github.com/rust-lang/crates.io-index)",
- "nom 2.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "quick-error 1.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "quote 0.3.15 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.99 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2810,7 +2795,7 @@ dependencies = [
  "beancounter-grpc 0.1.0 (git+ssh://git@github.com/umpyre-code/beancounter.git)",
  "chrono 0.4.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "data-encoding 2.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "elastic 0.21.0-pre.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "elastic 0.21.0-pre.5 (git+https://github.com/brndnmtthws/elastic.git)",
  "elastic_derive 0.21.0-pre.5 (git+https://github.com/brndnmtthws/elastic.git)",
  "env_logger 0.6.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "failure 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -3179,9 +3164,8 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum digest 0.8.1 (registry+https://github.com/rust-lang/crates.io-index)" = "f3d0c8c8752312f9713efd397ff63acb9f85585afbf179282e720e7704954dd5"
 "checksum dtoa 0.4.4 (registry+https://github.com/rust-lang/crates.io-index)" = "ea57b42383d091c85abcc2706240b94ab2a8fa1fc81c10ff23c4de06e2a90b5e"
 "checksum either 1.5.2 (registry+https://github.com/rust-lang/crates.io-index)" = "5527cfe0d098f36e3f8839852688e63c8fff1c90b2b405aef730615f9a7bcf7b"
-"checksum elastic 0.21.0-pre.5 (registry+https://github.com/rust-lang/crates.io-index)" = "ea64ae42acdc36a016c5d7315189f573f60b23dcbf3b0d6b0460ff72cdf1071d"
+"checksum elastic 0.21.0-pre.5 (git+https://github.com/brndnmtthws/elastic.git)" = "<none>"
 "checksum elastic_derive 0.21.0-pre.5 (git+https://github.com/brndnmtthws/elastic.git)" = "<none>"
-"checksum elastic_derive 0.21.0-pre.5 (registry+https://github.com/rust-lang/crates.io-index)" = "14b385d447741a87d519e38e63b7606a2bfa46957135ebdd89754c1e7ec57005"
 "checksum encoding_rs 0.8.17 (registry+https://github.com/rust-lang/crates.io-index)" = "4155785c79f2f6701f185eb2e6b4caf0555ec03477cb4c70db67b465311620ed"
 "checksum env_logger 0.6.2 (registry+https://github.com/rust-lang/crates.io-index)" = "aafcde04e90a5226a6443b7aabdb016ba2f8307c847d524724bd9b346dd1a2d3"
 "checksum error-chain 0.11.0 (registry+https://github.com/rust-lang/crates.io-index)" = "ff511d5dc435d703f4971bc399647c9bc38e20cb41452e3b9feb4765419ed3f3"
