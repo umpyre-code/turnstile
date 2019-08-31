@@ -14,6 +14,8 @@ extern crate lazy_static;
 extern crate log;
 #[macro_use]
 extern crate failure;
+#[macro_use]
+extern crate tera;
 
 extern crate chrono;
 extern crate elastic;
@@ -127,6 +129,7 @@ fn main() -> Result<(), std::io::Error> {
             routes![
                 routes::get_account_balance,
                 routes::get_account_connect,
+                routes::get_badge,
                 routes::get_client_by_handle,
                 routes::get_client,
                 routes::get_messages,

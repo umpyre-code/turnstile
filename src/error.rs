@@ -209,3 +209,16 @@ impl From<data_encoding::DecodeError> for ResponseError {
         }
     }
 }
+
+impl From<tera::Error> for ResponseError {
+    fn from(err: tera::Error) -> Self {
+        ResponseError::BadRequest {
+            response: content::Json(
+                json!({
+                    "message:": err.to_string(),
+                })
+                .to_string(),
+            ),
+        }
+    }
+}
