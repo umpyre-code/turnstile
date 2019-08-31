@@ -77,7 +77,7 @@ impl From<rolodex_client::RolodexError> for ResponseError {
             _ => ResponseError::BadRequest {
                 response: content::Json(
                     json!({
-                        "message:": err.to_string(),
+                        "message": err.to_string(),
                     })
                     .to_string(),
                 ),
@@ -103,7 +103,7 @@ impl From<switchroom_client::SwitchroomError> for ResponseError {
             _ => ResponseError::BadRequest {
                 response: content::Json(
                     json!({
-                        "message:": err.to_string(),
+                        "message": err.to_string(),
                     })
                     .to_string(),
                 ),
@@ -129,7 +129,7 @@ impl From<beancounter_client::BeanCounterError> for ResponseError {
             _ => Self::BadRequest {
                 response: content::Json(
                     json!({
-                        "message:": err.to_string(),
+                        "message": err.to_string(),
                     })
                     .to_string(),
                 ),
@@ -189,7 +189,7 @@ impl From<redis::db::RedisError> for ResponseError {
         ResponseError::BadRequest {
             response: content::Json(
                 json!({
-                    "message:": err.to_string(),
+                    "message": err.to_string(),
                 })
                 .to_string(),
             ),
@@ -202,7 +202,7 @@ impl From<data_encoding::DecodeError> for ResponseError {
         ResponseError::BadRequest {
             response: content::Json(
                 json!({
-                    "message:": err.to_string(),
+                    "message": err.to_string(),
                 })
                 .to_string(),
             ),
@@ -215,7 +215,7 @@ impl From<tera::Error> for ResponseError {
         ResponseError::BadRequest {
             response: content::Json(
                 json!({
-                    "message:": err.to_string(),
+                    "message": err.to_string(),
                 })
                 .to_string(),
             ),

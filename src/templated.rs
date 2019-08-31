@@ -6,12 +6,12 @@ use crate::rolodex_client;
 
 use rocket::http::RawStr;
 use rocket::response::content;
+use tera::Tera;
 
 lazy_static! {
-    pub static ref TERA: tera::Tera = {
-        let mut tera = compile_templates!("templates/**/*");
-        // and we can add more things to our instance if we want to
-        tera.autoescape_on(vec!["html", ".sql", "svg", "xml"]);
+    pub static ref TERA: Tera = {
+        let mut tera = Tera::default();
+        tera.add_raw_templates(vec![("badge.svg", include_str!("templates/badge.svg"))]);
         tera
     };
 }
@@ -56,7 +56,7 @@ pub fn get_badge(
         Err(_) => Err(ResponseError::NotFound {
             response: content::Json(
                 json!({
-                    "message:": "Client not found",
+                    "message": "Client not found",
                     "client_id": client_id
                 })
                 .to_string(),
