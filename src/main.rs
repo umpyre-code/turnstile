@@ -14,8 +14,6 @@ extern crate lazy_static;
 extern crate log;
 #[macro_use]
 extern crate failure;
-#[macro_use]
-extern crate tera;
 
 extern crate chrono;
 extern crate elastic;
@@ -24,6 +22,7 @@ extern crate http;
 extern crate instrumented;
 extern crate r2d2_redis_cluster;
 extern crate rand;
+extern crate tera;
 extern crate time;
 extern crate uuid;
 extern crate yansi;

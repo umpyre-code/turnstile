@@ -11,7 +11,8 @@ use tera::Tera;
 lazy_static! {
     pub static ref TERA: Tera = {
         let mut tera = Tera::default();
-        tera.add_raw_templates(vec![("badge.svg", include_str!("templates/badge.svg"))]);
+        tera.add_raw_templates(vec![("badge.svg", include_str!("templates/badge.svg"))])
+            .expect("failed to add tera templates");
         tera
     };
 }
