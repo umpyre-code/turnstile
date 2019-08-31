@@ -45,6 +45,7 @@ mod rolodex_client;
 mod routes;
 mod static_routes;
 mod switchroom_client;
+mod templated;
 mod token;
 mod utils;
 
@@ -129,7 +130,6 @@ fn main() -> Result<(), std::io::Error> {
             routes![
                 routes::get_account_balance,
                 routes::get_account_connect,
-                routes::get_badge,
                 routes::get_client_by_handle,
                 routes::get_client,
                 routes::get_messages,
@@ -151,6 +151,7 @@ fn main() -> Result<(), std::io::Error> {
                 routes::put_messages_settle,
                 static_routes::openapi_html,
                 static_routes::openapi_yaml,
+                templated::get_badge,
             ],
         )
         .launch();
