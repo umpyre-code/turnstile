@@ -279,7 +279,7 @@
 
 	<path class="st0" d="M123,47.27H13.5c-6.6,0-12-5.4-12-12V13.5c0-6.6,5.4-12,12-12H123c6.6,0,12,5.4,12,12v21.77
 	C135,41.87,129.6,47.27,123,47.27z"/>
-<text id="tname" transform="matrix(1 0 0 1 44.9665 28.4751)" class="st1 st2">{{ name }}</text>
+<text transform="matrix(1 0 0 1 44.9665 28.4751)" class="st1 st2">{{ name }}</text>
 <g>
 	<path d="M23.39,5.64C13.05,5.67,4.66,14.09,4.71,24.39c0.05,10.29,8.48,18.67,18.74,18.64c10.34-0.04,18.75-8.48,18.67-18.76
 		C42.04,13.91,33.69,5.6,23.39,5.64z M23.41,41.68C13.8,41.67,6.03,33.9,6.04,24.31c0.01-9.6,7.79-17.36,17.4-17.35
@@ -300,20 +300,4 @@
 </g>
 <text transform="matrix(1 0 0 1 41.9665 42.8511)" class="st1 st2">on Umpyre</text>
 <text transform="matrix(1 0 0 1 41.9665 14.0991)" class="st1 st2">Contact</text>
- <script type="text/javascript">
-		// <![CDATA[
-    var width=82, height=20;
-    var textNode = document.getElementById("tname");
-    var bb = textNode.getBBox();
-    var widthTransform = width / bb.width;
-    var heightTransform = height / bb.height;
-		var value = 1;
-		if (widthTransform < heightTransform) {
-			value = widthTransform;
-		} else {
-			value = heightTransform;
-		}
-    textNode.setAttribute("transform", "matrix("+value+", 0, 0, "+value+", 48,28.4921)");
-		// ]]>
- </script>
 </svg>
