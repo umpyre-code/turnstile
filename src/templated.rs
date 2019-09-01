@@ -4,7 +4,6 @@ use crate::guards;
 use crate::responders::Cached;
 use crate::rolodex_client;
 
-use rocket::http::RawStr;
 use rocket::response::content;
 use tera::Tera;
 
@@ -31,7 +30,7 @@ pub struct Badge {
 #[get("/badge/<client_id>/badge.svg?<name>&<width>&<height>")]
 pub fn get_badge(
     client_id: String,
-    name: Option<&RawStr>,
+    name: Option<String>,
     width: Option<i32>,
     height: Option<i32>,
     _ratelimited: guards::RateLimited,
@@ -51,10 +50,7 @@ pub fn get_badge(
                 None => "",
             };
             let badge = Badge {
-                name: name
-                    .unwrap_or_else(|| RawStr::from_str(full_name))
-                    .as_str()
-                    .to_string(),
+                name: name.unwrap_or_else(|| full_name.to_owned()),
                 width: width.unwrap_or_else(|| 180),
                 height: height.unwrap_or_else(|| 70),
             };

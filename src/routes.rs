@@ -12,7 +12,6 @@ use crate::rolodex_client;
 use crate::switchroom_client;
 use crate::utils;
 
-use rocket::http::RawStr;
 use rocket::response::content;
 use rocket_contrib::json::Json;
 use rocket_contrib::json::JsonError;
@@ -533,7 +532,7 @@ pub fn get_ping(_ratelimited: guards::RateLimited) -> String {
 
 #[get("/messages?<sketch>")]
 pub fn get_messages(
-    sketch: Option<&RawStr>,
+    sketch: Option<String>,
     calling_client: guards::Client,
     _ratelimited: guards::RateLimited,
 ) -> Result<Json<Vec<models::Message>>, ResponseError> {
@@ -541,10 +540,7 @@ pub fn get_messages(
 
     let response = switchroom_client.get_messages(switchroom_grpc::proto::GetMessagesRequest {
         client_id: calling_client.client_id,
-        sketch: sketch
-            .unwrap_or_else(|| RawStr::from_str(""))
-            .as_str()
-            .to_string(),
+        sketch: sketch.unwrap_or_else(|| "".to_owned()),
     })?;
 
     Ok(Json(
