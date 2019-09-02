@@ -1,5 +1,10 @@
 FROM gcr.io/umpyre/github.com/umpyre-code/rust:latest
 
+# Install libcairo for SVG rendering
+RUN apt-get update -qq \
+    && apt-get install -yqq libcairo2-dev \
+    && apt-get clean && rm -rf /var/lib/apt/lists
+
 ARG SSH_KEY
 ARG SCCACHE_KEY
 
