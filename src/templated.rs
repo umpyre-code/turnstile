@@ -106,7 +106,7 @@ pub fn get_badge_png(
     let svg = get_badge_svg_inner(client_id, name, width, height, font_size)?;
 
     let mut opt = resvg::Options::default();
-    opt.fit_to = resvg::FitTo::Zoom(3.0);
+    opt.usvg.dpi = 300.0;
     let rtree = usvg::Tree::from_str(&svg, &opt.usvg)?;
 
     let backend = resvg::default_backend();
