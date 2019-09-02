@@ -25,14 +25,16 @@ pub struct Badge {
     name: String,
     width: i32,
     height: i32,
+    font_size: i32,
 }
 
-#[get("/badge/<client_id>/badge.svg?<name>&<width>&<height>")]
+#[get("/badge/<client_id>/badge.svg?<name>&<width>&<height>&<font_size>")]
 pub fn get_badge(
     client_id: String,
     name: Option<String>,
     width: Option<i32>,
     height: Option<i32>,
+    font_size: Option<i32>,
     _ratelimited: guards::RateLimited,
 ) -> Result<Cached<Svg>, ResponseError> {
     let rolodex_client = rolodex_client::Client::new(&config::CONFIG);
@@ -53,6 +55,7 @@ pub fn get_badge(
                 name: name.unwrap_or_else(|| full_name.to_owned()),
                 width: width.unwrap_or_else(|| 151),
                 height: height.unwrap_or_else(|| 50),
+                font_size: font_size.unwrap_or_else(|| 12),
             };
             Ok(Cached::from(Svg(TERA.render("badge.svg", &badge)?), 3600))
         }
