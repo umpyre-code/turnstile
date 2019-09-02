@@ -1,12 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
 	width="{{ width }}" height="{{ height }}" preserveAspectRatio="xMinYMin meet"
-	viewBox="0 0 151.15 50.36" style="enable-background:new 0 0 151.15 50.36;" xml:space="preserve">
+	viewBox="0 0 151 50" style="enable-background:new 0 0 151 50;" xml:space="preserve">
 <style type="text/css">
 	.st0{fill:#F2F2F2;stroke:#333333;stroke-width:2;stroke-miterlimit:10;}
 	.st1{font-family:'Lato-Black';}
 	.st2{font-size:12px;}
 	.st3{fill:#333333;}
+	.st4{fill:#404040}
+	.st5{fill:#000000}
 </style>
 <font horiz-adv-x="2000">
 <!-- Lato is a trademark of tyPoland Lukasz Dziedzic. -->
@@ -280,7 +282,7 @@
 
 	<path class="st0" d="M141.64,49.36H9.5c-4.68,0-8.5-3.83-8.5-8.5V9.5C1,4.83,4.83,1,9.5,1h132.14c4.68,0,8.5,3.83,8.5,8.5v31.35
 	C150.15,45.54,146.32,49.36,141.64,49.36z"/>
-<text transform="matrix(1 0 0 1 47.4665 28.9751)" class="st1 st2">{{ name }}</text>
+<text transform="matrix(1 0 0 1 47.4665 28.9751)" class="st1 st2 st5" textLength="65%">{{ name }}</text>
 <g>
 	<path d="M25.89,6.14C15.55,6.17,7.16,14.59,7.21,24.89c0.05,10.29,8.48,18.67,18.74,18.64c10.34-0.04,18.75-8.48,18.67-18.76
 		C44.54,14.41,36.19,6.1,25.89,6.14z M25.91,42.18C16.3,42.17,8.53,34.4,8.54,24.81c0.01-9.6,7.79-17.36,17.4-17.35
@@ -299,6 +301,6 @@
 		C21.01,20.75,21.04,18.52,21.01,16.29z M17.86,16.53c-0.38-0.03-0.62-0.21-0.64-0.6c-0.01-0.39,0.22-0.62,0.59-0.63
 		c0.37-0.01,0.62,0.2,0.63,0.59C18.46,16.28,18.24,16.49,17.86,16.53z"/>
 </g>
-<text transform="matrix(1 0 0 1 44.4665 43.3511)" class="st1 st2">on Umpyre</text>
-<text transform="matrix(1 0 0 1 44.4665 14.5991)" class="st1 st2">Contact</text>
+<text transform="matrix(1 0 0 1 44.4665 43.3511)" class="st1 st2 st4">on Umpyre</text>
+<text transform="matrix(1 0 0 1 44.4665 14.5991)" class="st1 st2 st4">Contact</text>
 </svg>
