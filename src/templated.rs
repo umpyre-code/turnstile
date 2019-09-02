@@ -51,8 +51,8 @@ pub fn get_badge(
             };
             let badge = Badge {
                 name: name.unwrap_or_else(|| full_name.to_owned()),
-                width: width.unwrap_or_else(|| 180),
-                height: height.unwrap_or_else(|| 70),
+                width: width.unwrap_or_else(|| 151),
+                height: height.unwrap_or_else(|| 56),
             };
             Ok(Cached::from(Svg(TERA.render("badge.svg", &badge)?), 3600))
         }
