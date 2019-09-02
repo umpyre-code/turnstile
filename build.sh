@@ -2,6 +2,10 @@
 set -e
 set -x
 
+apt-get update -qq
+apt-get install -yqq libcairo2-dev
+apt-get clean && rm -rf /var/lib/apt/lists
+
 echo "Running build for $REPO_NAME"
 # GCS w/ sccache currently does not work :/
 # export SCCACHE_GCS_BUCKET=umpyre-sccache
