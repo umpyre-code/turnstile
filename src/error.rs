@@ -222,3 +222,29 @@ impl From<tera::Error> for ResponseError {
         }
     }
 }
+
+impl From<resvg::Error> for ResponseError {
+    fn from(err: resvg::Error) -> Self {
+        ResponseError::BadRequest {
+            response: content::Json(
+                json!({
+                    "message": err.to_string(),
+                })
+                .to_string(),
+            ),
+        }
+    }
+}
+
+impl From<std::io::Error> for ResponseError {
+    fn from(err: std::io::Error) -> Self {
+        ResponseError::BadRequest {
+            response: content::Json(
+                json!({
+                    "message": err.to_string(),
+                })
+                .to_string(),
+            ),
+        }
+    }
+}

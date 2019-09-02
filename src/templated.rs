@@ -28,15 +28,13 @@ pub struct Badge {
     font_size: i32,
 }
 
-#[get("/badge/<client_id>/badge.svg?<name>&<width>&<height>&<font_size>")]
-pub fn get_badge(
+fn get_badge_svg_inner(
     client_id: String,
     name: Option<String>,
     width: Option<i32>,
     height: Option<i32>,
     font_size: Option<i32>,
-    _ratelimited: guards::RateLimited,
-) -> Result<Cached<Svg>, ResponseError> {
+) -> Result<String, ResponseError> {
     let rolodex_client = rolodex_client::Client::new(&config::CONFIG);
     let client = rolodex_client.get_client(rolodex_grpc::proto::GetClientRequest {
         calling_client_id: "".to_owned(),
@@ -57,7 +55,7 @@ pub fn get_badge(
                 height: height.unwrap_or_else(|| 50),
                 font_size: font_size.unwrap_or_else(|| 12),
             };
-            Ok(Cached::from(Svg(TERA.render("badge.svg", &badge)?), 3600))
+            Ok(TERA.render("badge.svg", &badge)?)
         }
         Err(_) => Err(ResponseError::NotFound {
             response: content::Json(
@@ -69,4 +67,55 @@ pub fn get_badge(
             ),
         }),
     }
+}
+
+#[get("/badge/<client_id>/badge.svg?<name>&<width>&<height>&<font_size>")]
+pub fn get_badge_svg(
+    client_id: String,
+    name: Option<String>,
+    width: Option<i32>,
+    height: Option<i32>,
+    font_size: Option<i32>,
+    _ratelimited: guards::RateLimited,
+) -> Result<Cached<Svg>, ResponseError> {
+    Ok(Cached::from(
+        Svg(get_badge_svg_inner(
+            client_id, name, width, height, font_size,
+        )?),
+        3600,
+    ))
+}
+
+#[derive(Responder)]
+#[response(content_type = "image/png")]
+pub struct Png(Vec<u8>);
+
+#[get("/badge/<client_id>/badge.png?<name>&<width>&<height>&<font_size>")]
+pub fn get_badge_png(
+    client_id: String,
+    name: Option<String>,
+    width: Option<i32>,
+    height: Option<i32>,
+    font_size: Option<i32>,
+    _ratelimited: guards::RateLimited,
+) -> Result<Cached<Png>, ResponseError> {
+    use resvg::prelude::*;
+    use std::io::Read;
+    use tempfile::NamedTempFile;
+
+    let svg = get_badge_svg_inner(client_id, name, width, height, font_size)?;
+
+    let opt = resvg::Options::default();
+    let rtree = usvg::Tree::from_str(&svg, &opt.usvg)?;
+
+    let backend = resvg::default_backend();
+
+    let mut img = backend.render_to_image(&rtree, &opt)?;
+    let file = NamedTempFile::new()?;
+    img.save_png(file.path());
+
+    let mut png = Vec::new();
+    file.as_file().read_to_end(&mut png)?;
+
+    Ok(Cached::from(Png(png), 3600))
 }

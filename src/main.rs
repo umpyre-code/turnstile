@@ -22,6 +22,7 @@ extern crate http;
 extern crate instrumented;
 extern crate r2d2_redis_cluster;
 extern crate rand;
+extern crate resvg;
 extern crate tera;
 extern crate time;
 extern crate uuid;
@@ -150,7 +151,8 @@ fn main() -> Result<(), std::io::Error> {
                 routes::put_messages_settle,
                 static_routes::openapi_html,
                 static_routes::openapi_yaml,
-                templated::get_badge,
+                templated::get_badge_png,
+                templated::get_badge_svg,
             ],
         )
         .launch();
