@@ -77,3 +77,19 @@ impl<'a, T: Responder<'a>> Responder<'a> for Cached<T> {
             .ok()
     }
 }
+
+#[derive(Responder)]
+#[response(content_type = "image/png")]
+pub struct Png(pub Vec<u8>);
+
+#[derive(Responder)]
+#[response(content_type = "image/svg+xml")]
+pub struct Svg(pub String);
+
+#[derive(Responder)]
+#[response(content_type = "image/jpeg")]
+pub struct Jpeg(pub String);
+
+#[derive(Responder)]
+#[response(content_type = "image/webp")]
+pub struct Webp(pub String);

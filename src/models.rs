@@ -209,3 +209,6 @@ pub struct VerifyPhoneResponse {
 
 #[derive(Debug, Serialize)]
 pub struct SendVerificationCodeResponse {}
+
+#[derive(Debug, Serialize)]
+pub struct ImageUploadResponse {}

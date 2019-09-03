@@ -248,3 +248,29 @@ impl From<std::io::Error> for ResponseError {
         }
     }
 }
+
+impl From<image::ImageError> for ResponseError {
+    fn from(err: image::ImageError) -> Self {
+        ResponseError::BadRequest {
+            response: content::Json(
+                json!({
+                    "message": err.to_string(),
+                })
+                .to_string(),
+            ),
+        }
+    }
+}
+
+impl From<reqwest::Error> for ResponseError {
+    fn from(err: reqwest::Error) -> Self {
+        ResponseError::BadRequest {
+            response: content::Json(
+                json!({
+                    "message": err.to_string(),
+                })
+                .to_string(),
+            ),
+        }
+    }
+}

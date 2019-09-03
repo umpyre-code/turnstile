@@ -2,6 +2,7 @@ use crate::config;
 use crate::error::ResponseError;
 use crate::guards;
 use crate::responders::Cached;
+use crate::responders::{Png, Svg};
 use crate::rolodex_client;
 
 use rocket::response::content;
@@ -15,10 +16,6 @@ lazy_static! {
         tera
     };
 }
-
-#[derive(Responder)]
-#[response(content_type = "image/svg+xml")]
-pub struct Svg(String);
 
 #[derive(Serialize)]
 pub struct Badge {
@@ -85,10 +82,6 @@ pub fn get_badge_svg(
         3600,
     ))
 }
-
-#[derive(Responder)]
-#[response(content_type = "image/png")]
-pub struct Png(Vec<u8>);
 
 #[get("/badge/<client_id>/badge.png?<name>&<width>&<height>&<font_size>")]
 pub fn get_badge_png(

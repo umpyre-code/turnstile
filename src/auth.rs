@@ -112,7 +112,7 @@ mod test {
         let reader_pool = get_reader_redis_pool();
         let mut writer = writer_pool.get().unwrap();
         let mut reader = reader_pool.get().unwrap();
-        let jwt = generate_auth_token(&mut writer, "bob").unwrap();
+        let jwt = generate_auth_token(&mut writer, "bob", b"secret").unwrap();
         let sub = verify_auth_token_get_sub(&mut reader, &jwt.token).unwrap();
         assert_eq!(&sub, "bob");
     }
@@ -123,7 +123,7 @@ mod test {
         let reader_pool = get_reader_redis_pool();
         let mut writer = writer_pool.get().unwrap();
         let mut reader = reader_pool.get().unwrap();
-        let jwt = generate_auth_token(&mut writer, "bob").unwrap();
+        let jwt = generate_auth_token(&mut writer, "bob", b"secret").unwrap();
         let sub = verify_auth_token_get_sub(&mut reader, &jwt.token).unwrap();
         assert_eq!(&sub, "bob");
         delete_tokens_for(&mut writer, "bob").expect("couldn't delete tokens");

@@ -19,9 +19,13 @@ extern crate chrono;
 extern crate elastic;
 extern crate env_logger;
 extern crate http;
+extern crate image;
 extern crate instrumented;
+extern crate libc;
 extern crate r2d2_redis_cluster;
 extern crate rand;
+extern crate rayon;
+extern crate reqwest;
 extern crate resvg;
 extern crate tera;
 extern crate time;
@@ -37,6 +41,7 @@ mod error;
 mod fairings;
 mod gcp;
 mod guards;
+mod images;
 mod models;
 mod optional;
 mod redis;
@@ -153,6 +158,7 @@ fn main() -> Result<(), std::io::Error> {
                 static_routes::openapi_yaml,
                 templated::get_badge_png,
                 templated::get_badge_svg,
+                images::post_client_image,
             ],
         )
         .launch();
