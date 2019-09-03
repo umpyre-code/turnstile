@@ -179,7 +179,7 @@ fn post_to_gcs(object: &str, data: Vec<u8>) -> Result<(), ResponseError> {
     let client = reqwest::Client::new();
     let mut res = client
         .post(&url)
-        .form(&params)
+        .query(&params)
         .body(reqwest::Body::from(data))
         .send()?;
 
