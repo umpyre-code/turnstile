@@ -2,7 +2,7 @@ FROM gcr.io/umpyre/github.com/umpyre-code/rust:latest
 
 # Install libcairo for SVG rendering
 RUN apt-get update -qq \
-    && apt-get install -yqq libcairo2 fontconfig fonts-lato libwebp fonts-noto-color-emoji \
+    && apt-get install -yqq libcairo2 fontconfig fonts-lato libwebp6 fonts-noto-color-emoji \
     && apt-get clean && rm -rf /var/lib/apt/lists
 
 ARG SSH_KEY
