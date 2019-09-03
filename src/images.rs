@@ -156,7 +156,7 @@ fn get_from_gcs(object: &str) -> Result<reqwest::Response, ResponseError> {
                 response: content::Json(
                     json!({
                         "message:": "GCS failure",
-                    "response": res.text().unwrap_or_else(|_| "none".to_string())
+                        "response": res.text().unwrap_or_else(|_| "none".to_string())
                     })
                     .to_string(),
                 ),
