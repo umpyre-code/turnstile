@@ -2,13 +2,36 @@ use crate::config;
 use crate::error::ResponseError;
 use crate::guards;
 use crate::models::ImageUploadResponse;
-use crate::responders::{Cached, Image, Jpeg, Webp};
+use crate::responders::{Cached, Image, JpegReqwestStream, WebpReqwestStream};
 
 use instrumented::instrument;
 use libc::{c_float, c_int, size_t};
 use rocket::response::content;
 use rocket_contrib::json::Json;
 use std::collections::HashMap;
+
+pub struct ImageUpload(Vec<u8>);
+
+#[cfg(not(debug_assertions))]
+impl rocket::data::FromDataSimple for ImageUpload {
+    type Error = std::io::Error;
+
+    // from https://api.rocket.rs/v0.4/rocket/data/trait.FromDataSimple.html
+    // see discussion at https://api.rocket.rs/v0.4/rocket/data/trait.FromData.html#provided-implementations
+    #[inline(always)]
+    fn from_data(
+        _: &rocket::Request,
+        data: rocket::Data,
+    ) -> rocket::data::Outcome<Self, Self::Error> {
+        use std::io::Read;
+        const LIMIT: u64 = 10 * 1024 * 1024; // 10MiB
+        let mut bytes = Vec::new();
+        match data.open().take(LIMIT).read_to_end(&mut bytes) {
+            Ok(_) => rocket::Outcome::Success(Self(bytes)),
+            Err(e) => rocket::Outcome::Failure((rocket::http::Status::BadRequest, e)),
+        }
+    }
+}
 
 struct Thumbnails<'a> {
     thumbs: HashMap<&'a str, image::DynamicImage>,
@@ -116,19 +139,17 @@ struct GCSParams<'a> {
 }
 
 #[instrument(INFO)]
-fn get_from_gcs(object: &str) -> Result<Vec<u8>, ResponseError> {
+fn get_from_gcs(object: &str) -> Result<reqwest::Response, ResponseError> {
     let url = format!(
         "https://www.googleapis.com/storage/v1/b/{}/o/{}",
         config::CONFIG.service.image_bucket,
         object
     );
     let client = reqwest::Client::new();
-    let mut res = client.get(&url).send()?;
+    let res = client.get(&url).send()?;
 
     if res.status().is_success() {
-        let mut result = vec![];
-        res.copy_to(&mut result)?;
-        Ok(result)
+        Ok(res)
     } else {
         match res.status() {
             reqwest::StatusCode::NOT_FOUND => Err(ResponseError::not_found()),
@@ -218,7 +239,7 @@ fn encode_image_and_upload(client_id: &str, image: &[u8]) -> Result<(), Response
 #[post("/img/<client_id>", data = "<image>", format = "image/jpeg")]
 pub fn post_client_image(
     client_id: String,
-    image: Vec<u8>,
+    image: ImageUpload,
     calling_client: guards::Client,
     _ratelimited: guards::RateLimited,
 ) -> Result<Json<ImageUploadResponse>, ResponseError> {
@@ -234,7 +255,7 @@ pub fn post_client_image(
         });
     }
 
-    encode_image_and_upload(&client_id, &image)?;
+    encode_image_and_upload(&client_id, &image.0)?;
 
     Ok(Json(ImageUploadResponse {}))
 }
@@ -245,6 +266,7 @@ pub fn get_client_image(
     name: String,
     _ratelimited: guards::RateLimited,
 ) -> Result<Cached<Image>, ResponseError> {
+    use rocket::response::Stream;
     if client_id.len() != 32 {
         return Err(ResponseError::not_found());
     }
@@ -261,11 +283,11 @@ pub fn get_client_image(
         "big" | "medium" | "small" | "tiny" => match splat[1] {
             // match second part
             "jpg" => Ok(Cached::from(
-                Image::Jpeg(Jpeg(get_from_gcs(&object)?)),
+                Image::Jpeg(JpegReqwestStream(Stream::from(get_from_gcs(&object)?))),
                 24 * 3600,
             )),
             "webp" => Ok(Cached::from(
-                Image::Webp(Webp(get_from_gcs(&object)?)),
+                Image::Webp(WebpReqwestStream(Stream::from(get_from_gcs(&object)?))),
                 24 * 3600,
             )),
             _ => Err(ResponseError::not_found()),

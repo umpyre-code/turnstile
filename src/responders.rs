@@ -82,13 +82,9 @@ impl<'a, T: Responder<'a>> Responder<'a> for Cached<T> {
 pub enum Image {
     Png(Png),
     Svg(Svg),
-    Jpeg(Jpeg),
-    Webp(Webp),
+    Jpeg(JpegReqwestStream),
+    Webp(WebpReqwestStream),
 }
-
-#[derive(Responder)]
-#[response(content_type = "image/png")]
-pub struct Png(pub Vec<u8>);
 
 #[derive(Responder)]
 #[response(content_type = "image/svg+xml")]
@@ -96,8 +92,12 @@ pub struct Svg(pub String);
 
 #[derive(Responder)]
 #[response(content_type = "image/jpeg")]
-pub struct Jpeg(pub Vec<u8>);
+pub struct JpegReqwestStream(pub rocket::response::Stream<reqwest::Response>);
 
 #[derive(Responder)]
 #[response(content_type = "image/webp")]
-pub struct Webp(pub Vec<u8>);
+pub struct WebpReqwestStream(pub rocket::response::Stream<reqwest::Response>);
+
+#[derive(Responder)]
+#[response(content_type = "image/png")]
+pub struct Png(pub Vec<u8>);
