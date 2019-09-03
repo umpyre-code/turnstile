@@ -40,9 +40,7 @@ impl<'a> Thumbnails<'a> {
 
 #[link(name = "webp")]
 extern "C" {
-    // Here's the C lib's function def:
-    //     size_t WebPEncodeBGR(const uint8_t* rgb, int width, int height, int stride, float quality_factor, uint8_t** output);
-
+    // size_t WebPEncodeBGR(const uint8_t* rgb, int width, int height, int stride, float quality_factor, uint8_t** output);
     fn WebPEncodeBGR(
         rgb: *const u8,
         width: c_int,
@@ -51,14 +49,13 @@ extern "C" {
         quality_factor: c_float,
         output: *mut *mut u8,
     ) -> size_t;
-    fn WebPFree(ptr: *const u8);
 }
 
 fn webp_encode(img: image::ImageBuffer<image::Bgr<u8>, Vec<u8>>) -> Vec<u8> {
     let width = img.width();
     let height = img.height();
     let stride = width * 3;
-    let quality: c_float = 85.0;
+    let quality: c_float = 80.0;
     let mut output: *mut u8 = std::ptr::null_mut();
     let raw = img.into_raw();
     let mut result: Vec<u8> = vec![];
@@ -71,7 +68,8 @@ fn webp_encode(img: image::ImageBuffer<image::Bgr<u8>, Vec<u8>>) -> Vec<u8> {
             quality,
             &mut output,
         );
-        // Vec::from_raw_parts will take ownership of the underlying data
+        // Vec::from_raw_parts will take ownership of the underlying data, so we
+        // don't have to explicitly call WebPFree() or free().
         result.append(&mut Vec::from_raw_parts(output, length, length));
     }
     result

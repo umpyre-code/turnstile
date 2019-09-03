@@ -21,6 +21,8 @@ pub enum ResponseError {
     PhoneNotVerified { response: content::Json<String> },
     #[response(status = 500, content_type = "json")]
     InternalError { response: content::Json<String> },
+    #[response(status = 503, content_type = "json")]
+    Unavailable { response: content::Json<String> },
 }
 
 impl From<std::option::NoneError> for ResponseError {
@@ -76,7 +78,7 @@ impl From<rolodex_client::RolodexError> for ResponseError {
                     ),
                 }
             }
-            _ => ResponseError::BadRequest {
+            _ => ResponseError::Unavailable {
                 response: content::Json(
                     json!({
                         "message": err.to_string(),
@@ -102,7 +104,7 @@ impl From<switchroom_client::SwitchroomError> for ResponseError {
                     ),
                 }
             }
-            _ => ResponseError::BadRequest {
+            _ => ResponseError::Unavailable {
                 response: content::Json(
                     json!({
                         "message": err.to_string(),
@@ -128,7 +130,7 @@ impl From<beancounter_client::BeanCounterError> for ResponseError {
                     ),
                 }
             }
-            _ => Self::BadRequest {
+            _ => Self::Unavailable {
                 response: content::Json(
                     json!({
                         "message": err.to_string(),
@@ -188,7 +190,7 @@ impl From<&JsonError<'_>> for ResponseError {
 
 impl From<redis::db::RedisError> for ResponseError {
     fn from(err: redis::db::RedisError) -> Self {
-        ResponseError::BadRequest {
+        ResponseError::Unavailable {
             response: content::Json(
                 json!({
                     "message": err.to_string(),
@@ -214,7 +216,7 @@ impl From<data_encoding::DecodeError> for ResponseError {
 
 impl From<tera::Error> for ResponseError {
     fn from(err: tera::Error) -> Self {
-        ResponseError::BadRequest {
+        ResponseError::InternalError {
             response: content::Json(
                 json!({
                     "message": err.to_string(),
@@ -227,7 +229,7 @@ impl From<tera::Error> for ResponseError {
 
 impl From<resvg::Error> for ResponseError {
     fn from(err: resvg::Error) -> Self {
-        ResponseError::BadRequest {
+        ResponseError::InternalError {
             response: content::Json(
                 json!({
                     "message": err.to_string(),
@@ -240,7 +242,7 @@ impl From<resvg::Error> for ResponseError {
 
 impl From<std::io::Error> for ResponseError {
     fn from(err: std::io::Error) -> Self {
-        ResponseError::BadRequest {
+        ResponseError::InternalError {
             response: content::Json(
                 json!({
                     "message": err.to_string(),
@@ -253,7 +255,7 @@ impl From<std::io::Error> for ResponseError {
 
 impl From<image::ImageError> for ResponseError {
     fn from(err: image::ImageError) -> Self {
-        ResponseError::BadRequest {
+        ResponseError::InternalError {
             response: content::Json(
                 json!({
                     "message": err.to_string(),
@@ -266,7 +268,7 @@ impl From<image::ImageError> for ResponseError {
 
 impl From<reqwest::Error> for ResponseError {
     fn from(err: reqwest::Error) -> Self {
-        ResponseError::BadRequest {
+        ResponseError::InternalError {
             response: content::Json(
                 json!({
                     "message": err.to_string(),
