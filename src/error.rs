@@ -19,6 +19,8 @@ pub enum ResponseError {
     NotFound { response: content::Json<String> },
     #[response(status = 401, content_type = "json")]
     PhoneNotVerified { response: content::Json<String> },
+    #[response(status = 500, content_type = "json")]
+    InternalError { response: content::Json<String> },
 }
 
 impl From<std::option::NoneError> for ResponseError {

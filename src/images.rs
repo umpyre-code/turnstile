@@ -3,6 +3,7 @@ use crate::error::ResponseError;
 use crate::guards;
 use crate::models::ImageUploadResponse;
 
+use instrumented::instrument;
 use libc::{c_float, c_int, size_t};
 use rocket::response::content;
 use rocket_contrib::json::Json;
@@ -110,21 +111,78 @@ impl<'a> EncodedImages<'a> {
 }
 
 #[derive(Serialize)]
-struct GCSParams {}
+#[serde(rename_all = "camelCase")]
+struct GCSParams<'a> {
+    upload_type: &'a str,
+}
 
+#[instrument(INFO)]
 fn post_to_gcs(name: &str, data: Vec<u8>) -> Result<(), ResponseError> {
     let url = format!(
         "https://www.googleapis.com/upload/storage/v1/b/{}/{}",
         config::CONFIG.service.image_bucket,
         name
     );
-    let params = GCSParams {};
+    let params = GCSParams {
+        upload_type: "media",
+    };
     let client = reqwest::Client::new();
     let res = client
         .post(&url)
         .form(&params)
         .body(reqwest::Body::from(data))
         .send()?;
+
+    if res.status().is_success() {
+        Ok(())
+    } else {
+        Err(ResponseError::InternalError {
+            response: content::Json(
+                json!({
+                    "message:": "GCS failure",
+                })
+                .to_string(),
+            ),
+        })
+    }
+}
+
+#[instrument(INFO)]
+fn encode_image_and_upload(client_id: &str, image: &[u8]) -> Result<(), ResponseError> {
+    use rayon::prelude::*;
+
+    let thumbnails = Thumbnails::from_buffer(image)?;
+    let mut jpegs = EncodedImages::new(&thumbnails, image::ImageFormat::JPEG);
+    let mut webps = EncodedImages::new(&thumbnails, image::ImageFormat::WEBP);
+
+    let prefix = format!("{}/{}", client_id.get(0..2).unwrap(), client_id);
+
+    let (_, mut errors): (Vec<_>, Vec<_>) = webps
+        .images
+        .par_iter_mut()
+        .map(|(key, val)| {
+            post_to_gcs(
+                &format!("{}/{}.webp", prefix, key),
+                val.drain(0..).collect(),
+            )
+        })
+        .partition(Result::is_ok);
+
+    if !errors.is_empty() {
+        // Just return the first error and stop
+        return errors.pop().unwrap();
+    }
+
+    let (_, mut errors): (Vec<_>, Vec<_>) = jpegs
+        .images
+        .par_iter_mut()
+        .map(|(key, val)| post_to_gcs(&format!("{}/{}.jpg", prefix, key), val.drain(0..).collect()))
+        .partition(Result::is_ok);
+
+    if !errors.is_empty() {
+        // Just return the first error and stop
+        return errors.pop().unwrap();
+    }
 
     Ok(())
 }
@@ -136,8 +194,6 @@ pub fn post_client_image(
     calling_client: guards::Client,
     _ratelimited: guards::RateLimited,
 ) -> Result<Json<ImageUploadResponse>, ResponseError> {
-    use rayon::prelude::*;
-
     // check if calling client is authorized
     if calling_client.client_id != client_id {
         return Err(ResponseError::Unauthorized {
@@ -150,25 +206,7 @@ pub fn post_client_image(
         });
     }
 
-    let thumbnails = Thumbnails::from_buffer(&image)?;
-    let mut jpgs = EncodedImages::new(&thumbnails, image::ImageFormat::JPEG);
-    let mut webps = EncodedImages::new(&thumbnails, image::ImageFormat::WEBP);
-
-    webps.images.par_iter_mut().for_each(|(key, val)| {
-        post_to_gcs(
-            &format!("{}/{}.webp", client_id, key),
-            val.drain(0..).collect(),
-        )
-        .expect("unable to post");
-    });
-
-    jpgs.images.par_iter_mut().for_each(|(key, val)| {
-        post_to_gcs(
-            &format!("{}/{}.jpg", client_id, key),
-            val.drain(0..).collect(),
-        )
-        .expect("unable to post");
-    });
+    encode_image_and_upload(&client_id, &image)?;
 
     Ok(Json(ImageUploadResponse {}))
 }
