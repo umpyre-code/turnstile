@@ -133,6 +133,7 @@ fn main() -> Result<(), std::io::Error> {
         .mount(
             "/",
             routes![
+                images::post_client_image,
                 routes::get_account_balance,
                 routes::get_account_connect,
                 routes::get_client_by_handle,
@@ -158,7 +159,6 @@ fn main() -> Result<(), std::io::Error> {
                 static_routes::openapi_yaml,
                 templated::get_badge_png,
                 templated::get_badge_svg,
-                images::post_client_image,
             ],
         )
         .launch();
