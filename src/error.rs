@@ -25,6 +25,19 @@ pub enum ResponseError {
     Unavailable { response: content::Json<String> },
 }
 
+impl ResponseError {
+    pub fn not_found() -> Self {
+        Self::NotFound {
+            response: content::Json(
+                json!({
+                    "message": "Not found",
+                })
+                .to_string(),
+            ),
+        }
+    }
+}
+
 impl From<std::option::NoneError> for ResponseError {
     fn from(_err: std::option::NoneError) -> Self {
         ResponseError::BadRequest {

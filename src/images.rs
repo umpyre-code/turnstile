@@ -2,6 +2,7 @@ use crate::config;
 use crate::error::ResponseError;
 use crate::guards;
 use crate::models::ImageUploadResponse;
+use crate::responders::{Cached, Image, Jpeg, Webp};
 
 use instrumented::instrument;
 use libc::{c_float, c_int, size_t};
@@ -115,11 +116,40 @@ struct GCSParams<'a> {
 }
 
 #[instrument(INFO)]
-fn post_to_gcs(name: &str, data: Vec<u8>) -> Result<(), ResponseError> {
+fn get_from_gcs(object: &str) -> Result<Vec<u8>, ResponseError> {
+    let url = format!(
+        "https://www.googleapis.com/storage/v1/b/{}/o/{}",
+        config::CONFIG.service.image_bucket,
+        object
+    );
+    let client = reqwest::Client::new();
+    let mut res = client.get(&url).send()?;
+
+    if res.status().is_success() {
+        let mut result = vec![];
+        res.copy_to(&mut result)?;
+        Ok(result)
+    } else {
+        match res.status() {
+            reqwest::StatusCode::NOT_FOUND => Err(ResponseError::not_found()),
+            _ => Err(ResponseError::InternalError {
+                response: content::Json(
+                    json!({
+                        "message:": "GCS failure",
+                    })
+                    .to_string(),
+                ),
+            }),
+        }
+    }
+}
+
+#[instrument(INFO)]
+fn post_to_gcs(object: &str, data: Vec<u8>) -> Result<(), ResponseError> {
     let url = format!(
         "https://www.googleapis.com/upload/storage/v1/b/{}/{}",
         config::CONFIG.service.image_bucket,
-        name
+        object
     );
     let params = GCSParams {
         upload_type: "media",
@@ -207,6 +237,41 @@ pub fn post_client_image(
     encode_image_and_upload(&client_id, &image)?;
 
     Ok(Json(ImageUploadResponse {}))
+}
+
+#[get("/img/<client_id>/<name>")]
+pub fn get_client_image(
+    client_id: String,
+    name: String,
+    _ratelimited: guards::RateLimited,
+) -> Result<Cached<Image>, ResponseError> {
+    if client_id.len() != 32 {
+        return Err(ResponseError::not_found());
+    }
+
+    let object = format!("{}/{}/{}", client_id.get(0..2).unwrap(), client_id, name);
+
+    let splat: Vec<&str> = name.split('.').collect();
+    if splat.len() != 2 {
+        return Err(ResponseError::not_found());
+    }
+
+    match splat[0] {
+        // match first part, should be one of these options
+        "big" | "medium" | "small" | "tiny" => match splat[1] {
+            // match second part
+            "jpg" => Ok(Cached::from(
+                Image::Jpeg(Jpeg(get_from_gcs(&object)?)),
+                24 * 3600,
+            )),
+            "webp" => Ok(Cached::from(
+                Image::Webp(Webp(get_from_gcs(&object)?)),
+                24 * 3600,
+            )),
+            _ => Err(ResponseError::not_found()),
+        },
+        _ => Err(ResponseError::not_found()),
+    }
 }
 
 #[cfg(test)]

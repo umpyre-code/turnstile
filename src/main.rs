@@ -133,6 +133,7 @@ fn main() -> Result<(), std::io::Error> {
         .mount(
             "/",
             routes![
+                images::get_client_image,
                 images::post_client_image,
                 routes::get_account_balance,
                 routes::get_account_connect,
