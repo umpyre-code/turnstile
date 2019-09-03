@@ -12,7 +12,6 @@ use std::collections::HashMap;
 
 pub struct ImageUpload(Vec<u8>);
 
-#[cfg(not(debug_assertions))]
 impl rocket::data::FromDataSimple for ImageUpload {
     type Error = std::io::Error;
 
