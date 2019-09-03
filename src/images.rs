@@ -145,7 +145,7 @@ fn get_from_gcs(object: &str) -> Result<reqwest::Response, ResponseError> {
         object
     );
     let client = reqwest::Client::new();
-    let res = client.get(&url).send()?;
+    let mut res = client.get(&url).send()?;
 
     if res.status().is_success() {
         Ok(res)
@@ -156,6 +156,7 @@ fn get_from_gcs(object: &str) -> Result<reqwest::Response, ResponseError> {
                 response: content::Json(
                     json!({
                         "message:": "GCS failure",
+                    "response": res.text().unwrap_or_else(|_| "none".to_string())
                     })
                     .to_string(),
                 ),
@@ -175,7 +176,7 @@ fn post_to_gcs(object: &str, data: Vec<u8>) -> Result<(), ResponseError> {
         upload_type: "media",
     };
     let client = reqwest::Client::new();
-    let res = client
+    let mut res = client
         .post(&url)
         .form(&params)
         .body(reqwest::Body::from(data))
@@ -188,6 +189,7 @@ fn post_to_gcs(object: &str, data: Vec<u8>) -> Result<(), ResponseError> {
             response: content::Json(
                 json!({
                     "message:": "GCS failure",
+                    "response": res.text().unwrap_or_else(|_| "none".to_string())
                 })
                 .to_string(),
             ),
