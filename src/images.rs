@@ -135,6 +135,7 @@ impl<'a> EncodedImages<'a> {
 #[serde(rename_all = "camelCase")]
 struct GCSParams<'a> {
     upload_type: &'a str,
+    name: &'a str,
 }
 
 #[instrument(INFO)]
@@ -168,12 +169,12 @@ fn get_from_gcs(object: &str) -> Result<reqwest::Response, ResponseError> {
 #[instrument(INFO)]
 fn post_to_gcs(object: &str, data: Vec<u8>) -> Result<(), ResponseError> {
     let url = format!(
-        "https://www.googleapis.com/upload/storage/v1/b/{}/{}",
+        "https://www.googleapis.com/upload/storage/v1/b/{}/o",
         config::CONFIG.service.image_bucket,
-        object
     );
     let params = GCSParams {
         upload_type: "media",
+        name: object,
     };
     let client = reqwest::Client::new();
     let mut res = client
