@@ -31,6 +31,7 @@ extern crate tera;
 extern crate time;
 extern crate uuid;
 extern crate yansi;
+extern crate yup_oauth2;
 
 mod auth;
 mod beancounter_client;

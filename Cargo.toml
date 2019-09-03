@@ -52,6 +52,7 @@ uuid = { version = "0.7", features = ["serde", "v4"] }
 webpki = "0.19"
 woothee = "0.10"
 yansi = "0.5"
+yup-oauth2 = "3.1"
 
 [patch.crates-io]
 rocket = { git = "https://github.com/brndnmtthws/Rocket.git" }
