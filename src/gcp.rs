@@ -28,13 +28,17 @@ struct GCSParams<'a> {
 
 #[instrument(INFO)]
 pub fn get_from_gcs(object: &str) -> Result<reqwest::Response, ResponseError> {
+    let token = get_google_token(
+        &config::CONFIG.service.image_bucket_credentials,
+        vec!["https://www.googleapis.com/auth/devstorage.read_write"],
+    );
     let url = format!(
         "https://www.googleapis.com/storage/v1/b/{}/o/{}",
         config::CONFIG.service.image_bucket,
         object
     );
     let client = reqwest::Client::new();
-    let mut res = client.get(&url).send()?;
+    let mut res = client.get(&url).bearer_auth(&token).send()?;
 
     if res.status().is_success() {
         Ok(res)
