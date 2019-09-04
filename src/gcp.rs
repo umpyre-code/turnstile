@@ -143,3 +143,11 @@ pub fn invalidate_cdn_cache(path: &str) {
         }
     }
 }
+
+pub fn invalidate_cdn_cache_for_client(client_id: &str, handle: &Option<String>) {
+    invalidate_cdn_cache(&format!("/client/{}", client_id));
+    match handle {
+        Some(handle) => invalidate_cdn_cache(&format!("/handle/{}", handle)),
+        _ => (),
+    }
+}

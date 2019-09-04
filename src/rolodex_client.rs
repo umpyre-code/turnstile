@@ -10,6 +10,8 @@ extern crate webpki;
 use futures::Future;
 
 use crate::config;
+use crate::error;
+
 use hyper::client::connect::{Destination, HttpConnector};
 use instrumented::instrument;
 use rolodex_grpc::tower_grpc::{BoxBody, Request};
@@ -165,6 +167,14 @@ impl Client {
     }
 
     #[instrument(INFO)]
+    pub fn increment_client_avatar(
+        &self,
+        update_request: rolodex_grpc::proto::IncrementClientAvatarRequest,
+    ) -> Result<rolodex_grpc::proto::UpdateClientResponse, RolodexError> {
+        with_client!(self, RpcClient::increment_client_avatar, update_request)
+    }
+
+    #[instrument(INFO)]
     pub fn update_client_password(
         &self,
         update_request: rolodex_grpc::proto::UpdateClientPasswordRequest,
@@ -203,4 +213,18 @@ impl Client {
     ) -> Result<rolodex_grpc::proto::SendVerificationCodeResponse, RolodexError> {
         with_client!(self, RpcClient::send_verification_code, request)
     }
+}
+
+pub fn get_client_for(
+    rolodex_client: &Client,
+    calling_client_id: &str,
+    client_id: &str,
+) -> Result<rolodex_grpc::proto::Client, error::ResponseError> {
+    let response = rolodex_client.get_client(rolodex_grpc::proto::GetClientRequest {
+        id: Some(rolodex_grpc::proto::get_client_request::Id::ClientId(
+            client_id.into(),
+        )),
+        calling_client_id: calling_client_id.into(),
+    })?;
+    Ok(response.client?)
 }

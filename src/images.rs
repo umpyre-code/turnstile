@@ -1,8 +1,10 @@
+use crate::config;
 use crate::error::ResponseError;
 use crate::gcp::*;
 use crate::guards;
 use crate::models::ImageUploadResponse;
 use crate::responders::{Cached, Image, JpegReqwestStream, WebpReqwestStream};
+use crate::rolodex_client;
 
 use instrumented::instrument;
 use libc::{c_float, c_int, size_t};
@@ -182,9 +184,26 @@ pub fn post_client_image(
     if calling_client.client_id != client_id {
         return Err(ResponseError::unauthorized("Not authorized"));
     }
+
     match kind.as_ref() {
         "avatar" => {
             encode_image_and_upload(&kind, &client_id, &image.0)?;
+
+            // fetch client info
+            let rolodex_client = rolodex_client::Client::new(&config::CONFIG);
+            let client = rolodex_client::get_client_for(
+                &rolodex_client,
+                &calling_client.client_id,
+                &calling_client.client_id,
+            )?;
+
+            // increment avatar version
+            rolodex_client.increment_client_avatar(
+                rolodex_grpc::proto::IncrementClientAvatarRequest {
+                    client_id: calling_client.client_id.clone(),
+                    increment_by: 1,
+                },
+            )?;
 
             Ok(Json(ImageUploadResponse {}))
         }

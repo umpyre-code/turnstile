@@ -222,6 +222,7 @@ impl From<Option<rolodex_grpc::proto::Client>> for models::GetClientResponse {
             joined: client.joined,
             phone_sms_verified: client.phone_sms_verified,
             ral: client.ral,
+            avatar_version: client.avatar_version,
         }
     }
 }
@@ -352,6 +353,7 @@ impl From<rolodex_grpc::proto::UpdateClientResponse> for models::UpdateClientRes
             joined: client.joined,
             phone_sms_verified: client.phone_sms_verified,
             ral: client.ral,
+            avatar_version: client.avatar_version,
         }
     }
 }
@@ -489,9 +491,10 @@ pub fn put_client(
                 .unwrap_or_else(|| String::from("")),
 
             // these fields are ignored but required by the proto definition
-            joined: 0,                 // ignored
-            phone_sms_verified: false, // ignored
-            ral: update_client_request.ral,
+            joined: 0,                      // ignored
+            phone_sms_verified: false,      // ignored
+            ral: update_client_request.ral, // ignored
+            avatar_version: 0,              // ignored
         }),
         location,
     })?;
@@ -499,18 +502,7 @@ pub fn put_client(
     check_result(response.result)?;
 
     // Lastly, invalidate the CDN caches
-    gcp::invalidate_cdn_cache(&format!("/client/{}", client_id));
-    if update_client_request
-        .handle
-        .as_ref()
-        .map(|h| !h.is_empty())
-        .unwrap_or_else(|| false)
-    {
-        gcp::invalidate_cdn_cache(&format!(
-            "/handle/{}",
-            update_client_request.handle.as_ref().unwrap()
-        ));
-    }
+    gcp::invalidate_cdn_cache_for_client(&client_id, &update_client_request.handle);
 
     let response: models::UpdateClientResponse = response.into();
 
@@ -584,20 +576,6 @@ impl From<switchroom_grpc::proto::Message> for models::Message {
     fn from(message: switchroom_grpc::proto::Message) -> Self {
         models::Message::from(&message)
     }
-}
-
-fn get_client_for(
-    rolodex_client: &rolodex_client::Client,
-    calling_client_id: &str,
-    client_id: &str,
-) -> Result<rolodex_grpc::proto::Client, ResponseError> {
-    let response = rolodex_client.get_client(rolodex_grpc::proto::GetClientRequest {
-        id: Some(rolodex_grpc::proto::get_client_request::Id::ClientId(
-            client_id.into(),
-        )),
-        calling_client_id: calling_client_id.into(),
-    })?;
-    Ok(response.client?)
 }
 
 fn check_box_public_keys(
@@ -708,7 +686,7 @@ pub fn post_messages(
     let rolodex_client = rolodex_client::Client::new(&config::CONFIG);
     let beancounter_client = beancounter_client::Client::new(&config::CONFIG);
 
-    let sender_client = get_client_for(
+    let sender_client = rolodex_client::get_client_for(
         &rolodex_client,
         &calling_client.client_id,
         &calling_client.client_id,
@@ -734,8 +712,11 @@ pub fn post_messages(
         check_box_public_keys(&sender_client, &message.sender_public_key)?;
 
         // Verify the public key of the recipient matches what's in our DB
-        let recipient_client =
-            get_client_for(&rolodex_client, &calling_client.client_id, &message.to)?;
+        let recipient_client = rolodex_client::get_client_for(
+            &rolodex_client,
+            &calling_client.client_id,
+            &message.to,
+        )?;
         check_box_public_keys(&recipient_client, &message.recipient_public_key)?;
 
         // Verify the message signature

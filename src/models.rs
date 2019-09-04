@@ -64,6 +64,7 @@ pub struct GetClientResponse {
     pub joined: i64,
     pub phone_sms_verified: bool,
     pub ral: i32,
+    pub avatar_version: i32,
 }
 
 #[derive(Debug, Deserialize)]
@@ -80,6 +81,7 @@ pub struct UpdateClientRequest {
     pub joined: i64,
     pub phone_sms_verified: bool,
     pub ral: i32,
+    pub avatar_version: i32,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -93,6 +95,7 @@ pub struct UpdateClientResponse {
     pub joined: i64,
     pub phone_sms_verified: bool,
     pub ral: i32,
+    pub avatar_version: i32,
 }
 
 #[derive(Debug, Deserialize, Serialize, Default, Clone)]
