@@ -208,7 +208,7 @@ pub fn get_client_image(
 ) -> Result<Cached<Image>, ResponseError> {
     use rocket::response::Stream;
     if client_id.len() != 32 {
-        return Err(ResponseError::not_found());
+        return Err(ResponseError::not_found("client_id"));
     }
 
     let object = format!(
@@ -221,7 +221,7 @@ pub fn get_client_image(
 
     let splat: Vec<&str> = name.split('.').collect();
     if splat.len() != 2 {
-        return Err(ResponseError::not_found());
+        return Err(ResponseError::not_found("name"));
     }
 
     match kind.as_ref() {
@@ -237,11 +237,11 @@ pub fn get_client_image(
                     Image::Webp(WebpReqwestStream(Stream::from(get_from_gcs(&object)?))),
                     24 * 3600,
                 )),
-                _ => Err(ResponseError::not_found()),
+                _ => Err(ResponseError::not_found("format")),
             },
-            _ => Err(ResponseError::not_found()),
+            _ => Err(ResponseError::not_found("size")),
         },
-        _ => Err(ResponseError::not_found()),
+        _ => Err(ResponseError::not_found("kind")),
     }
 }
 

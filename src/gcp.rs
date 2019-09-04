@@ -40,7 +40,7 @@ pub fn get_from_gcs(object: &str) -> Result<reqwest::Response, ResponseError> {
         Ok(res)
     } else {
         match res.status() {
-            reqwest::StatusCode::NOT_FOUND => Err(ResponseError::not_found()),
+            reqwest::StatusCode::NOT_FOUND => Err(ResponseError::not_found("GCS")),
             _ => Err(ResponseError::InternalError {
                 response: content::Json(
                     json!({
