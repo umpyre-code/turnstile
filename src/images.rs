@@ -130,13 +130,6 @@ impl<'a> EncodedImages<'a> {
     }
 }
 
-#[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
-struct GCSParams<'a> {
-    upload_type: &'a str,
-    name: &'a str,
-}
-
 #[instrument(INFO)]
 fn encode_image_and_upload(kind: &str, client_id: &str, image: &[u8]) -> Result<(), ResponseError> {
     use rayon::prelude::*;

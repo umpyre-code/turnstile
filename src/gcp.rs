@@ -28,6 +28,7 @@ struct GCSParams<'a> {
 
 #[instrument(INFO)]
 pub fn get_from_gcs(object: &str) -> Result<reqwest::Response, ResponseError> {
+    use rocket::http::uri::Uri;
     let token = get_google_token(
         &config::CONFIG.service.image_bucket_credentials,
         vec!["https://www.googleapis.com/auth/devstorage.read_write"],
@@ -35,7 +36,7 @@ pub fn get_from_gcs(object: &str) -> Result<reqwest::Response, ResponseError> {
     let url = format!(
         "https://www.googleapis.com/storage/v1/b/{}/o/{}",
         config::CONFIG.service.image_bucket,
-        object
+        Uri::percent_encode(object)
     );
     let client = reqwest::Client::new();
     let mut res = client.get(&url).bearer_auth(&token).send()?;
