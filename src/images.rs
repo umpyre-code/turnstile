@@ -19,9 +19,10 @@ fn get_google_token(scopes: Vec<&str>) -> String {
             .unwrap();
     let mut access = yup_oauth2::ServiceAccountAccess::new(client_secret).build();
 
-    let tok = access
-        .token(scopes)
-        .wait()
+    let mut runtime = tokio::runtime::Runtime::new().expect("Unable to create a runtime");
+
+    let tok = runtime
+        .block_on(access.token(scopes))
         .expect("couldn't get oauth2 token");
 
     tok.access_token
