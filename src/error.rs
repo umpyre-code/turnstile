@@ -36,6 +36,16 @@ impl ResponseError {
             ),
         }
     }
+    pub fn bad_request(message: &str) -> Self {
+        Self::BadRequest {
+            response: content::Json(json!({ "message": message }).to_string()),
+        }
+    }
+    pub fn unauthorized(message: &str) -> Self {
+        Self::Unauthorized {
+            response: content::Json(json!({ "message": message }).to_string()),
+        }
+    }
 }
 
 impl From<std::option::NoneError> for ResponseError {

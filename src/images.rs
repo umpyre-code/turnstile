@@ -1,4 +1,3 @@
-use crate::config;
 use crate::error::ResponseError;
 use crate::gcp::*;
 use crate::guards;
@@ -7,7 +6,6 @@ use crate::responders::{Cached, Image, JpegReqwestStream, WebpReqwestStream};
 
 use instrumented::instrument;
 use libc::{c_float, c_int, size_t};
-use rocket::response::content;
 use rocket_contrib::json::Json;
 use std::collections::HashMap;
 
@@ -179,8 +177,9 @@ fn encode_image_and_upload(client_id: &str, image: &[u8]) -> Result<(), Response
     Ok(())
 }
 
-#[post("/img/<client_id>", data = "<image>", format = "image/jpeg")]
+#[post("/img/<kind>/<client_id>", data = "<image>", format = "image/jpeg")]
 pub fn post_client_image(
+    kind: String,
     client_id: String,
     image: ImageUpload,
     calling_client: guards::Client,
@@ -188,23 +187,21 @@ pub fn post_client_image(
 ) -> Result<Json<ImageUploadResponse>, ResponseError> {
     // check if calling client is authorized
     if calling_client.client_id != client_id {
-        return Err(ResponseError::Unauthorized {
-            response: content::Json(
-                json!({
-                    "message:": "Not authorized",
-                })
-                .to_string(),
-            ),
-        });
+        return Err(ResponseError::unauthorized("Not authorized"));
     }
+    match kind.as_ref() {
+        "avatar" => {
+            encode_image_and_upload(&client_id, &image.0)?;
 
-    encode_image_and_upload(&client_id, &image.0)?;
-
-    Ok(Json(ImageUploadResponse {}))
+            Ok(Json(ImageUploadResponse {}))
+        }
+        _ => Err(ResponseError::bad_request("Invalid 'kind' parameter")),
+    }
 }
 
-#[get("/img/<client_id>/<name>")]
+#[get("/img/<kind>/<client_id>/<name>")]
 pub fn get_client_image(
+    kind: String,
     client_id: String,
     name: String,
     _ratelimited: guards::RateLimited,
@@ -214,25 +211,34 @@ pub fn get_client_image(
         return Err(ResponseError::not_found());
     }
 
-    let object = format!("{}/{}/{}", client_id.get(0..2).unwrap(), client_id, name);
+    let object = format!(
+        "{}/{}/{}/{}",
+        kind,
+        client_id.get(0..2).unwrap(),
+        client_id,
+        name
+    );
 
     let splat: Vec<&str> = name.split('.').collect();
     if splat.len() != 2 {
         return Err(ResponseError::not_found());
     }
 
-    match splat[0] {
-        // match first part, should be one of these options
-        "big" | "medium" | "small" | "tiny" => match splat[1] {
-            // match second part
-            "jpg" => Ok(Cached::from(
-                Image::Jpeg(JpegReqwestStream(Stream::from(get_from_gcs(&object)?))),
-                24 * 3600,
-            )),
-            "webp" => Ok(Cached::from(
-                Image::Webp(WebpReqwestStream(Stream::from(get_from_gcs(&object)?))),
-                24 * 3600,
-            )),
+    match kind.as_ref() {
+        "avatar" => match splat[0] {
+            // match first part, should be one of these options
+            "big" | "medium" | "small" | "tiny" => match splat[1] {
+                // match second part
+                "jpg" => Ok(Cached::from(
+                    Image::Jpeg(JpegReqwestStream(Stream::from(get_from_gcs(&object)?))),
+                    24 * 3600,
+                )),
+                "webp" => Ok(Cached::from(
+                    Image::Webp(WebpReqwestStream(Stream::from(get_from_gcs(&object)?))),
+                    24 * 3600,
+                )),
+                _ => Err(ResponseError::not_found()),
+            },
             _ => Err(ResponseError::not_found()),
         },
         _ => Err(ResponseError::not_found()),
