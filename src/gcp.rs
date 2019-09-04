@@ -36,12 +36,12 @@ struct GCSGetParams<'a> {
 pub fn get_from_gcs(object: &str) -> Result<reqwest::Response, ResponseError> {
     use rocket::http::uri::Uri;
     let token = get_google_token(
-        &config::CONFIG.service.image_bucket_credentials,
+        &config::CONFIG.gcp.image_bucket_credentials,
         vec!["https://www.googleapis.com/auth/devstorage.read_write"],
     );
     let url = format!(
         "https://www.googleapis.com/storage/v1/b/{}/o/{}",
-        config::CONFIG.service.image_bucket,
+        config::CONFIG.gcp.image_bucket,
         Uri::percent_encode(object)
     );
     let params = GCSGetParams { alt: "media" };
@@ -70,12 +70,12 @@ pub fn get_from_gcs(object: &str) -> Result<reqwest::Response, ResponseError> {
 #[instrument(INFO)]
 pub fn post_to_gcs(object: &str, data: Vec<u8>) -> Result<(), ResponseError> {
     let token = get_google_token(
-        &config::CONFIG.service.image_bucket_credentials,
+        &config::CONFIG.gcp.image_bucket_credentials,
         vec!["https://www.googleapis.com/auth/devstorage.read_write"],
     );
     let url = format!(
         "https://www.googleapis.com/upload/storage/v1/b/{}/o",
-        config::CONFIG.service.image_bucket,
+        config::CONFIG.gcp.image_bucket,
     );
     let params = GCSInsertParams {
         upload_type: "media",
@@ -112,7 +112,7 @@ struct InvalidateCdnCache {
 
 pub fn invalidate_cdn_cache(path: &str) {
     let token = get_google_token(
-        &config::CONFIG.service.image_bucket_credentials,
+        &config::CONFIG.gcp.cdn_credentials,
         vec!["https://www.googleapis.com/auth/compute"],
     );
     let client = reqwest::Client::new();

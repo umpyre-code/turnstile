@@ -27,14 +27,15 @@ pub struct ElasticSearch {
 pub struct Gcp {
     pub project: String,
     pub cdn_url_maps: Vec<String>,
+    pub cdn_credentials: String,
+    pub image_bucket: String,
+    pub image_bucket_credentials: String,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct Service {
     pub site_uri: String,
     pub enable_hsts: bool,
-    pub image_bucket: String,
-    pub image_bucket_credentials: String,
 }
 
 #[derive(Debug, Deserialize)]
