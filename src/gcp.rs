@@ -39,6 +39,7 @@ pub fn get_from_gcs(object: &str) -> Result<reqwest::Response, ResponseError> {
     if res.status().is_success() {
         Ok(res)
     } else {
+        error!("Fetch from GCS failed: {:?}", res);
         match res.status() {
             reqwest::StatusCode::NOT_FOUND => Err(ResponseError::not_found("GCS")),
             _ => Err(ResponseError::InternalError {
