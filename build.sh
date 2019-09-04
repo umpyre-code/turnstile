@@ -2,8 +2,10 @@
 set -e
 set -x
 
+curl -sS https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
+echo "deb https://packages.cloud.google.com/apt cloud-sdk main" | tee /etc/apt/sources.list.d/google-cloud-sdk.list \
 apt-get update -qq
-apt-get install -yqq build-essential cmake libcairo2-dev libwebp-dev
+DEBIAN_FRONTEND=noninteractive apt-get install -yqq build-essential cmake libcairo2-dev libwebp-dev google-cloud-sdk
 apt-get clean && rm -rf /var/lib/apt/lists
 
 echo "Running build for $REPO_NAME"
