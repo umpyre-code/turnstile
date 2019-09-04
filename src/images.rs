@@ -205,6 +205,14 @@ pub fn post_client_image(
                 },
             )?;
 
+            let handle = if client.handle.is_empty() {
+                None
+            } else {
+                Some(client.handle)
+            };
+
+            invalidate_cdn_cache_for_client(&client.client_id, &handle);
+
             Ok(Json(ImageUploadResponse {}))
         }
         _ => Err(ResponseError::bad_request("Invalid 'kind' parameter")),
@@ -243,11 +251,11 @@ pub fn get_client_image(
                 // match second part
                 "jpg" => Ok(Cached::from(
                     Image::Jpeg(JpegReqwestStream(Stream::from(get_from_gcs(&object)?))),
-                    24 * 3600,
+                    30 * 24 * 3600, // 30 days
                 )),
                 "webp" => Ok(Cached::from(
                     Image::Webp(WebpReqwestStream(Stream::from(get_from_gcs(&object)?))),
-                    24 * 3600,
+                    30 * 24 * 3600, // 30 days
                 )),
                 _ => Err(ResponseError::not_found("format")),
             },

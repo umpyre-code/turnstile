@@ -501,10 +501,10 @@ pub fn put_client(
 
     check_result(response.result)?;
 
-    // Lastly, invalidate the CDN caches
-    gcp::invalidate_cdn_cache_for_client(&client_id, &update_client_request.handle);
-
     let response: models::UpdateClientResponse = response.into();
+
+    // Lastly, invalidate the CDN caches
+    gcp::invalidate_cdn_cache_for_client(&client_id, &response.handle);
 
     // Update the index in elasticsearch. This is launched on a separate thread
     // so it doesn't block.
