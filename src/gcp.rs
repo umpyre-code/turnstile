@@ -21,9 +21,15 @@ fn get_google_token(credentials: &str, scopes: Vec<&str>) -> String {
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
-struct GCSParams<'a> {
+struct GCSInsertParams<'a> {
     upload_type: &'a str,
     name: &'a str,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct GCSGetParams<'a> {
+    alt: &'a str,
 }
 
 #[instrument(INFO)]
@@ -38,8 +44,9 @@ pub fn get_from_gcs(object: &str) -> Result<reqwest::Response, ResponseError> {
         config::CONFIG.service.image_bucket,
         Uri::percent_encode(object)
     );
+    let params = GCSGetParams { alt: "media" };
     let client = reqwest::Client::new();
-    let mut res = client.get(&url).bearer_auth(&token).send()?;
+    let mut res = client.get(&url).query(&params).bearer_auth(&token).send()?;
 
     if res.status().is_success() {
         Ok(res)
@@ -70,7 +77,7 @@ pub fn post_to_gcs(object: &str, data: Vec<u8>) -> Result<(), ResponseError> {
         "https://www.googleapis.com/upload/storage/v1/b/{}/o",
         config::CONFIG.service.image_bucket,
     );
-    let params = GCSParams {
+    let params = GCSInsertParams {
         upload_type: "media",
         name: object,
     };
