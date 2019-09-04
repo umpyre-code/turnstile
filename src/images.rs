@@ -10,7 +10,7 @@ use rocket::response::content;
 use rocket_contrib::json::Json;
 use std::collections::HashMap;
 
-fn get_token() -> String {
+fn get_google_token(scopes: Vec<&str>) -> String {
     use futures::Future;
     use yup_oauth2::GetToken;
 
@@ -20,9 +20,7 @@ fn get_token() -> String {
     let mut access = yup_oauth2::ServiceAccountAccess::new(client_secret).build();
 
     let tok = access
-        .token(vec![
-            "https://www.googleapis.com/auth/devstorage.read_write",
-        ])
+        .token(scopes)
         .wait()
         .expect("couldn't get oauth2 token");
 
@@ -187,7 +185,9 @@ fn get_from_gcs(object: &str) -> Result<reqwest::Response, ResponseError> {
 
 #[instrument(INFO)]
 fn post_to_gcs(object: &str, data: Vec<u8>) -> Result<(), ResponseError> {
-    let token = get_token();
+    let token = get_google_token(vec![
+        "https://www.googleapis.com/auth/devstorage.read_write",
+    ]);
     let url = format!(
         "https://www.googleapis.com/upload/storage/v1/b/{}/o",
         config::CONFIG.service.image_bucket,
