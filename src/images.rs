@@ -10,6 +10,25 @@ use rocket::response::content;
 use rocket_contrib::json::Json;
 use std::collections::HashMap;
 
+fn get_token() -> String {
+    use futures::Future;
+    use yup_oauth2::GetToken;
+
+    let client_secret =
+        yup_oauth2::service_account_key_from_file(&config::CONFIG.service.image_bucket_credentials)
+            .unwrap();
+    let mut access = yup_oauth2::ServiceAccountAccess::new(client_secret).build();
+
+    let tok = access
+        .token(vec![
+            "https://www.googleapis.com/auth/devstorage.read_write",
+        ])
+        .wait()
+        .expect("couldn't get oauth2 token");
+
+    tok.access_token
+}
+
 pub struct ImageUpload(Vec<u8>);
 
 impl rocket::data::FromDataSimple for ImageUpload {
@@ -168,6 +187,7 @@ fn get_from_gcs(object: &str) -> Result<reqwest::Response, ResponseError> {
 
 #[instrument(INFO)]
 fn post_to_gcs(object: &str, data: Vec<u8>) -> Result<(), ResponseError> {
+    let token = get_token();
     let url = format!(
         "https://www.googleapis.com/upload/storage/v1/b/{}/o",
         config::CONFIG.service.image_bucket,
@@ -179,6 +199,7 @@ fn post_to_gcs(object: &str, data: Vec<u8>) -> Result<(), ResponseError> {
     let client = reqwest::Client::new();
     let mut res = client
         .post(&url)
+        .bearer_auth(&token)
         .query(&params)
         .body(reqwest::Body::from(data))
         .send()?;
