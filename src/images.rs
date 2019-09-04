@@ -138,14 +138,14 @@ struct GCSParams<'a> {
 }
 
 #[instrument(INFO)]
-fn encode_image_and_upload(client_id: &str, image: &[u8]) -> Result<(), ResponseError> {
+fn encode_image_and_upload(kind: &str, client_id: &str, image: &[u8]) -> Result<(), ResponseError> {
     use rayon::prelude::*;
 
     let thumbnails = Thumbnails::from_buffer(image)?;
     let mut jpegs = EncodedImages::new(&thumbnails, image::ImageFormat::JPEG);
     let mut webps = EncodedImages::new(&thumbnails, image::ImageFormat::WEBP);
 
-    let prefix = format!("{}/{}", client_id.get(0..2).unwrap(), client_id);
+    let prefix = format!("{}/{}/{}", kind, client_id.get(0..2).unwrap(), client_id);
 
     let (_, mut errors): (Vec<_>, Vec<_>) = webps
         .images
@@ -191,7 +191,7 @@ pub fn post_client_image(
     }
     match kind.as_ref() {
         "avatar" => {
-            encode_image_and_upload(&client_id, &image.0)?;
+            encode_image_and_upload(&kind, &client_id, &image.0)?;
 
             Ok(Json(ImageUploadResponse {}))
         }
