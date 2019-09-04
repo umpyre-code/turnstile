@@ -26,12 +26,12 @@ pub enum ResponseError {
 }
 
 impl ResponseError {
-    pub fn not_found(item: &str) -> Self {
+    pub fn not_found(source: &str) -> Self {
         Self::NotFound {
             response: content::Json(
                 json!({
                     "message": "Not found",
-                    "item": item,
+                    "source": source,
                 })
                 .to_string(),
             ),
