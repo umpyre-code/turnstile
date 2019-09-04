@@ -110,7 +110,8 @@ struct InvalidateCdnCache {
     host: Option<String>,
 }
 
-pub fn invalidate_cdn_cache(path: &str) {
+#[instrument(INFO)]
+pub fn invalidate_cdn_cache(path: &str) -> Result<(), ResponseError> {
     let token = get_google_token(
         &config::CONFIG.gcp.cdn_credentials,
         vec!["https://www.googleapis.com/auth/compute"],
@@ -131,23 +132,23 @@ pub fn invalidate_cdn_cache(path: &str) {
             host: None,
         };
 
-        let res = client
-            .post(&url)
-            .json(&body)
-            .bearer_auth(&token)
-            .send()
-            .expect("failed to make request");
+        let res = client.post(&url).json(&body).bearer_auth(&token).send()?;
 
         if !res.status().is_success() {
             error!("CDN cache invalidation failed: {:?}", res);
         }
     }
+
+    Ok(())
 }
 
-pub fn invalidate_cdn_cache_for_client(client_id: &str, handle: &Option<String>) {
-    invalidate_cdn_cache(&format!("/client/{}", client_id));
+pub fn invalidate_cdn_cache_for_client(
+    client_id: &str,
+    handle: &Option<String>,
+) -> Result<(), ResponseError> {
+    invalidate_cdn_cache(&format!("/client/{}", client_id))?;
     match handle {
         Some(handle) => invalidate_cdn_cache(&format!("/handle/{}", handle)),
-        _ => (),
+        _ => Ok(()),
     }
 }
