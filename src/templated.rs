@@ -11,8 +11,11 @@ use tera::Tera;
 lazy_static! {
     pub static ref TERA: Tera = {
         let mut tera = Tera::default();
-        tera.add_raw_templates(vec![("badge.svg", include_str!("templates/badge.svg"))])
-            .expect("failed to add tera templates");
+        tera.add_raw_templates(vec![
+            ("badge-dark.svg", include_str!("templates/badge-dark.svg")),
+            ("badge-light.svg", include_str!("templates/badge-light.svg")),
+        ])
+        .expect("failed to add tera templates");
         tera
     };
 }
@@ -31,6 +34,7 @@ fn get_badge_svg_inner(
     width: Option<i32>,
     height: Option<i32>,
     font_size: Option<i32>,
+    style: Option<String>,
 ) -> Result<String, ResponseError> {
     let rolodex_client = rolodex_client::Client::new(&config::CONFIG);
     let client = rolodex_client.get_client(rolodex_grpc::proto::GetClientRequest {
@@ -39,6 +43,14 @@ fn get_badge_svg_inner(
             client_id.clone(),
         )),
     });
+
+    let style = match style.as_ref() {
+        Some(style) => match style.as_ref() {
+            "light" | "dark" => style,
+            _ => "light",
+        },
+        _ => "light",
+    };
 
     match client {
         Ok(client) => {
@@ -52,7 +64,7 @@ fn get_badge_svg_inner(
                 height: height.unwrap_or_else(|| 50),
                 font_size: font_size.unwrap_or_else(|| 12),
             };
-            Ok(TERA.render("badge.svg", &badge)?)
+            Ok(TERA.render(&format!("badge-{}.svg", style), &badge)?)
         }
         Err(_) => Err(ResponseError::NotFound {
             response: content::Json(
@@ -66,37 +78,39 @@ fn get_badge_svg_inner(
     }
 }
 
-#[get("/badge/<client_id>/badge.svg?<name>&<width>&<height>&<font_size>")]
+#[get("/badge/<client_id>/badge.svg?<name>&<width>&<height>&<font_size>&<style>")]
 pub fn get_badge_svg(
     client_id: String,
     name: Option<String>,
     width: Option<i32>,
     height: Option<i32>,
     font_size: Option<i32>,
+    style: Option<String>,
     _ratelimited: guards::RateLimited,
 ) -> Result<Cached<Svg>, ResponseError> {
     Ok(Cached::from(
         Svg(get_badge_svg_inner(
-            client_id, name, width, height, font_size,
+            client_id, name, width, height, font_size, style,
         )?),
         3600,
     ))
 }
 
-#[get("/badge/<client_id>/badge.png?<name>&<width>&<height>&<font_size>")]
+#[get("/badge/<client_id>/badge.png?<name>&<width>&<height>&<font_size>&<style>")]
 pub fn get_badge_png(
     client_id: String,
     name: Option<String>,
     width: Option<i32>,
     height: Option<i32>,
     font_size: Option<i32>,
+    style: Option<String>,
     _ratelimited: guards::RateLimited,
 ) -> Result<Cached<Png>, ResponseError> {
     use resvg::prelude::*;
     use std::io::Read;
     use tempfile::NamedTempFile;
 
-    let svg = get_badge_svg_inner(client_id, name, width, height, font_size)?;
+    let svg = get_badge_svg_inner(client_id, name, width, height, font_size, style)?;
 
     let mut opt = resvg::Options::default();
     opt.usvg.dpi = 300.0;
