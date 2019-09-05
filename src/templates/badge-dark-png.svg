@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" id="Layer_1" width="{{ width }}" height="{{ height }}" x="0px" y="0px" preserveAspectRatio="xMinYMin meet" style="enable-background:new 0 0 156.5 50.4" version="1.1" viewBox="0 0 156.5 50.4" xml:space="preserve">
   <style type="text/css">
-    .st0{stroke:#999999;stroke-width:2;stroke-miterlimit:10;} .st1{fill:#ffffff;font-family:&quot;Lato&quot;;font-weight:800;} .st3{font-size:{{ font_size }}px;} .st4{fill:#CCCCCC;} .st5{font-size:11.4821px;} .st6{fill:none;}
+    .st0{stroke:#999999;stroke-width:2;stroke-miterlimit:10;} .st1{fill:#ffffff;font-family:'Lato';font-weight:800;} .st3{font-size:{{ font_size }}px;} .st4{fill:#CCCCCC;} .st5{font-size:11.4821px;} .st6{fill:none;}
   </style>
   <font horiz-adv-x="2000">
 <!--Lato is a trademark of tyPoland Lukasz Dziedzic.-->
