@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" id="Layer_1" width="{{ width }}" height="{{ height }}" x="0px" y="0px" preserveAspectRatio="xMinYMin meet" style="enable-background:new 0 0 156.5 50.4" version="1.1" viewBox="0 0 156.5 50.4" xml:space="preserve">
   <style type="text/css">
-    .st0{fill:#FAFAFA;stroke:#333333;stroke-width:2;stroke-miterlimit:10;} .st1{ font-family:&quot;Lato&quot;;font-weight:800;} .st2{font-size:{{ font_size }}px;} .st3{fill:#333333;} .st4{fill:#4D4D4D;} .st5{font-size:11.4821px;} .st6{fill:none;} .st7{fill:#000000}
+    .st0{fill:#FAFAFA;stroke:#333333;stroke-width:2;stroke-miterlimit:10;} .st1{ font-family:"Lato";font-weight:800;} .st2{font-size:{{ font_size }}px;} .st3{fill:#333333;} .st4{fill:#4D4D4D;} .st5{font-size:11.4821px;} .st6{fill:none;} .st7{fill:#000000}
   </style>
   <font horiz-adv-x="2000">
 <!--Lato is a trademark of tyPoland Lukasz Dziedzic.-->
@@ -297,7 +297,7 @@
 		C18.82,20.4,18.85,18.05,18.83,15.7z M15.5,15.96c-0.4-0.03-0.66-0.22-0.67-0.63c-0.01-0.41,0.23-0.66,0.63-0.67
 		c0.39-0.01,0.66,0.21,0.67,0.62C16.14,15.69,15.9,15.91,15.5,15.96z" class="st3"/>
   </g>
-  <svg width="60" height="14" x="67.5" y="3">
+  <svg width="60" height="14" x="67" y="3">
 <!--<rect width="60" height="14" style="fill:rgb(0,0,255);stroke-width:3;stroke:rgb(0,0,0)"/>-->
     <text x="50%" y="50%" class="st4 st1 st5" dominant-baseline="middle" text-anchor="middle">
       CONTACT
