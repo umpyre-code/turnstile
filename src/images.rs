@@ -1,4 +1,5 @@
 use crate::config;
+use crate::elasticsearch;
 use crate::error::ResponseError;
 use crate::gcp::*;
 use crate::guards;
@@ -204,6 +205,14 @@ pub fn post_client_image(
                     increment_by: 1,
                 },
             )?;
+
+            // Update the index in elasticsearch. This is launched on a separate thread
+            // so it doesn't block.
+            let elastic_doc: elasticsearch::ClientProfileDocument = client.clone().into();
+            std::thread::spawn(move || {
+                let elastic = elasticsearch::ElasticSearchClient::new();
+                elastic.update(elastic_doc);
+            });
 
             let handle = if client.handle.is_empty() {
                 None

@@ -24,6 +24,21 @@ impl From<models::UpdateClientResponse> for ClientProfileDocument {
     }
 }
 
+impl From<rolodex_grpc::proto::Client> for ClientProfileDocument {
+    fn from(client: rolodex_grpc::proto::Client) -> Self {
+        Self {
+            client_id: client.client_id,
+            full_name: client.full_name.clone(),
+            handle: client.handle.clone(),
+            avatar_version: Integer::<EmptyIntegerMapping>::new(client.avatar_version),
+            suggest: vec![
+                Text::<StringMapping>::new(client.full_name),
+                Text::<StringMapping>::new(client.handle),
+            ],
+        }
+    }
+}
+
 impl ClientProfileDocument {
     pub fn new(client_id: &str, full_name: &str, handle: &str, avatar_version: i32) -> Self {
         Self {
