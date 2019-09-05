@@ -37,17 +37,17 @@ lazy_static! {
 #[derive(Serialize)]
 pub struct Badge {
     name: String,
-    width: i32,
-    height: i32,
-    font_size: i32,
+    width: f64,
+    height: f64,
+    font_size: f64,
 }
 
 fn get_badge_svg_inner(
     client_id: String,
     name: Option<String>,
-    width: Option<i32>,
-    height: Option<i32>,
-    font_size: Option<i32>,
+    width: Option<f64>,
+    height: Option<f64>,
+    font_size: Option<f64>,
     style: Option<String>,
     format: &str,
 ) -> Result<String, ResponseError> {
@@ -75,9 +75,9 @@ fn get_badge_svg_inner(
             };
             let badge = Badge {
                 name: name.unwrap_or_else(|| full_name.to_owned()),
-                width: width.unwrap_or_else(|| 151),
-                height: height.unwrap_or_else(|| 50),
-                font_size: font_size.unwrap_or_else(|| 12),
+                width: width.unwrap_or_else(|| 156.5),
+                height: height.unwrap_or_else(|| 50.4),
+                font_size: font_size.unwrap_or_else(|| 12.0),
             };
             Ok(TERA.render(&format!("badge-{}-{}.svg", style, format), &badge)?)
         }
@@ -97,9 +97,9 @@ fn get_badge_svg_inner(
 pub fn get_badge_svg(
     client_id: String,
     name: Option<String>,
-    width: Option<i32>,
-    height: Option<i32>,
-    font_size: Option<i32>,
+    width: Option<f64>,
+    height: Option<f64>,
+    font_size: Option<f64>,
     style: Option<String>,
     _ratelimited: guards::RateLimited,
 ) -> Result<Cached<Svg>, ResponseError> {
@@ -115,9 +115,9 @@ pub fn get_badge_svg(
 pub fn get_badge_png(
     client_id: String,
     name: Option<String>,
-    width: Option<i32>,
-    height: Option<i32>,
-    font_size: Option<i32>,
+    width: Option<f64>,
+    height: Option<f64>,
+    font_size: Option<f64>,
     style: Option<String>,
     _ratelimited: guards::RateLimited,
 ) -> Result<Cached<Png>, ResponseError> {
