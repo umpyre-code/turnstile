@@ -1101,7 +1101,7 @@ pub fn post_account_connect_payout(
 
 impl From<elastic::Error> for ResponseError {
     fn from(err: elastic::Error) -> Self {
-        Self::BadRequest {
+        Self::InternalError {
             response: content::Json(
                 json!({
                     "message:": "Search failed",
