@@ -79,6 +79,10 @@ impl elastic::types::number::mapping::IntegerMapping for EmptyIntegerMapping {
     }
 }
 
+fn default_integer() -> Integer<EmptyIntegerMapping> {
+    Integer::<EmptyIntegerMapping>::new(0)
+}
+
 #[derive(ElasticType, Clone, Debug, Serialize, Deserialize)]
 #[elastic(index = "client_profiles")]
 pub struct ClientProfileDocument {
@@ -86,6 +90,7 @@ pub struct ClientProfileDocument {
     pub client_id: String,
     pub full_name: String,
     pub handle: String,
+    #[serde(default = "default_integer")]
     pub avatar_version: Integer<EmptyIntegerMapping>,
     pub suggest: Vec<Text<StringMapping>>,
 }
