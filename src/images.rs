@@ -211,7 +211,7 @@ pub fn post_client_image(
                 Some(client.handle)
             };
 
-            invalidate_cdn_cache_for_client(&client.client_id, &handle);
+            let _res = invalidate_cdn_cache_for_client(&client.client_id, &handle);
 
             Ok(Json(ImageUploadResponse {}))
         }

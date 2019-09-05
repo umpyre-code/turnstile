@@ -197,6 +197,7 @@ pub fn post_client(
         &response.client_id,
         &new_client_request.full_name,
         "",
+        0,
     );
     std::thread::spawn(move || {
         let elastic = elasticsearch::ElasticSearchClient::new();

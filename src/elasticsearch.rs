@@ -15,6 +15,7 @@ impl From<models::UpdateClientResponse> for ClientProfileDocument {
             client_id: client.client_id,
             full_name: client.full_name.clone(),
             handle: handle.clone(),
+            avatar_version: Integer::<EmptyIntegerMapping>::new(client.avatar_version),
             suggest: vec![
                 Text::<StringMapping>::new(client.full_name),
                 Text::<StringMapping>::new(handle),
@@ -24,11 +25,12 @@ impl From<models::UpdateClientResponse> for ClientProfileDocument {
 }
 
 impl ClientProfileDocument {
-    pub fn new(client_id: &str, full_name: &str, handle: &str) -> Self {
+    pub fn new(client_id: &str, full_name: &str, handle: &str, avatar_version: i32) -> Self {
         Self {
             client_id: client_id.into(),
             full_name: full_name.into(),
             handle: handle.into(),
+            avatar_version: Integer::<EmptyIntegerMapping>::new(avatar_version),
             suggest: vec![
                 Text::<StringMapping>::new(full_name),
                 Text::<StringMapping>::new(handle),
@@ -54,6 +56,14 @@ impl elastic::types::string::text::mapping::TextMapping for StringMapping {
     }
 }
 
+#[derive(Default, Debug, Clone)]
+pub struct EmptyIntegerMapping;
+impl elastic::types::number::mapping::IntegerMapping for EmptyIntegerMapping {
+    fn null_value() -> Option<i32> {
+        Some(0)
+    }
+}
+
 #[derive(ElasticType, Clone, Debug, Serialize, Deserialize)]
 #[elastic(index = "client_profiles")]
 pub struct ClientProfileDocument {
@@ -61,6 +71,7 @@ pub struct ClientProfileDocument {
     pub client_id: String,
     pub full_name: String,
     pub handle: String,
+    pub avatar_version: Integer<EmptyIntegerMapping>,
     pub suggest: Vec<Text<StringMapping>>,
 }
 
@@ -247,6 +258,10 @@ mod tests {
                         }
                     },
                     "type":"text"
+                },
+                "avatar_version":{
+                    "null_value": 0,
+                    "type":"integer"
                 },
                 "suggest":{
                     "fields":{
