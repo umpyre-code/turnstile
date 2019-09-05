@@ -192,11 +192,6 @@ pub fn post_client_image(
 
             // fetch client info
             let rolodex_client = rolodex_client::Client::new(&config::CONFIG);
-            let client = rolodex_client::get_client_for(
-                &rolodex_client,
-                &calling_client.client_id,
-                &calling_client.client_id,
-            )?;
 
             // increment avatar version
             rolodex_client.increment_client_avatar(
@@ -204,6 +199,12 @@ pub fn post_client_image(
                     client_id: calling_client.client_id.clone(),
                     increment_by: 1,
                 },
+            )?;
+
+            let client = rolodex_client::get_client_for(
+                &rolodex_client,
+                &calling_client.client_id,
+                &calling_client.client_id,
             )?;
 
             // Update the index in elasticsearch. This is launched on a separate thread
