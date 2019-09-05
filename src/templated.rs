@@ -12,8 +12,22 @@ lazy_static! {
     pub static ref TERA: Tera = {
         let mut tera = Tera::default();
         tera.add_raw_templates(vec![
-            ("badge-dark.svg", include_str!("templates/badge-dark.svg")),
-            ("badge-light.svg", include_str!("templates/badge-light.svg")),
+            (
+                "badge-dark-svg.svg",
+                include_str!("templates/badge-dark-svg.svg"),
+            ),
+            (
+                "badge-light-svg.svg",
+                include_str!("templates/badge-light-svg.svg"),
+            ),
+            (
+                "badge-dark-png.svg",
+                include_str!("templates/badge-dark-png.svg"),
+            ),
+            (
+                "badge-light-png.svg",
+                include_str!("templates/badge-light-png.svg"),
+            ),
         ])
         .expect("failed to add tera templates");
         tera
@@ -35,6 +49,7 @@ fn get_badge_svg_inner(
     height: Option<i32>,
     font_size: Option<i32>,
     style: Option<String>,
+    format: &str,
 ) -> Result<String, ResponseError> {
     let rolodex_client = rolodex_client::Client::new(&config::CONFIG);
     let client = rolodex_client.get_client(rolodex_grpc::proto::GetClientRequest {
@@ -64,7 +79,7 @@ fn get_badge_svg_inner(
                 height: height.unwrap_or_else(|| 50),
                 font_size: font_size.unwrap_or_else(|| 12),
             };
-            Ok(TERA.render(&format!("badge-{}.svg", style), &badge)?)
+            Ok(TERA.render(&format!("badge-{}-{}.svg", style, format), &badge)?)
         }
         Err(_) => Err(ResponseError::NotFound {
             response: content::Json(
@@ -90,7 +105,7 @@ pub fn get_badge_svg(
 ) -> Result<Cached<Svg>, ResponseError> {
     Ok(Cached::from(
         Svg(get_badge_svg_inner(
-            client_id, name, width, height, font_size, style,
+            client_id, name, width, height, font_size, style, "svg",
         )?),
         3600,
     ))
@@ -110,7 +125,7 @@ pub fn get_badge_png(
     use std::io::Read;
     use tempfile::NamedTempFile;
 
-    let svg = get_badge_svg_inner(client_id, name, width, height, font_size, style)?;
+    let svg = get_badge_svg_inner(client_id, name, width, height, font_size, style, "png")?;
 
     let mut opt = resvg::Options::default();
     opt.usvg.dpi = 300.0;
