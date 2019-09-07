@@ -504,8 +504,11 @@ pub fn put_client(
 
     let response: models::UpdateClientResponse = response.into();
 
-    // Lastly, invalidate the CDN caches
-    gcp::invalidate_cdn_cache_for_client(&client_id, &response.handle)?;
+    let response_inner = response.clone();
+    std::thread::spawn(move || {
+        // Lastly, invalidate the CDN caches in the background
+        let _res = gcp::invalidate_cdn_cache_for_client(&client_id, &response_inner.handle);
+    });
 
     // Update the index in elasticsearch. This is launched on a separate thread
     // so it doesn't block.
@@ -1143,8 +1146,10 @@ pub fn post_client_verify_phone(
     })?;
 
     if response.result == rolodex_grpc::proto::Result::Success as i32 {
-        // Invalidate the CDN caches
-        gcp::invalidate_cdn_cache(&format!("/client/{}", calling_client.client_id))?;
+        std::thread::spawn(move || {
+            // Invalidate the CDN caches in the background
+            let _res = gcp::invalidate_cdn_cache(&format!("/client/{}", calling_client.client_id));
+        });
         Ok(Json(models::VerifyPhoneResponse {
             result: "success".to_owned(),
             client: Some(response.client.into()),
