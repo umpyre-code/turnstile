@@ -565,7 +565,6 @@ impl From<&switchroom_grpc::proto::Message> for models::Message {
             nonce: BASE64URL_NOPAD.encode(&message.nonce),
             sender_public_key: BASE64URL_NOPAD.encode(&message.sender_public_key),
             recipient_public_key: BASE64URL_NOPAD.encode(&message.recipient_public_key),
-            pda: message.pda.clone(),
             sent_at: models::Timestamp {
                 seconds: sent_at.seconds,
                 nanos: sent_at.nanos,
@@ -739,7 +738,6 @@ pub fn post_messages(
             sender_public_key: BASE64URL_NOPAD.decode(message.sender_public_key.as_bytes())?,
             recipient_public_key: BASE64URL_NOPAD
                 .decode(message.recipient_public_key.as_bytes())?,
-            pda: message.pda.clone(),
             sent_at: Some(switchroom_grpc::proto::Timestamp {
                 seconds: message.sent_at.seconds,
                 nanos: message.sent_at.nanos,

@@ -107,7 +107,6 @@ pub struct Message {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub hash: Option<String>,
     pub nonce: String,
-    pub pda: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub received_at: Option<Timestamp>,
     pub recipient_public_key: String,
