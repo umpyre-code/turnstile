@@ -16,6 +16,13 @@ pub struct Config {
     pub rate_limits: RateLimits,
     pub gcp: Gcp,
     pub elasticsearch: ElasticSearch,
+    pub mailgun: Mailgun,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct Mailgun {
+    pub api_key: String,
+    pub url: String,
 }
 
 #[derive(Debug, Deserialize)]

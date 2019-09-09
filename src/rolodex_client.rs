@@ -129,9 +129,17 @@ impl Client {
     #[instrument(INFO)]
     pub fn get_client(
         &self,
-        get_client_request: rolodex_grpc::proto::GetClientRequest,
+        request: rolodex_grpc::proto::GetClientRequest,
     ) -> Result<rolodex_grpc::proto::GetClientResponse, RolodexError> {
-        with_client!(self, RpcClient::get_client, get_client_request)
+        with_client!(self, RpcClient::get_client, request)
+    }
+
+    #[instrument(INFO)]
+    pub fn get_client_email(
+        &self,
+        request: rolodex_grpc::proto::GetClientEmailRequest,
+    ) -> Result<rolodex_grpc::proto::GetClientEmailResponse, RolodexError> {
+        with_client!(self, RpcClient::get_client_email, request)
     }
 
     #[instrument(INFO)]

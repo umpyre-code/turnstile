@@ -43,6 +43,7 @@ mod fairings;
 mod gcp;
 mod guards;
 mod images;
+mod mailgun;
 mod models;
 mod optional;
 mod redis;

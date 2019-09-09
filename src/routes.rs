@@ -6,6 +6,7 @@ use crate::error::ResponseError;
 use crate::fairings;
 use crate::gcp;
 use crate::guards;
+use crate::mailgun;
 use crate::models;
 use crate::responders::Cached;
 use crate::rolodex_client;
@@ -745,6 +746,23 @@ pub fn post_messages(
             signature: BASE64URL_NOPAD.decode(message.signature.as_ref()?.as_bytes())?,
             value_cents,
         })?;
+
+        // if this message value is at or above RAL, send an email notification
+        if (f64::from(value_cents) / 100.0).round() >= f64::from(recipient_client.ral) {
+            let recipient_client_id = recipient_client.client_id.clone();
+            let sender_client_name = sender_client.full_name.clone();
+            let message_hash = message_hash.clone();
+
+            // execute in a background thread
+            std::thread::spawn(move || {
+                let _res = mailgun::send_new_message_email(
+                    recipient_client_id,
+                    &sender_client_name,
+                    value_cents,
+                    &BASE64URL_NOPAD.encode(&message_hash),
+                );
+            });
+        }
 
         if value_cents > 0 {
             let payment_response =
