@@ -64,9 +64,10 @@ pub fn send_new_message_email(
 
     client
         .post(&format!("{}/messages", config::CONFIG.mailgun.url))
+        .basic_auth("api", Some(&config::CONFIG.mailgun.api_key))
         .form(&form_params)
         .header(
-            reqwest::header::HeaderName::from_static("X-Mailgun-Variables"),
+            reqwest::header::HeaderName::from_static("x-mailgun-variables"),
             &serde_json::to_string(&template).unwrap(),
         )
         .send()?;
