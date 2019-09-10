@@ -53,7 +53,7 @@ pub fn send_new_message_email(
         from_name,
         value_dollars: (f64::from(value_cents) / 100.0).round() as i32,
         message_hash,
-        site_uri: &config::CONFIG.service.site_uri,
+        site_uri: &config::CONFIG.service.web_uri,
     };
     let form_params = EmailFormParams {
         to: &email.email_as_entered,

@@ -42,6 +42,7 @@ pub struct Gcp {
 #[derive(Debug, Deserialize)]
 pub struct Service {
     pub site_uri: String,
+    pub web_uri: String,
     pub enable_hsts: bool,
 }
 
