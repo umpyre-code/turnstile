@@ -35,6 +35,7 @@ struct EmailFormParams<'a> {
 #[instrument(INFO)]
 pub fn send_new_message_email(
     recipient_client_id: String,
+    recipient_client_ral: i32,
     from_name: &str,
     value_cents: i32,
     message_hash: &str,
@@ -45,31 +46,50 @@ pub fn send_new_message_email(
     }
 
     let rolodex_client = rolodex_client::Client::new(&config::CONFIG);
-    let email = rolodex_client.get_client_email(rolodex_grpc::proto::GetClientEmailRequest {
-        client_id: recipient_client_id,
+    // Fetch recipient's notification prefs
+    let client_prefs = rolodex_client.get_prefs(rolodex_grpc::proto::GetPrefsRequest {
+        client_id: recipient_client_id.clone(),
     })?;
 
-    let template = NewMessageTemplate {
-        from_name,
-        value_dollars: (f64::from(value_cents) / 100.0).round() as i32,
-        message_hash,
-        site_uri: &config::CONFIG.service.web_uri,
-    };
-    let form_params = EmailFormParams {
-        to: &email.email_as_entered,
-        from: "Umpyre <umpyre@noreply.umpyre.com>",
-        subject: &format!("New message from {}", from_name),
-        template: "newmessage",
-        variables: &serde_json::to_string(&template).unwrap(),
-    };
+    match client_prefs.prefs {
+        Some(prefs) => match prefs.email_notifications.as_ref() {
+            pref @ "ral" | pref @ "always" => {
+                // if this message value is at or above RAL, send an email notification
+                if pref == "always"
+                    || (f64::from(value_cents) / 100.0).round() >= f64::from(recipient_client_ral)
+                {
+                    let email = rolodex_client.get_client_email(
+                        rolodex_grpc::proto::GetClientEmailRequest {
+                            client_id: recipient_client_id,
+                        },
+                    )?;
 
-    let client = reqwest::Client::new();
+                    let template = NewMessageTemplate {
+                        from_name,
+                        value_dollars: (f64::from(value_cents) / 100.0).round() as i32,
+                        message_hash,
+                        site_uri: &config::CONFIG.service.web_uri,
+                    };
+                    let form_params = EmailFormParams {
+                        to: &email.email_as_entered,
+                        from: "Umpyre <umpyre@noreply.umpyre.com>",
+                        subject: &format!("New message from {}", from_name),
+                        template: "newmessage",
+                        variables: &serde_json::to_string(&template).unwrap(),
+                    };
 
-    client
-        .post(&format!("{}/messages", config::CONFIG.mailgun.url))
-        .basic_auth("api", Some(&config::CONFIG.mailgun.api_key))
-        .form(&form_params)
-        .send()?;
+                    let client = reqwest::Client::new();
 
+                    client
+                        .post(&format!("{}/messages", config::CONFIG.mailgun.url))
+                        .basic_auth("api", Some(&config::CONFIG.mailgun.api_key))
+                        .form(&form_params)
+                        .send()?;
+                }
+            }
+            _ => (),
+        },
+        _ => (),
+    }
     Ok(())
 }
