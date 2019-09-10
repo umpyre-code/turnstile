@@ -20,6 +20,8 @@ struct EmailFormParams<'a> {
     to: &'a str,
     subject: &'a str,
     template: &'a str,
+    #[serde(rename(serialize = "h:X-Mailgun-Variables"))]
+    variables: &'a str,
 }
 
 //  curl -s --user 'api:ENTER_API_KEY_HERE' \
@@ -47,17 +49,18 @@ pub fn send_new_message_email(
         client_id: recipient_client_id,
     })?;
 
-    let form_params = EmailFormParams {
-        to: &email.email_as_entered,
-        from: "Umpyre <umpyre@noreply.umpyre.com>",
-        subject: &format!("New message from {}", from_name),
-        template: "newmessage",
-    };
     let template = NewMessageTemplate {
         from_name,
         value_dollars: (f64::from(value_cents) / 100.0).round() as i32,
         message_hash,
         site_uri: &config::CONFIG.service.site_uri,
+    };
+    let form_params = EmailFormParams {
+        to: &email.email_as_entered,
+        from: "Umpyre <umpyre@noreply.umpyre.com>",
+        subject: &format!("New message from {}", from_name),
+        template: "newmessage",
+        variables: &serde_json::to_string(&template).unwrap(),
     };
 
     let client = reqwest::Client::new();
@@ -66,10 +69,6 @@ pub fn send_new_message_email(
         .post(&format!("{}/messages", config::CONFIG.mailgun.url))
         .basic_auth("api", Some(&config::CONFIG.mailgun.api_key))
         .form(&form_params)
-        .header(
-            reqwest::header::HeaderName::from_static("x-mailgun-variables"),
-            &serde_json::to_string(&template).unwrap(),
-        )
         .send()?;
 
     Ok(())
