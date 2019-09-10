@@ -214,3 +214,8 @@ pub struct SendVerificationCodeResponse {}
 
 #[derive(Debug, Serialize)]
 pub struct ImageUploadResponse {}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct ClientPrefs {
+    pub email_notifications: String,
+}

@@ -221,6 +221,22 @@ impl Client {
     ) -> Result<rolodex_grpc::proto::SendVerificationCodeResponse, RolodexError> {
         with_client!(self, RpcClient::send_verification_code, request)
     }
+
+    #[instrument(INFO)]
+    pub fn get_prefs(
+        &self,
+        request: rolodex_grpc::proto::GetPrefsRequest,
+    ) -> Result<rolodex_grpc::proto::GetPrefsResponse, RolodexError> {
+        with_client!(self, RpcClient::get_prefs, request)
+    }
+
+    #[instrument(INFO)]
+    pub fn update_prefs(
+        &self,
+        request: rolodex_grpc::proto::UpdatePrefsRequest,
+    ) -> Result<rolodex_grpc::proto::UpdatePrefsResponse, RolodexError> {
+        with_client!(self, RpcClient::update_prefs, request)
+    }
 }
 
 pub fn get_client_for(

@@ -1190,3 +1190,82 @@ pub fn post_client_verify_phone_new_code(
 
     Ok(Json(models::SendVerificationCodeResponse {}))
 }
+
+impl From<Option<rolodex_grpc::proto::Prefs>> for models::ClientPrefs {
+    fn from(prefs: Option<rolodex_grpc::proto::Prefs>) -> Self {
+        Self {
+            email_notifications: match prefs {
+                Some(prefs) => prefs.email_notifications,
+                _ => "ral".into(),
+            },
+        }
+    }
+}
+
+#[get("/client/<arg_client_id>/prefs")]
+pub fn get_client_prefs(
+    arg_client_id: String,
+    calling_client: guards::Client,
+    _ratelimited: guards::RateLimited,
+) -> Result<Json<models::ClientPrefs>, ResponseError> {
+    let rolodex_client = rolodex_client::Client::new(&config::CONFIG);
+
+    let fetch_client_id = if arg_client_id == "self" {
+        calling_client.client_id
+    } else {
+        if arg_client_id != calling_client.client_id {
+            return Err(ResponseError::Unauthorized {
+                response: content::Json(
+                    json!({
+                        "message:": "Authentication required",
+                    })
+                    .to_string(),
+                ),
+            });
+        }
+        arg_client_id
+    };
+
+    let response = rolodex_client.get_prefs(rolodex_grpc::proto::GetPrefsRequest {
+        client_id: fetch_client_id,
+    })?;
+
+    Ok(Json(response.prefs.into()))
+}
+
+#[put("/client/<arg_client_id>/prefs", data = "<prefs>", format = "json")]
+pub fn put_client_prefs(
+    arg_client_id: String,
+    calling_client: guards::Client,
+    prefs: Result<Json<models::ClientPrefs>, JsonError>,
+    _ratelimited: guards::RateLimited,
+) -> Result<Json<models::ClientPrefs>, ResponseError> {
+    let prefs = prefs?;
+
+    let rolodex_client = rolodex_client::Client::new(&config::CONFIG);
+
+    let fetch_client_id = if arg_client_id == "self" {
+        calling_client.client_id
+    } else {
+        if arg_client_id != calling_client.client_id {
+            return Err(ResponseError::Unauthorized {
+                response: content::Json(
+                    json!({
+                        "message:": "Authentication required",
+                    })
+                    .to_string(),
+                ),
+            });
+        }
+        arg_client_id
+    };
+
+    let response = rolodex_client.update_prefs(rolodex_grpc::proto::UpdatePrefsRequest {
+        client_id: fetch_client_id,
+        prefs: Some(rolodex_grpc::proto::Prefs {
+            email_notifications: prefs.email_notifications.clone(),
+        }),
+    })?;
+
+    Ok(Json(response.prefs.into()))
+}
