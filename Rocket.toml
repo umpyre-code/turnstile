@@ -1,0 +1,27 @@
+[global]
+port = 8000
+workers = 2
+keep_alive = 5
+limits = { forms = 32768 }
+
+[global.databases.redis_reader]
+url = "redis://127.0.0.1:6379"
+pool_size = 2
+
+[global.databases.redis_writer]
+url = "redis://127.0.0.1:6379"
+pool_size = 2
+
+[development]
+address = "localhost"
+log = "normal"
+# To generate:
+#   $ openssl rand -base64 32
+secret_key = "4adWbqpCHO3vGZUzAXIYBALTS9uGAo5FtfHuLb2Pi6Y="
+
+[staging]
+address = "0.0.0.0"
+log = "normal"
+
+[production]
+address = "0.0.0.0"

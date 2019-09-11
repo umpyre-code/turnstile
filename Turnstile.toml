@@ -1,0 +1,58 @@
+[service]
+site_uri = "http://localhost:8000"
+enable_hsts = false
+
+[rolodex]
+tls_cert_path = "tests/certs/Frontend.crt"
+tls_key_path = "tests/certs/Frontend.key"
+ca_cert_path = "tests/certs/UmpyreAuth.crt"
+host = "localhost"
+port = 10011
+
+[switchroom]
+tls_cert_path = "tests/certs/Frontend.crt"
+tls_key_path = "tests/certs/Frontend.key"
+ca_cert_path = "tests/certs/UmpyreAuth.crt"
+host = "localhost"
+port = 10012
+
+[beancounter]
+tls_cert_path = "tests/certs/Frontend.crt"
+tls_key_path = "tests/certs/Frontend.key"
+ca_cert_path = "tests/certs/UmpyreAuth.crt"
+host = "localhost"
+port = 10013
+
+[jwt]
+iss = "Umpyre"
+leeway = 300
+
+[metrics]
+bind_to_address = "127.0.0.1:5000"
+
+[rate_limits.public]
+# number of requests per period
+tokens = 100
+# period (in seconds) for requests / period
+period = 10
+# maximum burst
+max_burst = 100
+
+[rate_limits.private]
+# number of requests per period
+tokens = 100
+# period (in seconds) for requests / period
+period = 10
+# maximum burst
+max_burst = 100
+
+[gcp]
+project = "umpyre"
+# These are the current values in staging
+cdn_url_maps = [
+  "k8s-um-staging-turnstile--e37976232700233f",
+  "k8s-um-staging-turnstile-ipv6--e37976232700233f"
+]
+
+[elasticsearch]
+url = "http://elasticsearch-master:9200"

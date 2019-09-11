@@ -1,0 +1,639 @@
+openapi: 3.0.2
+tags:
+- name: auth
+  description: Authentication operations
+- name: client
+  description: Client operations
+- name: message
+  description: Message operations
+- name: handle
+  description: Client handle operations
+servers:
+- description: Umpyre API
+  url: https://api.umpyre.com
+info:
+  description: Umpyre API
+  version: 1.0.0
+  title: Umpyre API
+  contact:
+    name: Umpyre Support
+    url: https://umpyre.com/support
+    email: support@umpyre.com
+paths:
+  /client/auth/handshake:
+    post:
+      summary: 'Authenticate client: handshake'
+      operationId: auth-handshake
+      tags:
+      - auth
+      requestBody:
+        required: true
+        description: A JSON object containing the client email and random
+          number, as per SRP spec (see http://srp.stanford.edu). The handsake
+          must be verified within 5 minutes.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthHandshakeRequest'
+      security: []
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthHandshakeResponse'
+          description: Handshake succeeded.
+        "401":
+          $ref: '#/components/responses/UnauthorizedError'
+  /client/auth/verify:
+    post:
+      summary: 'Authenticate client: verify'
+      requestBody:
+        required: true
+        description: A JSON object containing the client email, random number, and
+          proof as per SRP spec (see http://srp.stanford.edu). The handshake
+          parameters are only valid for 5 minutes.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthVerifyRequest'
+      security: []
+      operationId: auth-verify
+      tags:
+      - auth
+      responses:
+        "200":
+          description: Successfully authenticated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthVerifyResponse'
+        "401":
+          $ref: '#/components/responses/UnauthorizedError'
+  /client/auth-temporarily/handshake:
+    post:
+      summary: 'Authenticate client temporarily: handshake'
+      requestBody:
+        required: true
+        description: A JSON object containing the client email and random
+          number, as per SRP spec (see http://srp.stanford.edu). The handsake
+          must be verified within 5 minutes.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthHandshakeRequest'
+      security: []
+      operationId: auth-handshake-temp
+      tags:
+      - auth
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthHandshakeResponse'
+          description: Handshake succeeded. The temporary token is only valid for
+            1 hour.
+        "401":
+          $ref: '#/components/responses/UnauthorizedError'
+  /client/auth-temporarily/verify:
+    post:
+      summary: 'Authenticate client temporarily: verify'
+      requestBody:
+        required: true
+        description: A JSON object containing the client email, random number, and
+          proof as per SRP spec (see http://srp.stanford.edu). The handshake
+          parameters are only valid for 5 minutes.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthVerifyRequest'
+      security: []
+      operationId: auth-verify-temp
+      tags:
+      - auth
+      responses:
+        "200":
+          description: Successfully authenticated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthVerifyResponse'
+        "401":
+          $ref: '#/components/responses/UnauthorizedError'
+  /client/{client_id}:
+    get:
+      summary: Get client info
+      description: Fetches and returns the client info object for the provided client
+        ID.
+      operationId: get-client
+      tags:
+      - client
+      parameters:
+      - name: client_id
+        in: path
+        description: Client ID.
+        required: true
+        example: aca0da3ee24b41d0a98d9a4f6256aa78
+        schema:
+          type: string
+      responses:
+        "200":
+          description: The client exists and is available.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Client'
+        "401":
+          $ref: '#/components/responses/UnauthorizedError'
+        "404":
+          description: The client does not exist.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/responses/Error'
+    put:
+      summary: Update client info
+      description: Updates the underlying client model for the provided client ID.
+        If you're trying to modify the password hash, email address, or phone number,
+        you must obtain a temporary API token.
+      operationId: update-client
+      tags:
+      - client
+      parameters:
+      - name: client_id
+        in: path
+        description: Client ID.
+        required: true
+        example: aca0da3ee24b41d0a98d9a4f6256aa78
+        schema:
+          type: string
+      requestBody:
+        required: true
+        description: A JSON object containing the client model. If you're trying to
+          modify the password hash, email address, or phone number, you must obtain
+          a temporary API token.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Client'
+      responses:
+        "200":
+          description: The client exists and is available.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Client'
+        "401":
+          $ref: '#/components/responses/UnauthorizedError'
+        "404":
+          description: The client does not exist.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/responses/Error'
+  /client:
+    post:
+      summary: Create a new client
+      description: Creates a new client with the supplied client model. A unique client
+        ID will be generated by the server.
+      operationId: create-client
+      tags:
+      - client
+      security: []
+      requestBody:
+        description: The client to create.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddClientRequest'
+      responses:
+        "200":
+          description: The client was created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AddClientResponse'
+        "400":
+          description: The client could not be created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/responses/Error'
+        "401":
+          $ref: '#/components/responses/UnauthorizedError'
+  /handle/{handle}:
+    get:
+      summary: Get client info by handle
+      description: Fetches and returns the client info object for the provided handle.
+      operationId: get-client-by-handle
+      tags:
+      - client
+      - handle
+      parameters:
+      - name: handle
+        in: path
+        description: Client handle.
+        required: true
+        example: cool_dude
+        schema:
+          type: string
+      responses:
+        "200":
+          description: The client exists and is available.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Client'
+        "401":
+          $ref: '#/components/responses/UnauthorizedError'
+        "404":
+          description: The client does not exist.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/responses/Error'
+  /messages:
+    get:
+      summary: Get all messages
+      description: Returns all of the messages in a client's inbox stored on the server,
+        minus any messages included in the optional sketch.
+      operationId: get-messages
+      tags:
+      - message
+      parameters:
+      - in: query
+        name: sketch
+        schema:
+          type: string
+        description: A URL-safe base-64 encoded sketch, or serialized bloom filter,
+          representing the messages which the client already has.
+      responses:
+        "200":
+          description: The client exists and is available.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Messages'
+        "401":
+          $ref: '#/components/responses/UnauthorizedError'
+        "404":
+          description: The specified client does not exist.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/responses/Error'
+    post:
+      summary: Send a message
+      description: Send a message from the calling client's account to another client.
+        When sending a message, only the `to` and `body` fields need to be specified.
+      operationId: send-message
+      tags:
+      - message
+      requestBody:
+        description: Message to send.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Message'
+      responses:
+        "200":
+          description: The client exists and is available.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        "401":
+          $ref: '#/components/responses/UnauthorizedError'
+        "404":
+          description: The client does not exist.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/responses/Error'
+components:
+  schemas:
+    Client:
+      type: object
+      properties:
+        client_id:
+          type: string
+          description: Unique identifier for this client.
+        full_name:
+          type: string
+          description: Public display name of this client.
+        box_public_key:
+          type: string
+          description: Box public key for this client. Used for encrypting the message
+            body.
+        sign_public_key:
+          type: string
+          description: Signing public key for this client. Used for signing the message
+            to verify authenticity.
+        password_verifier:
+          type: string
+          format: byte
+          description: A base64 encoded password verifier generated by the client,
+            for use with the SHA3-512 algorithm as part of the SRP auth flow. See
+            http://srp.stanford.edu for details on SRP.
+        password_salt:
+          type: string
+          format: byte
+          description: A base64 encoded password salt generated by the client using
+            a secure random number generator, for use with the SHA3-512 algorithm
+            as part of the SRP auth flow. See http://srp.stanford.edu for details
+            on SRP.
+        email:
+          type: string
+          format: email
+          description: Contact email address for this client. To update the email
+            address, the client must firust obtain and then supply a short-term token
+            with the request.
+        phone_number:
+          type: object
+          description: An object representing a phone number. To update the phone
+            number, the client must firust obtain and then supply a short-term token
+            with the request.
+          properties:
+            country_code:
+              type: string
+              description: Two-letter CLDR country code for this number.
+            national_number:
+              type: string
+              description: The national phone number.
+        handle:
+          type: string
+          description: The client's public handle.
+        profile:
+          type: string
+          description: The client's public profile.
+      required:
+      - client_id
+      - full_name
+      - box_public_key
+      - sign_public_key
+    AddClientRequest:
+      type: object
+      properties:
+        full_name:
+          type: string
+          description: Public display name of this client.
+        box_public_key:
+          type: string
+          format: byte
+          description: Box public key for this client. Used for encrypting the message
+            body.
+        sign_public_key:
+          type: string
+          format: byte
+          description: Signing public key for this client. Used for signing the message
+            to verify authenticity.
+        password_verifier:
+          type: string
+          format: byte
+          description: A base64 encoded password verifier generated by the client,
+            for use with the SHA3-512 algorithm as part of the SRP auth flow. See
+            http://srp.stanford.edu for details on SRP.
+        password_salt:
+          type: string
+          format: byte
+          description: A base64 encoded password salt generated by the client using
+            a secure random number generator, for use with the SHA3-512 algorithm
+            as part of the SRP auth flow. See http://srp.stanford.edu for details
+            on SRP.
+        email:
+          type: string
+          format: email
+          description: Contact email address for this client.
+        phone_number:
+          type: object
+          properties:
+            country_code:
+              type: string
+              description: Two-letter CLDR country code for this number.
+            national_number:
+              type: string
+              description: The national phone number.
+        handle:
+          type: string
+          description: The client's public handle.
+        profile:
+          type: string
+          description: The client's public profile.
+      required:
+      - full_name
+      - box_public_key
+      - sign_public_key
+      - password_hash
+      - email
+      - phone_number
+    AddClientResponse:
+      type: object
+      properties:
+        client_id:
+          type: string
+          description: Unique identifier for this client.
+        full_name:
+          type: string
+          description: Public display name of this client.
+        box_public_key:
+          type: string
+          format: byte
+          description: Box public key for this client. Used for encrypting the message
+            body.
+        sign_public_key:
+          type: string
+          format: byte
+          description: Signing public key for this client. Used for signing the message
+            to verify authenticity.
+        handle:
+          type: string
+          description: The client's public handle.
+        profile:
+          type: string
+          description: The client's public profile.
+        jwt:
+          $ref: '#/components/schemas/Jwt'
+      required:
+      - client_id
+      - full_name
+      - box_public_key
+      - sign_public_key
+      - jwt
+    Message:
+      type: object
+      description: >
+        The model representing a message. When hashing or signing
+        a message, all keys should be lexographically ordered, and empty/null
+        fields should be removed.
+      properties:
+        hash:
+          type: string
+          format: byte
+          description: Base64 encoded 32-byte Blake2b hash of this message's body.
+        from:
+          type: string
+          description: Client ID of sender.
+        to:
+          type: string
+          description: Client ID of recipient.
+        body:
+          type: string
+          format: byte
+          description: >
+            Text body of message, encrypted using a libsodium Box
+            with base64 encoding. The message body is usually JSON, which
+            contains a markdown body in the `markdown` field.
+        received_at:
+          $ref: '#/components/schemas/Timestamp'
+        sent_at:
+          $ref: '#/components/schemas/Timestamp'
+        sender_public_key:
+          type: string
+          format: byte
+          description: Public key of the sender used to encrypt the message body.
+        recipient_public_key:
+          type: string
+          format: byte
+          description: Public key of the recipient used to encrypt the message body.
+        nonce:
+          type: string
+          format: byte
+          description: Nonce used for encryption.
+        pda:
+          type: string
+          description: Public display of affection.
+      required:
+      - hash
+      - to
+      - from
+      - body
+      - sent_at
+      - signature
+      - sender_public_key
+      - recipient_public_key
+    Messages:
+      type: object
+      properties:
+        messages:
+          type: array
+          items:
+            $ref: '#/components/schemas/Message'
+    Timestamp:
+      type: object
+      description: An object representing a timestamp.
+      properties:
+        seconds:
+          type: integer
+          description: Represents seconds of UTC time since Unix epoch 1970-01-01T00:00:00Z.
+            Must be from 0001-01-01T00:00:00Z to 9999-12-31T23:59:59Z inclusive.
+        nanos:
+          type: integer
+          description: Non-negative fractions of a second at nanosecond resolution.
+            Negative second values with fractions must still have non-negative nanos
+            values that count forward in time. Must be from 0 to 999,999,999 inclusive.
+      required:
+      - seconds
+      - nanos
+    AuthHandshakeRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          description: Email request for the auth request.
+        a_pub:
+          type: string
+          format: byte
+          description: A base64 encoded 64-byte secure random value.
+      required:
+      - email
+      - a_pub
+    AuthHandshakeResponse:
+      type: object
+      properties:
+        salt:
+          type: string
+          format: byte
+          description: A base64 encoded 32-byte password salt.
+        b_pub:
+          type: string
+          format: byte
+          description: A base64 encoded 64-byte secure random value.
+      required:
+      - salt
+      - b_pub
+    AuthVerifyRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          description: Email request for the auth request.
+        b_pub:
+          type: string
+          format: byte
+          description: A base64 encoded 64-byte secure random value.
+        client_proof:
+          type: string
+          format: byte
+          description: The base64 encoded client proof, to be verified by the server.
+      required:
+      - email
+      - a_pub
+      - client_proof
+    AuthVerifyResponse:
+      type: object
+      properties:
+        client_id:
+          type: string
+          description: Unique identifier for this client.
+        server_proof:
+          type: string
+          format: byte
+          description: The base64 encoded server proof, which can be used by the client
+            to verify the auth request.
+        jwt:
+          $ref: '#/components/schemas/Jwt'
+      required:
+      - client_id
+      - server_proof
+      - jwt
+    Jwt:
+      type: object
+      description: A JSON web token with secret for verification and signing.
+      properties:
+        token:
+          type: string
+          description: A JSON web token.
+        secret:
+          type: string
+          description: The secret used to sign the token.
+  responses:
+    UnauthorizedError:
+      description: Credentials missing or invalid.
+      headers:
+        WWW-Authenticate:
+          schema:
+            type: string
+    Error:
+      description: Error response.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                description: A description of the error.
+  securitySchemes:
+    apiKeyHeader:
+      type: apiKey
+      in: header
+      name: X-UMPYRE-TOKEN
+    apiKeyTempHeader:
+      type: apiKey
+      in: header
+      name: X-UMPYRE-TOKEN-TEMP
+security:
+- apiKeyHeader: []
