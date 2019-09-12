@@ -104,7 +104,7 @@ dependencies = [
 [[package]]
 name = "beancounter-grpc"
 version = "0.1.0"
-source = "git+ssh://git@github.com/umpyre-code/beancounter.git#0e693bcfba708fd191b4f71db1066741716b1b4f"
+source = "git+ssh://git@github.com/umpyre-code/beancounter.git#13bc2d395ef86edd715dc2aa125ed77c06d1829d"
 dependencies = [
  "bytes 0.4.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "chrono 0.4.9 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2581,7 +2581,7 @@ dependencies = [
 [[package]]
 name = "switchroom-grpc"
 version = "0.1.0"
-source = "git+ssh://git@github.com/umpyre-code/switchroom.git#356def66d594a6d1e34abab30b1cc86bbc5ccc17"
+source = "git+ssh://git@github.com/umpyre-code/switchroom.git#fc81b6cf23ad89d6e03b4eeb9caf65a463d0aea4"
 dependencies = [
  "bytes 0.4.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "prost 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
