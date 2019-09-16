@@ -104,7 +104,7 @@ dependencies = [
 [[package]]
 name = "beancounter-grpc"
 version = "0.1.0"
-source = "git+ssh://git@github.com/umpyre-code/beancounter.git#13bc2d395ef86edd715dc2aa125ed77c06d1829d"
+source = "git+ssh://git@github.com/umpyre-code/beancounter.git#9766187fe39f9ffa64da5ec6213be73b6825093b"
 dependencies = [
  "bytes 0.4.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "chrono 0.4.9 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2288,7 +2288,7 @@ dependencies = [
 [[package]]
 name = "rolodex-grpc"
 version = "0.1.0"
-source = "git+ssh://git@github.com/umpyre-code/rolodex.git#c14371ebc2e4d7915287f564b47f245991f97a28"
+source = "git+ssh://git@github.com/umpyre-code/rolodex.git#590065d158f66f314ce17a7561edc2ad96db0f9b"
 dependencies = [
  "bytes 0.4.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "prost 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2581,7 +2581,7 @@ dependencies = [
 [[package]]
 name = "switchroom-grpc"
 version = "0.1.0"
-source = "git+ssh://git@github.com/umpyre-code/switchroom.git#fc81b6cf23ad89d6e03b4eeb9caf65a463d0aea4"
+source = "git+ssh://git@github.com/umpyre-code/switchroom.git#af9417868b140a146b080c7d47a73092875c17ab"
 dependencies = [
  "bytes 0.4.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "prost 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
