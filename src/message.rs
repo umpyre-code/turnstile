@@ -62,6 +62,8 @@ pub struct Welcome<'a> {
 #[derive(Serialize)]
 pub struct Body {
     markdown: String,
+    r#type: String,
+    pda: String,
 }
 
 pub fn create_welcome_message(
@@ -80,6 +82,8 @@ pub fn create_welcome_message(
     };
     let body = serde_json::to_string(&Body {
         markdown: TERA.render("welcome.md", &welcome)?,
+        r#type: "@@message/message".into(),
+        pda: "Welcome to Umpyre".into(),
     })
     .unwrap();
     let (body, nonce) = encrypt_body(account, recipient_public_key, &body);
