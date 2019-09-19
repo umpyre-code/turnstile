@@ -1,9 +1,7 @@
-### Hey {{ first_name }}, welcome to Umpyre! Here's a ${{value}} message to get you started
+### Hey {{ first_name }}, welcome to Umpyre! 🎉 Here's a ${{value}} message to get you started
 
-Umpyre is a messaging platform that helps experts monetize their expertise.
-We're really happy to have you aboard, and we'd love to hear your feedback.
-We want to make the platform more useful for you (see below on how to contact
-us).
+We're really happy to have you on board! Here's some information to help you
+get the most out of Umpyre.
 
 ## Helpful notes to get you started
 
@@ -37,6 +35,6 @@ us).
 
 ## Contact us
 
-You can say hello to our cofounders [Michael](/c/michael) and
-[Brenden](/c/brenden). Please send them your feedback, comments, suggestions,
-or even complaints!
+Please say hello to our cofounders [Michael](/c/michael) and
+[Brenden](/c/brenden). Send them your feedback, comments, suggestions, or
+even complaints! We're here to help.
