@@ -59,6 +59,11 @@ pub struct Welcome<'a> {
     value: i32,
 }
 
+#[derive(Serialize)]
+pub struct Body {
+    markdown: String,
+}
+
 pub fn create_welcome_message(
     to: &str,
     recipient_public_key: &str,
@@ -73,8 +78,9 @@ pub fn create_welcome_message(
         first_name,
         value: account.welcome_promo_amount,
     };
-    let original_body = TERA.render("welcome.md", &welcome)?;
-    let (body, nonce) = encrypt_body(account, recipient_public_key, &original_body);
+    let original_markdown = TERA.render("welcome.md", &welcome)?;
+    let (markdown, nonce) = encrypt_body(account, recipient_public_key, &original_markdown);
+    let body = serde_json::to_string(&Body { markdown }).unwrap();
 
     let now = SystemTime::now()
         .duration_since(SystemTime::UNIX_EPOCH)
