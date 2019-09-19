@@ -1,4 +1,4 @@
-### Hey {{ first_name }}, welcome to Umpyre! 🎉 Here's a ${{value}} message to get you started
+### Hey {{ first_name }}, welcome to Umpyre! Here's a ${{value}} message to get you started
 
 We're really happy to have you on board! Here's some information to help you
 get the most out of Umpyre.
