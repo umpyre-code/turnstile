@@ -16,12 +16,16 @@ lazy_static! {
     };
 }
 
-fn encrypt_body(account: &config::Account, body: &str) -> (String, String) {
+fn encrypt_body(
+    account: &config::Account,
+    recipient_public_key: &str,
+    body: &str,
+) -> (String, String) {
     use sodiumoxide::crypto::box_;
 
     let theirpk = box_::PublicKey::from_slice(
         &BASE64URL_NOPAD
-            .decode(account.box_public_key.as_bytes())
+            .decode(recipient_public_key.as_bytes())
             .unwrap(),
     )
     .unwrap();
@@ -70,13 +74,13 @@ pub fn create_welcome_message(
         value: account.welcome_promo_amount,
     };
     let original_body = TERA.render("welcome.md", &welcome)?;
-    let (body, nonce) = encrypt_body(account, &original_body);
+    let (body, nonce) = encrypt_body(account, recipient_public_key, &original_body);
 
     let now = SystemTime::now()
         .duration_since(SystemTime::UNIX_EPOCH)
         .unwrap();
 
-    // Create a message, send to self
+    // Create message
     let message = SendMessage {
         body,
         nonce,
@@ -85,8 +89,8 @@ pub fn create_welcome_message(
         recipient_public_key: recipient_public_key.into(),
         sender_public_key: account.box_public_key.clone(),
         sent_at: Timestamp {
-            nanos: 1,
-            seconds: 1,
+            nanos: now.subsec_nanos() as i32,
+            seconds: now.as_secs() as i64,
         },
         signature: None,
         to: to.into(),
