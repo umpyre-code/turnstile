@@ -44,6 +44,7 @@ mod gcp;
 mod guards;
 mod images;
 mod mailgun;
+mod message;
 mod models;
 mod optional;
 mod redis;

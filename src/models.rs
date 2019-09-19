@@ -219,3 +219,19 @@ pub struct ImageUploadResponse {}
 pub struct ClientPrefs {
     pub email_notifications: String,
 }
+
+#[derive(Debug, Serialize)]
+pub struct SendMessage {
+    pub body: String,
+    pub from: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub hash: Option<String>,
+    pub nonce: String,
+    pub recipient_public_key: String,
+    pub sender_public_key: String,
+    pub sent_at: Timestamp,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub signature: Option<String>,
+    pub to: String,
+    pub value_cents: i32,
+}

@@ -7,6 +7,7 @@ use crate::fairings;
 use crate::gcp;
 use crate::guards;
 use crate::mailgun;
+use crate::message;
 use crate::models;
 use crate::responders::Cached;
 use crate::rolodex_client;
@@ -200,9 +201,23 @@ pub fn post_client(
         "",
         0,
     );
+    let to_client_id = response.client_id.clone();
+    let to_public_key = new_client_request.box_public_key.clone();
+    let to_full_name = new_client_request.full_name.clone();
     std::thread::spawn(move || {
         let elastic = elasticsearch::ElasticSearchClient::new();
         elastic.update(elastic_doc);
+        // deliver welcome message
+        let vec: Vec<String> = to_full_name
+            .split_whitespace()
+            .map(|s| s.to_string())
+            .collect();
+        let to_first_name = vec.first().unwrap();
+        let welcome_message =
+            match message::create_welcome_message(&to_client_id, &to_public_key, to_first_name) {
+                Ok(welcome_message) => welcome_message,
+                Err(err) => error!("error generating welcome message: {:?}", err),
+            };
     });
 
     Ok(Json(models::NewClientResponse {

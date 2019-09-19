@@ -17,6 +17,17 @@ pub struct Config {
     pub gcp: Gcp,
     pub elasticsearch: ElasticSearch,
     pub mailgun: Mailgun,
+    pub system_account: Account,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct Account {
+    pub client_id: String,
+    pub signing_public_key: String,
+    pub signing_secret_key: String,
+    pub box_public_key: String,
+    pub box_secret_key: String,
+    pub welcome_promo_amount: i32,
 }
 
 #[derive(Debug, Deserialize)]
