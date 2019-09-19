@@ -784,6 +784,7 @@ pub fn post_messages(
                     client_id_to: message.to.clone(),
                     message_hash,
                     payment_cents: value_cents,
+                    is_promo: false,
                 })?;
 
             // If there's an error, we return success anyway, as if everything's

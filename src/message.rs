@@ -2,6 +2,7 @@ use data_encoding::BASE64URL_NOPAD;
 use serde_json;
 use tera::Tera;
 
+use crate::beancounter_client;
 use crate::config;
 use crate::error::ResponseError;
 use crate::models::{SendMessage, Timestamp};
@@ -106,7 +107,7 @@ pub fn create_welcome_message(
         },
         signature: None,
         to: to.into(),
-        value_cents: 0,
+        value_cents: 100 * account.welcome_promo_amount,
     };
 
     // Compute hash
@@ -132,6 +133,15 @@ pub fn create_welcome_message(
         signature: Some(signature),
         ..message
     };
+
+    let beancounter_client = beancounter_client::Client::new(&config::CONFIG);
+    beancounter_client.add_payment(beancounter_grpc::proto::AddPaymentRequest {
+        client_id_from: account.client_id.clone(),
+        client_id_to: message.to.clone(),
+        message_hash: BASE64URL_NOPAD.decode(message.hash.as_ref().unwrap().as_bytes())?,
+        payment_cents: 100 * account.welcome_promo_amount,
+        is_promo: true,
+    })?;
 
     let switchroom_client = switchroom_client::Client::new(&config::CONFIG);
     switchroom_client.send_message(switchroom_grpc::proto::Message {
