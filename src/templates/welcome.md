@@ -12,9 +12,10 @@ get the most out of Umpyre.
   the recipients field when you compose a message, and you can search the
   network. The reading level of that person will be displayed when you select
   them from the menu.
-* Reading level (or RAL) is a measurement of what someone's attention costs. If
-  you want to go to the top of their inbox and trigger a notification, make
-  sure you price the message at or above their RAL.
+* Reading level (or RAL) is a measurement of what someone's attention costs,
+  based on the value of messages they've read. If you want to be at the top of
+  someone's inbox and trigger a notification (provided they have notifications
+  enabled), make sure you price your messages at or above their RAL.
 * Messages are always end-to-end encrypted, and they're stored on the client
   side only. In other words: we can't read your messages, and we don't hang on
   to your messages 30 days. Everything is deleted from our servers.
