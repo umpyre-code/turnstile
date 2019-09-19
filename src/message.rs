@@ -78,9 +78,11 @@ pub fn create_welcome_message(
         first_name,
         value: account.welcome_promo_amount,
     };
-    let original_markdown = TERA.render("welcome.md", &welcome)?;
-    let (markdown, nonce) = encrypt_body(account, recipient_public_key, &original_markdown);
-    let body = serde_json::to_string(&Body { markdown }).unwrap();
+    let body = serde_json::to_string(&Body {
+        markdown: TERA.render("welcome.md", &welcome)?,
+    })
+    .unwrap();
+    let (body, nonce) = encrypt_body(account, recipient_public_key, &body);
 
     let now = SystemTime::now()
         .duration_since(SystemTime::UNIX_EPOCH)
