@@ -3,8 +3,10 @@
 We're really happy to have you on board! Here's some information to help you
 get the most out of Umpyre.
 
-## Helpful notes to get you started
+## Notes to get you started
 
+* Umpyre is about making sure everyone has skin in the game. There's a cost for
+  someone to get your attention, so they have to make sure it's worth it.
 * We recommend you [go to your profile](/profile) and fill it out. Add a photo,
   choose a handle, and write a description telling people who you are.
   Your profile is public!
