@@ -157,6 +157,7 @@ fn main() -> Result<(), std::io::Error> {
                 routes::post_client_verify_phone,
                 routes::post_client,
                 routes::post_messages,
+                routes::post_metrics_counter_inc,
                 routes::post_stripe_charge,
                 routes::put_client_prefs,
                 routes::put_client,

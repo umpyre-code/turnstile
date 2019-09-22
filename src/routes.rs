@@ -14,6 +14,7 @@ use crate::rolodex_client;
 use crate::switchroom_client;
 use crate::utils;
 
+use instrumented::{prometheus, register};
 use rocket::response::content;
 use rocket_contrib::json::Json;
 use rocket_contrib::json::JsonError;
@@ -1282,4 +1283,22 @@ pub fn put_client_prefs(
     })?;
 
     Ok(Json(response.prefs.into()))
+}
+
+lazy_static! {
+    static ref METRICS_COUNTER: prometheus::IntCounterVec = {
+        let counter_opts = prometheus::Opts::new("metrics_counter_total", "Metrics counter");
+        let counter = prometheus::IntCounterVec::new(counter_opts, &["metric"]).unwrap();
+        register(Box::new(counter.clone())).unwrap();
+        counter
+    };
+}
+
+#[post("/metrics/counter/<metric>/inc")]
+pub fn post_metrics_counter_inc(
+    metric: String,
+    _ratelimited: guards::RateLimited,
+) -> Result<(), ResponseError> {
+    METRICS_COUNTER.with_label_values(&[metric.as_str()]).inc();
+    Ok(())
 }
