@@ -119,7 +119,7 @@ impl Client {
             .map_err(SwitchroomError::from)
     }
 
-    #[instrument(INFO)]
+    #[instrument(DEBUG)]
     pub fn get_messages(
         &self,
         get_messages_request: switchroom_grpc::proto::GetMessagesRequest,
@@ -127,7 +127,7 @@ impl Client {
         with_client!(self, RpcClient::get_messages, get_messages_request)
     }
 
-    #[instrument(INFO)]
+    #[instrument(DEBUG)]
     pub fn send_message(
         &self,
         message: switchroom_grpc::proto::Message,
