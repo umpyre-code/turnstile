@@ -39,6 +39,9 @@ get the most out of Umpyre.
 - Got an open source project? [Grab your badge from your profile](/profile):
   place the badge in your project's README so people can contact you.
 - Umpyre is open source! [Here's our GitHub page](https://github.com/umpyre-code/).
+- [Check out our blog](https://blog.umpyre.com/) if you'd like to hear our
+  thoughts, learn about new features, and understand more about the problems
+  we're trying to solve with Umpyre.
 
 ## Contact us
 
