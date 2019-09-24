@@ -12,7 +12,7 @@ chrono = "0.4"
 data-encoding = "2"
 elastic = { git = "https://github.com/brndnmtthws/elastic.git" }
 elastic_derive = { git = "https://github.com/brndnmtthws/elastic.git" }
-env_logger = { version = "0.6", default-features = false }
+env_logger = { version = "0.7", default-features = false }
 failure = "0.1"
 futures = "0.1"
 http = "0.1"
