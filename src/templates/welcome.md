@@ -32,6 +32,11 @@ get the most out of Umpyre.
 ## Pro Tips(tm)
 
 - Messages can be formatted using markdown.
+- There's no way to search or find old messages. If this is something
+  you're pining for, send us a note and we'll take that feedback into
+  consideration. In the meantime, we suggest you copy and paste messages that
+  have important content, if that's what you need to do. You can also access
+  the raw data directly from your browser's storage if you feel adventurous.
 - You can bump a message you've already sent by replying to your own sent
   message with additional payment.
 - Email notifications are enabled by default only for messages at or above your
