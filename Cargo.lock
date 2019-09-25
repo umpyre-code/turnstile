@@ -2581,7 +2581,7 @@ dependencies = [
 [[package]]
 name = "switchroom-grpc"
 version = "0.1.0"
-source = "git+ssh://git@github.com/umpyre-code/switchroom.git#887571d548a6a28aac9662fc011201905b65f421"
+source = "git+ssh://git@github.com/umpyre-code/switchroom.git#fd0bb712f31170bd3c466e8a51a9114abd52e958"
 dependencies = [
  "bytes 0.4.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "prost 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
