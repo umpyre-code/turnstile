@@ -45,6 +45,7 @@ mod guards;
 mod images;
 mod mailgun;
 mod message;
+mod metrics;
 mod models;
 mod optional;
 mod redis;
@@ -138,6 +139,8 @@ fn main() -> Result<(), std::io::Error> {
             routes![
                 images::get_client_image,
                 images::post_client_image,
+                metrics::post_metrics_counter_inc,
+                metrics::post_metrics_counter_reason_inc,
                 routes::get_account_balance,
                 routes::get_account_connect,
                 routes::get_client_by_handle,
@@ -157,7 +160,6 @@ fn main() -> Result<(), std::io::Error> {
                 routes::post_client_verify_phone,
                 routes::post_client,
                 routes::post_messages,
-                routes::post_metrics_counter_inc,
                 routes::post_stripe_charge,
                 routes::put_client_prefs,
                 routes::put_client,
