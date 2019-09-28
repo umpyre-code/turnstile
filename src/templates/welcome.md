@@ -3,12 +3,6 @@
 We're really happy to have you on board! Here's some information to help you
 get the most out of Umpyre.
 
-## Invite a friend, get \${{referral_promo_amount}}
-
-For each friend you invite, we'll give you a $20 credit. Simply share your reflink with friends:
-
-**[https://umpyre.com/signup/?r={{client_id}}](https://umpyre.com/signup/?r={{client_id}})**
-
 ## Notes to get you started
 
 - On Umpyre everyone has skin in the game. There's a cost to get someone's
@@ -34,6 +28,12 @@ For each friend you invite, we'll give you a $20 credit. Simply share your refli
 - We retain account and payment information to combat fraud, maintain a high
   quality network without spam or bot accounts, and to comply with
   regulations where necessary.
+
+## Invite a friend, get \${{referral_promo_amount}}
+
+For each friend you invite, we'll give you a $20 credit. Simply share your reflink with friends:
+
+**`https://umpyre.com/signup/?r={{client_id}}`**
 
 ## Pro Tips(tm)
 
