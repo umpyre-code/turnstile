@@ -58,6 +58,8 @@ fn b2b_hash(s: &str, digest_size: usize) -> String {
 pub struct Welcome<'a> {
     first_name: &'a str,
     value: i32,
+    client_id: &'a str,
+    referral_promo_amount: i32,
 }
 
 #[derive(Serialize)]
@@ -80,6 +82,8 @@ pub fn create_welcome_message(
     let welcome = Welcome {
         first_name,
         value: account.welcome_promo_amount,
+        client_id: to,
+        referral_promo_amount: config::CONFIG.referrals.promo_amount,
     };
     let body = serde_json::to_string(&Body {
         markdown: TERA.render("welcome.md", &welcome)?,

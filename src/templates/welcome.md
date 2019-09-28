@@ -3,10 +3,16 @@
 We're really happy to have you on board! Here's some information to help you
 get the most out of Umpyre.
 
+## Invite a friend, get \${{referral_promo_amount}}
+
+For each friend you invite, we'll give you a $20 credit. Simply share your reflink with friends:
+
+**[https://umpyre.com/signup/?r={{client_id}}](https://umpyre.com/signup/?r={{client_id}})**
+
 ## Notes to get you started
 
-- Umpyre is about making sure everyone has skin in the game. There's a cost for
-  someone to get your attention, so they have to make sure it's worth it.
+- On Umpyre everyone has skin in the game. There's a cost to get someone's
+  attention, so make sure it's worthwhile.
 - We recommend you [go to your profile](/profile) and fill it out. Add a photo,
   choose a handle, and write a description telling people who you are.
   Your profile is public!
