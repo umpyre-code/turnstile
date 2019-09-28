@@ -18,6 +18,13 @@ pub struct Config {
     pub elasticsearch: ElasticSearch,
     pub mailgun: Mailgun,
     pub system_account: Account,
+    pub referrals: Referrals,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct Referrals {
+    pub enabled: bool,
+    pub promo_amount: i32,
 }
 
 #[derive(Debug, Deserialize)]

@@ -191,6 +191,7 @@ pub fn post_client(
         box_public_key: new_client_request.box_public_key.clone(),
         signing_public_key: new_client_request.signing_public_key.clone(),
         location,
+        referred_by: new_client_request.referred_by.clone(),
     })?;
 
     // Update the index in elasticsearch. This is launched on a separate thread
@@ -204,6 +205,7 @@ pub fn post_client(
     let to_client_id = response.client_id.clone();
     let to_public_key = new_client_request.box_public_key.clone();
     let to_full_name = new_client_request.full_name.clone();
+    let referred_by = response.referred_by.clone();
     std::thread::spawn(move || {
         let elastic = elasticsearch::ElasticSearchClient::new();
         elastic.update(elastic_doc);
@@ -213,7 +215,7 @@ pub fn post_client(
             .map(|s| s.to_string())
             .collect();
         let to_first_name = vec.first().unwrap();
-        let welcome_message =
+        let _welcome_message =
             match message::create_welcome_message(&to_client_id, &to_public_key, to_first_name) {
                 Ok(welcome_message) => welcome_message,
                 Err(err) => error!("error generating welcome message: {:?}", err),
@@ -512,6 +514,7 @@ pub fn put_client(
             phone_sms_verified: false,      // ignored
             ral: update_client_request.ral, // ignored
             avatar_version: 0,              // ignored
+            referred_by: "".into(),         // ignored
         }),
         location,
     })?;
@@ -1180,6 +1183,23 @@ pub fn post_client_verify_phone(
             // Invalidate the CDN caches in the background
             let _res = gcp::invalidate_cdn_cache(&format!("/client/{}", calling_client.client_id));
         });
+        match response.client.as_ref() {
+            Some(client) => {
+                if !client.referred_by.is_empty() && config::CONFIG.referrals.enabled {
+                    let referred_by = client.referred_by.clone();
+                    std::thread::spawn(move || {
+                        let beancounter_client = beancounter_client::Client::new(&config::CONFIG);
+                        let _res = beancounter_client.add_promo(
+                            beancounter_grpc::proto::AddPromoRequest {
+                                client_id: referred_by,
+                                amount_cents: config::CONFIG.referrals.promo_amount * 100,
+                            },
+                        );
+                    });
+                }
+            }
+            None => (),
+        }
         Ok(Json(models::VerifyPhoneResponse {
             result: "success".to_owned(),
             client: Some(response.client.into()),

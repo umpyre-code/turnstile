@@ -44,6 +44,8 @@ pub struct NewClientRequest {
     pub password_salt: String,
     pub phone_number: PhoneNumber,
     pub signing_public_key: String,
+    #[serde(default)]
+    pub referred_by: String,
 }
 
 #[derive(Debug, Serialize)]
