@@ -572,6 +572,24 @@ pub fn get_messages(
     ))
 }
 
+impl From<&models::Timestamp> for switchroom_grpc::proto::Timestamp {
+    fn from(ts: &models::Timestamp) -> Self {
+        Self {
+            seconds: ts.seconds,
+            nanos: ts.nanos,
+        }
+    }
+}
+
+impl From<&switchroom_grpc::proto::Timestamp> for models::Timestamp {
+    fn from(ts: &switchroom_grpc::proto::Timestamp) -> Self {
+        Self {
+            seconds: ts.seconds,
+            nanos: ts.nanos,
+        }
+    }
+}
+
 impl From<&switchroom_grpc::proto::Message> for models::Message {
     fn from(message: &switchroom_grpc::proto::Message) -> Self {
         use data_encoding::BASE64URL_NOPAD;
@@ -582,17 +600,11 @@ impl From<&switchroom_grpc::proto::Message> for models::Message {
             from: message.from.clone(),
             body: BASE64URL_NOPAD.encode(&message.body),
             hash: Some(BASE64URL_NOPAD.encode(&message.hash)),
-            received_at: Some(models::Timestamp {
-                seconds: received_at.seconds,
-                nanos: received_at.nanos,
-            }),
+            received_at: Some(received_at.into()),
             nonce: BASE64URL_NOPAD.encode(&message.nonce),
             sender_public_key: BASE64URL_NOPAD.encode(&message.sender_public_key),
             recipient_public_key: BASE64URL_NOPAD.encode(&message.recipient_public_key),
-            sent_at: models::Timestamp {
-                seconds: sent_at.seconds,
-                nanos: sent_at.nanos,
-            },
+            sent_at: sent_at.into(),
             signature: Some(BASE64URL_NOPAD.encode(&message.signature)),
             value_cents: message.value_cents,
         }
@@ -762,10 +774,7 @@ pub fn post_messages(
             sender_public_key: BASE64URL_NOPAD.decode(message.sender_public_key.as_bytes())?,
             recipient_public_key: BASE64URL_NOPAD
                 .decode(message.recipient_public_key.as_bytes())?,
-            sent_at: Some(switchroom_grpc::proto::Timestamp {
-                seconds: message.sent_at.seconds,
-                nanos: message.sent_at.nanos,
-            }),
+            sent_at: Some((&message.sent_at).into()),
             signature: BASE64URL_NOPAD.decode(message.signature.as_ref()?.as_bytes())?,
             value_cents,
         })?;
@@ -1138,6 +1147,52 @@ pub fn post_account_connect_payout(
         })?;
 
     Ok(Json(response.into()))
+}
+
+impl From<&beancounter_grpc::proto::Timestamp> for models::Timestamp {
+    fn from(ts: &beancounter_grpc::proto::Timestamp) -> Self {
+        Self {
+            seconds: ts.seconds,
+            nanos: ts.nanos,
+        }
+    }
+}
+
+impl From<beancounter_grpc::proto::Transaction> for models::Transaction {
+    fn from(tx: beancounter_grpc::proto::Transaction) -> Self {
+        Self {
+            created_at: tx.created_at.as_ref().unwrap().into(),
+            tx_type: tx.tx_type.to_string(),
+            tx_reason: tx.tx_reason.to_string(),
+            amount_cents: tx.amount_cents,
+        }
+    }
+}
+
+#[get("/account/transactions?<limit>")]
+pub fn get_account_transactions(
+    limit: Option<i64>,
+    calling_client: guards::Client,
+    _ratelimited: guards::RateLimited,
+) -> Result<Json<Vec<models::Transaction>>, ResponseError> {
+    let beancounter_client = beancounter_client::Client::new(&config::CONFIG);
+
+    let response =
+        beancounter_client.get_transactions(beancounter_grpc::proto::GetTransactionsRequest {
+            client_id: calling_client.client_id,
+            limit: match limit {
+                Some(limit) => limit,
+                None => 0,
+            },
+        })?;
+
+    Ok(Json(
+        response
+            .transactions
+            .into_iter()
+            .map(models::Transaction::from)
+            .collect(),
+    ))
 }
 
 impl From<elastic::Error> for ResponseError {

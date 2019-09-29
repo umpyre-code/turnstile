@@ -237,3 +237,12 @@ pub struct SendMessage {
     pub to: String,
     pub value_cents: i32,
 }
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub struct Transaction {
+    pub created_at: Timestamp,
+    pub tx_type: String,
+    pub tx_reason: String,
+    pub amount_cents: i32,
+}

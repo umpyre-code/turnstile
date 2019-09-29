@@ -191,4 +191,12 @@ impl Client {
     ) -> Result<beancounter_grpc::proto::AddPromoResponse, BeanCounterError> {
         with_client!(self, RpcClient::add_promo, request)
     }
+
+    #[instrument(INFO)]
+    pub fn get_transactions(
+        &self,
+        request: beancounter_grpc::proto::GetTransactionsRequest,
+    ) -> Result<beancounter_grpc::proto::GetTransactionsResponse, BeanCounterError> {
+        with_client!(self, RpcClient::get_transactions, request)
+    }
 }

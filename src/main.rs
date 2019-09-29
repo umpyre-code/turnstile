@@ -143,6 +143,7 @@ fn main() -> Result<(), std::io::Error> {
                 metrics::post_metrics_counter_reason_inc,
                 routes::get_account_balance,
                 routes::get_account_connect,
+                routes::get_account_transactions,
                 routes::get_client_by_handle,
                 routes::get_client_prefs,
                 routes::get_client,
