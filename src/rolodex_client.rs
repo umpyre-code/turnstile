@@ -237,6 +237,14 @@ impl Client {
     ) -> Result<rolodex_grpc::proto::UpdatePrefsResponse, RolodexError> {
         with_client!(self, RpcClient::update_prefs, request)
     }
+
+    #[instrument(INFO)]
+    pub fn get_referrals(
+        &self,
+        request: rolodex_grpc::proto::GetReferralsRequest,
+    ) -> Result<rolodex_grpc::proto::GetReferralsResponse, RolodexError> {
+        with_client!(self, RpcClient::get_referrals, request)
+    }
 }
 
 pub fn get_client_for(

@@ -205,7 +205,6 @@ pub fn post_client(
     let to_client_id = response.client_id.clone();
     let to_public_key = new_client_request.box_public_key.clone();
     let to_full_name = new_client_request.full_name.clone();
-    let referred_by = response.referred_by.clone();
     std::thread::spawn(move || {
         let elastic = elasticsearch::ElasticSearchClient::new();
         elastic.update(elastic_doc);
@@ -227,10 +226,9 @@ pub fn post_client(
     }))
 }
 
-impl From<Option<rolodex_grpc::proto::Client>> for models::GetClientResponse {
-    fn from(client: Option<rolodex_grpc::proto::Client>) -> Self {
+impl From<rolodex_grpc::proto::Client> for models::GetClientResponse {
+    fn from(client: rolodex_grpc::proto::Client) -> Self {
         use crate::optional::Optional;
-        let client = client.unwrap();
         models::GetClientResponse {
             client_id: client.client_id,
             full_name: client.full_name,
@@ -243,6 +241,13 @@ impl From<Option<rolodex_grpc::proto::Client>> for models::GetClientResponse {
             ral: client.ral,
             avatar_version: client.avatar_version,
         }
+    }
+}
+
+impl From<Option<rolodex_grpc::proto::Client>> for models::GetClientResponse {
+    fn from(client: Option<rolodex_grpc::proto::Client>) -> Self {
+        let client = client.unwrap();
+        client.into()
     }
 }
 
@@ -1302,4 +1307,24 @@ pub fn put_client_prefs(
     })?;
 
     Ok(Json(response.prefs.into()))
+}
+
+#[get("/referrals")]
+pub fn get_referrals(
+    calling_client: guards::Client,
+    _ratelimited: guards::RateLimited,
+) -> Result<Json<Vec<models::GetClientResponse>>, ResponseError> {
+    let rolodex_client = rolodex_client::Client::new(&config::CONFIG);
+
+    let response = rolodex_client.get_referrals(rolodex_grpc::proto::GetReferralsRequest {
+        referred_by_client_id: calling_client.client_id,
+    })?;
+
+    Ok(Json(
+        response
+            .referrals
+            .into_iter()
+            .map(models::GetClientResponse::from)
+            .collect(),
+    ))
 }
