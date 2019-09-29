@@ -1160,10 +1160,26 @@ impl From<&beancounter_grpc::proto::Timestamp> for models::Timestamp {
 
 impl From<beancounter_grpc::proto::Transaction> for models::Transaction {
     fn from(tx: beancounter_grpc::proto::Transaction) -> Self {
+        use beancounter_grpc::proto::transaction::{Reason, Type};
         Self {
             created_at: tx.created_at.as_ref().unwrap().into(),
-            tx_type: tx.tx_type.to_string(),
-            tx_reason: tx.tx_reason.to_string(),
+            tx_type: match Type::from_i32(tx.tx_type) {
+                Some(Type::Debit) => "debit",
+                Some(Type::Credit) => "credit",
+                Some(Type::PromoCredit) => "promo credit",
+                Some(Type::PromoDebit) => "promo debit",
+                _ => "unknown",
+            }
+            .to_string(),
+            tx_reason: match Reason::from_i32(tx.tx_reason) {
+                Some(Reason::MessageRead) => "message read",
+                Some(Reason::MessageUnread) => "message unread",
+                Some(Reason::MessageSent) => "message sent",
+                Some(Reason::CreditAdded) => "credit added",
+                Some(Reason::Payout) => "payout",
+                _ => "unknown",
+            }
+            .to_string(),
             amount_cents: tx.amount_cents,
         }
     }
