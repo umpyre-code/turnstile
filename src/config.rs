@@ -19,12 +19,19 @@ pub struct Config {
     pub mailgun: Mailgun,
     pub system_account: Account,
     pub referrals: Referrals,
+    pub redis: Redis,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct Referrals {
     pub enabled: bool,
     pub promo_amount: i32,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct Redis {
+    // Number of replicas per each master
+    pub replicas_per_master: i32,
 }
 
 #[derive(Debug, Deserialize)]

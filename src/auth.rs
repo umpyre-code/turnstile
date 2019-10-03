@@ -1,3 +1,4 @@
+use crate::config;
 use crate::error::ResponseError;
 use crate::models;
 use crate::redis::db;
@@ -9,6 +10,7 @@ fn generate_and_store_token(
     expiry: u64,
     secret: &[u8],
 ) -> Result<models::Jwt, ResponseError> {
+    use crate::redis::db::redis;
     use r2d2_redis_cluster::redis_cluster_rs::Commands;
 
     // generate token (JWT)
@@ -21,6 +23,10 @@ fn generate_and_store_token(
         secret,
         expiry as usize,
     )?;
+    let _res: (i32) = redis::cmd("WAIT")
+        .arg(config::CONFIG.redis.replicas_per_master)
+        .arg(0)
+        .query(&mut redis.0)?;
 
     Ok(models::Jwt { token: jwt.token })
 }
