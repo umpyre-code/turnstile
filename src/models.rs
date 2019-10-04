@@ -246,3 +246,19 @@ pub struct Transaction {
     pub tx_reason: String,
     pub amount_cents: i32,
 }
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub struct AmountByDate {
+    pub amount_cents: i64,
+    pub year: i32,
+    pub month: i32,
+    pub day: i32,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub struct Stats {
+    pub message_read_amount: Vec<AmountByDate>,
+    pub message_sent_amount: Vec<AmountByDate>,
+}

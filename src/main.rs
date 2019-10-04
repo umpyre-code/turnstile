@@ -150,6 +150,7 @@ fn main() -> Result<(), std::io::Error> {
                 routes::get_messages,
                 routes::get_ping,
                 routes::get_referrals,
+                routes::get_stats,
                 routes::post_account_connect_payout,
                 routes::post_account_connect_prefs,
                 routes::post_account_oauth,

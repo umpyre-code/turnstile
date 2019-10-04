@@ -1211,6 +1211,43 @@ pub fn get_account_transactions(
     ))
 }
 
+impl From<beancounter_grpc::proto::AmountByDate> for models::AmountByDate {
+    fn from(data: beancounter_grpc::proto::AmountByDate) -> Self {
+        Self {
+            amount_cents: data.amount_cents,
+            year: data.year,
+            month: data.month,
+            day: data.day,
+        }
+    }
+}
+
+impl From<beancounter_grpc::proto::GetStatsResponse> for models::Stats {
+    fn from(response: beancounter_grpc::proto::GetStatsResponse) -> Self {
+        Self {
+            message_read_amount: response
+                .message_read_amount
+                .into_iter()
+                .map(models::AmountByDate::from)
+                .collect(),
+            message_sent_amount: response
+                .message_sent_amount
+                .into_iter()
+                .map(models::AmountByDate::from)
+                .collect(),
+        }
+    }
+}
+
+#[get("/stats")]
+pub fn get_stats(_ratelimited: guards::RateLimited) -> Result<Json<models::Stats>, ResponseError> {
+    let beancounter_client = beancounter_client::Client::new(&config::CONFIG);
+
+    let response = beancounter_client.get_stats(beancounter_grpc::proto::GetStatsRequest {})?;
+
+    Ok(Json(response.into()))
+}
+
 impl From<elastic::Error> for ResponseError {
     fn from(err: elastic::Error) -> Self {
         Self::InternalError {
