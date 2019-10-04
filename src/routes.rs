@@ -1222,19 +1222,13 @@ impl From<beancounter_grpc::proto::AmountByDate> for models::AmountByDate {
     }
 }
 
-impl From<beancounter_grpc::proto::GetStatsResponse> for models::Stats {
-    fn from(response: beancounter_grpc::proto::GetStatsResponse) -> Self {
+impl From<rolodex_grpc::proto::CountByDate> for models::CountByDate {
+    fn from(data: rolodex_grpc::proto::CountByDate) -> Self {
         Self {
-            message_read_amount: response
-                .message_read_amount
-                .into_iter()
-                .map(models::AmountByDate::from)
-                .collect(),
-            message_sent_amount: response
-                .message_sent_amount
-                .into_iter()
-                .map(models::AmountByDate::from)
-                .collect(),
+            count: data.count,
+            year: data.year,
+            month: data.month,
+            day: data.day,
         }
     }
 }
@@ -1242,10 +1236,28 @@ impl From<beancounter_grpc::proto::GetStatsResponse> for models::Stats {
 #[get("/stats")]
 pub fn get_stats(_ratelimited: guards::RateLimited) -> Result<Json<models::Stats>, ResponseError> {
     let beancounter_client = beancounter_client::Client::new(&config::CONFIG);
+    let bc_response = beancounter_client.get_stats(beancounter_grpc::proto::GetStatsRequest {})?;
 
-    let response = beancounter_client.get_stats(beancounter_grpc::proto::GetStatsRequest {})?;
+    let rolodex_client = rolodex_client::Client::new(&config::CONFIG);
+    let r_response = rolodex_client.get_stats(rolodex_grpc::proto::GetStatsRequest {})?;
 
-    Ok(Json(response.into()))
+    Ok(Json(models::Stats {
+        message_read_amount: bc_response
+            .message_read_amount
+            .into_iter()
+            .map(models::AmountByDate::from)
+            .collect(),
+        message_sent_amount: bc_response
+            .message_sent_amount
+            .into_iter()
+            .map(models::AmountByDate::from)
+            .collect(),
+        clients_by_date: r_response
+            .clients_by_date
+            .into_iter()
+            .map(models::CountByDate::from)
+            .collect(),
+    }))
 }
 
 impl From<elastic::Error> for ResponseError {
