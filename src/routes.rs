@@ -1234,30 +1234,35 @@ impl From<rolodex_grpc::proto::CountByDate> for models::CountByDate {
 }
 
 #[get("/stats")]
-pub fn get_stats(_ratelimited: guards::RateLimited) -> Result<Json<models::Stats>, ResponseError> {
+pub fn get_stats(
+    _ratelimited: guards::RateLimited,
+) -> Result<Cached<Json<models::Stats>>, ResponseError> {
     let beancounter_client = beancounter_client::Client::new(&config::CONFIG);
     let bc_response = beancounter_client.get_stats(beancounter_grpc::proto::GetStatsRequest {})?;
 
     let rolodex_client = rolodex_client::Client::new(&config::CONFIG);
     let r_response = rolodex_client.get_stats(rolodex_grpc::proto::GetStatsRequest {})?;
 
-    Ok(Json(models::Stats {
-        message_read_amount: bc_response
-            .message_read_amount
-            .into_iter()
-            .map(models::AmountByDate::from)
-            .collect(),
-        message_sent_amount: bc_response
-            .message_sent_amount
-            .into_iter()
-            .map(models::AmountByDate::from)
-            .collect(),
-        clients_by_date: r_response
-            .clients_by_date
-            .into_iter()
-            .map(models::CountByDate::from)
-            .collect(),
-    }))
+    Ok(Cached::from(
+        Json(models::Stats {
+            message_read_amount: bc_response
+                .message_read_amount
+                .into_iter()
+                .map(models::AmountByDate::from)
+                .collect(),
+            message_sent_amount: bc_response
+                .message_sent_amount
+                .into_iter()
+                .map(models::AmountByDate::from)
+                .collect(),
+            clients_by_date: r_response
+                .clients_by_date
+                .into_iter()
+                .map(models::CountByDate::from)
+                .collect(),
+        }),
+        24 * 3600,
+    ))
 }
 
 impl From<elastic::Error> for ResponseError {
