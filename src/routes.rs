@@ -1222,6 +1222,15 @@ impl From<beancounter_grpc::proto::AmountByDate> for models::AmountByDate {
     }
 }
 
+impl From<beancounter_grpc::proto::AmountByClient> for models::AmountByClient {
+    fn from(data: beancounter_grpc::proto::AmountByClient) -> Self {
+        Self {
+            amount_cents: data.amount_cents,
+            client_id: data.client_id,
+        }
+    }
+}
+
 impl From<rolodex_grpc::proto::CountByDate> for models::CountByDate {
     fn from(data: rolodex_grpc::proto::CountByDate) -> Self {
         Self {
@@ -1254,6 +1263,16 @@ pub fn get_stats(
                 .message_sent_amount
                 .into_iter()
                 .map(models::AmountByDate::from)
+                .collect(),
+            most_well_read: bc_response
+                .most_well_read
+                .into_iter()
+                .map(models::AmountByClient::from)
+                .collect(),
+            most_generous: bc_response
+                .most_generous
+                .into_iter()
+                .map(models::AmountByClient::from)
                 .collect(),
             clients_by_date: r_response
                 .clients_by_date

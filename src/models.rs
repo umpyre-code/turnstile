@@ -258,6 +258,13 @@ pub struct AmountByDate {
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "snake_case")]
+pub struct AmountByClient {
+    pub amount_cents: i64,
+    pub client_id: String,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "snake_case")]
 pub struct CountByDate {
     pub count: i64,
     pub year: i32,
@@ -270,5 +277,7 @@ pub struct CountByDate {
 pub struct Stats {
     pub message_read_amount: Vec<AmountByDate>,
     pub message_sent_amount: Vec<AmountByDate>,
+    pub most_well_read: Vec<AmountByClient>,
+    pub most_generous: Vec<AmountByClient>,
     pub clients_by_date: Vec<CountByDate>,
 }
