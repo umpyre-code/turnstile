@@ -1231,6 +1231,15 @@ impl From<beancounter_grpc::proto::AmountByClient> for models::AmountByClient {
     }
 }
 
+impl From<rolodex_grpc::proto::AmountByClient> for models::AmountByClient {
+    fn from(data: rolodex_grpc::proto::AmountByClient) -> Self {
+        Self {
+            amount_cents: data.amount_cents,
+            client_id: data.client_id,
+        }
+    }
+}
+
 impl From<rolodex_grpc::proto::CountByDate> for models::CountByDate {
     fn from(data: rolodex_grpc::proto::CountByDate) -> Self {
         Self {
@@ -1267,17 +1276,48 @@ pub fn get_stats(
             most_well_read: bc_response
                 .most_well_read
                 .into_iter()
+                .filter(|d| {
+                    // filter out clients which have explicitly excluded
+                    // themselves from the leaderboard
+                    match rolodex_client.get_prefs(rolodex_grpc::proto::GetPrefsRequest {
+                        client_id: d.client_id.clone(),
+                    }) {
+                        Ok(response) => match response.prefs {
+                            Some(prefs) => prefs.include_in_leaderboard,
+                            _ => false,
+                        },
+                        _ => false,
+                    }
+                })
                 .map(models::AmountByClient::from)
                 .collect(),
             most_generous: bc_response
                 .most_generous
                 .into_iter()
+                .filter(|d| {
+                    // filter out clients which have explicitly excluded
+                    // themselves from the leaderboard
+                    match rolodex_client.get_prefs(rolodex_grpc::proto::GetPrefsRequest {
+                        client_id: d.client_id.clone(),
+                    }) {
+                        Ok(response) => match response.prefs {
+                            Some(prefs) => prefs.include_in_leaderboard,
+                            _ => false,
+                        },
+                        _ => false,
+                    }
+                })
                 .map(models::AmountByClient::from)
                 .collect(),
             clients_by_date: r_response
                 .clients_by_date
                 .into_iter()
                 .map(models::CountByDate::from)
+                .collect(),
+            clients_by_ral: r_response
+                .clients_by_ral
+                .into_iter()
+                .map(models::AmountByClient::from)
                 .collect(),
         }),
         24 * 3600,
