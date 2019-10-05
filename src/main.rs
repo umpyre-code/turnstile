@@ -59,15 +59,7 @@ mod token;
 mod utils;
 
 fn get_cors() -> rocket_cors::Cors {
-    use rocket_cors::AllowedOrigins;
-
-    let origins = AllowedOrigins::some_exact(&[
-        &config::CONFIG.service.web_uri,
-        &config::CONFIG.service.site_uri,
-    ]);
-
     rocket_cors::CorsOptions {
-        allowed_origins: origins,
         allow_credentials: true,
         max_age: Some(3600 * 24), // Cache for 24h
         ..Default::default()
@@ -116,21 +108,6 @@ fn main() -> Result<(), std::io::Error> {
     elastic_client.create_indices();
 
     rocket::ignite()
-        .attach(fairings::RequestTimer)
-        .attach(fairings::Counter)
-        .attach(fairings::RateLimitHeaders)
-        .attach(fairings::RedisReader::fairing())
-        .attach(fairings::RedisWriter::fairing())
-        .attach(Compression::fairing())
-        .attach(get_helmet())
-        .attach(get_cors())
-        .register(catchers![
-            catchers::bad_request,
-            catchers::not_found,
-            catchers::too_many_requests,
-            catchers::unauthorized,
-            catchers::unprocessable_entity,
-        ])
         .mount(
             "/",
             routes![
@@ -170,6 +147,21 @@ fn main() -> Result<(), std::io::Error> {
                 templated::get_badge_svg,
             ],
         )
+        .attach(fairings::RequestTimer)
+        .attach(fairings::Counter)
+        .attach(fairings::RateLimitHeaders)
+        .attach(fairings::RedisReader::fairing())
+        .attach(fairings::RedisWriter::fairing())
+        .attach(Compression::fairing())
+        .attach(get_helmet())
+        .attach(get_cors())
+        .register(catchers![
+            catchers::bad_request,
+            catchers::not_found,
+            catchers::too_many_requests,
+            catchers::unauthorized,
+            catchers::unprocessable_entity,
+        ])
         .launch();
 
     Ok(())
