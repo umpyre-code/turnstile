@@ -1252,71 +1252,76 @@ impl From<rolodex_grpc::proto::CountByDate> for models::CountByDate {
 }
 
 #[get("/stats")]
-pub fn get_stats(_ratelimited: guards::RateLimited) -> Result<Json<models::Stats>, ResponseError> {
+pub fn get_stats(
+    _ratelimited: guards::RateLimited,
+) -> Result<Cached<Json<models::Stats>>, ResponseError> {
     let beancounter_client = beancounter_client::Client::new(&config::CONFIG);
     let bc_response = beancounter_client.get_stats(beancounter_grpc::proto::GetStatsRequest {})?;
 
     let rolodex_client = rolodex_client::Client::new(&config::CONFIG);
     let r_response = rolodex_client.get_stats(rolodex_grpc::proto::GetStatsRequest {})?;
 
-    Ok(Json(models::Stats {
-        message_read_amount: bc_response
-            .message_read_amount
-            .into_iter()
-            .map(models::AmountByDate::from)
-            .collect(),
-        message_sent_amount: bc_response
-            .message_sent_amount
-            .into_iter()
-            .map(models::AmountByDate::from)
-            .collect(),
-        most_well_read: bc_response
-            .most_well_read
-            .into_iter()
-            .filter(|d| {
-                // filter out clients which have explicitly excluded
-                // themselves from the leaderboard
-                match rolodex_client.get_prefs(rolodex_grpc::proto::GetPrefsRequest {
-                    client_id: d.client_id.clone(),
-                }) {
-                    Ok(response) => match response.prefs {
-                        Some(prefs) => prefs.include_in_leaderboard,
+    Ok(Cached(
+        Json(models::Stats {
+            message_read_amount: bc_response
+                .message_read_amount
+                .into_iter()
+                .map(models::AmountByDate::from)
+                .collect(),
+            message_sent_amount: bc_response
+                .message_sent_amount
+                .into_iter()
+                .map(models::AmountByDate::from)
+                .collect(),
+            most_well_read: bc_response
+                .most_well_read
+                .into_iter()
+                .filter(|d| {
+                    // filter out clients which have explicitly excluded
+                    // themselves from the leaderboard
+                    match rolodex_client.get_prefs(rolodex_grpc::proto::GetPrefsRequest {
+                        client_id: d.client_id.clone(),
+                    }) {
+                        Ok(response) => match response.prefs {
+                            Some(prefs) => prefs.include_in_leaderboard,
+                            _ => false,
+                        },
                         _ => false,
-                    },
-                    _ => false,
-                }
-            })
-            .map(models::AmountByClient::from)
-            .collect(),
-        most_generous: bc_response
-            .most_generous
-            .into_iter()
-            .filter(|d| {
-                // filter out clients which have explicitly excluded
-                // themselves from the leaderboard
-                match rolodex_client.get_prefs(rolodex_grpc::proto::GetPrefsRequest {
-                    client_id: d.client_id.clone(),
-                }) {
-                    Ok(response) => match response.prefs {
-                        Some(prefs) => prefs.include_in_leaderboard,
+                    }
+                })
+                .map(models::AmountByClient::from)
+                .collect(),
+            most_generous: bc_response
+                .most_generous
+                .into_iter()
+                .filter(|d| {
+                    // filter out clients which have explicitly excluded
+                    // themselves from the leaderboard
+                    match rolodex_client.get_prefs(rolodex_grpc::proto::GetPrefsRequest {
+                        client_id: d.client_id.clone(),
+                    }) {
+                        Ok(response) => match response.prefs {
+                            Some(prefs) => prefs.include_in_leaderboard,
+                            _ => false,
+                        },
                         _ => false,
-                    },
-                    _ => false,
-                }
-            })
-            .map(models::AmountByClient::from)
-            .collect(),
-        clients_by_date: r_response
-            .clients_by_date
-            .into_iter()
-            .map(models::CountByDate::from)
-            .collect(),
-        clients_by_ral: r_response
-            .clients_by_ral
-            .into_iter()
-            .map(models::AmountByClient::from)
-            .collect(),
-    }))
+                    }
+                })
+                .map(models::AmountByClient::from)
+                .collect(),
+            clients_by_date: r_response
+                .clients_by_date
+                .into_iter()
+                .map(models::CountByDate::from)
+                .collect(),
+            clients_by_ral: r_response
+                .clients_by_ral
+                .into_iter()
+                .map(models::AmountByClient::from)
+                .collect(),
+        }),
+        24 * 3600,
+    ))
 }
 
 impl From<elastic::Error> for ResponseError {
