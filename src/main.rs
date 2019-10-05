@@ -59,9 +59,17 @@ mod token;
 mod utils;
 
 fn get_cors() -> rocket_cors::Cors {
+    use rocket_cors::AllowedOrigins;
+
+    let origins = AllowedOrigins::some_exact(&[
+        &config::CONFIG.service.web_uri,
+        &config::CONFIG.service.site_uri,
+    ]);
+
     rocket_cors::CorsOptions {
+        allowed_origins: origins,
         allow_credentials: true,
-        max_age: Some(3600), // Cache for 1h
+        max_age: Some(3600 * 24), // Cache for 24h
         ..Default::default()
     }
     .to_cors()
