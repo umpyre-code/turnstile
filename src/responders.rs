@@ -76,7 +76,7 @@ impl<'a, T: Responder<'a>> Responder<'a> for Cached<T> {
         Response::build_from(self.value.respond_to(req)?)
             .header(Vary::Items(vec![
                 UniCase("accept-encoding".to_owned()),
-                UniCase("accept-language".to_owned()),
+                UniCase("accept".to_owned()),
                 UniCase("origin".to_owned()),
             ]))
             .header(CacheControl(vec![
