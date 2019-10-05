@@ -60,9 +60,8 @@ mod utils;
 
 fn get_cors() -> rocket_cors::Cors {
     rocket_cors::CorsOptions {
-        send_wildcard: true,
         allow_credentials: true,
-        max_age: Some(3600 * 24), // Cache for 24h
+        max_age: Some(3600), // Cache for 1h
         ..Default::default()
     }
     .to_cors()
