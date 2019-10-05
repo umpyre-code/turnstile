@@ -59,18 +59,7 @@ mod token;
 mod utils;
 
 fn get_cors() -> rocket_cors::Cors {
-    use rocket_cors::{AllowedHeaders, AllowedMethods, AllowedOrigins};
-    use std::str::FromStr;
-
-    let allowed_methods: AllowedMethods = ["Get", "Post", "Put", "Delete", "Options"]
-        .iter()
-        .map(|s| FromStr::from_str(s).unwrap())
-        .collect();
-
     rocket_cors::CorsOptions {
-        allowed_origins: AllowedOrigins::all(),
-        allowed_methods,
-        allowed_headers: AllowedHeaders::all(),
         allow_credentials: true,
         max_age: Some(3600 * 24), // Cache for 24h
         ..Default::default()
