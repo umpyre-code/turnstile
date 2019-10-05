@@ -1261,7 +1261,7 @@ pub fn get_stats(
     let rolodex_client = rolodex_client::Client::new(&config::CONFIG);
     let r_response = rolodex_client.get_stats(rolodex_grpc::proto::GetStatsRequest {})?;
 
-    Ok(Cached(
+    Ok(Cached::from(
         Json(models::Stats {
             message_read_amount: bc_response
                 .message_read_amount
