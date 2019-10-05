@@ -60,6 +60,7 @@ mod utils;
 
 fn get_cors() -> rocket_cors::Cors {
     rocket_cors::CorsOptions {
+        send_wildcard: true,
         allow_credentials: true,
         max_age: Some(3600 * 24), // Cache for 24h
         ..Default::default()
@@ -72,12 +73,12 @@ fn get_helmet() -> rocket_contrib::helmet::SpaceHelmet {
     use rocket::http::uri::Uri;
     use rocket_contrib::helmet::{ExpectCt, Frame, Hsts, Referrer, SpaceHelmet, XssFilter};
     use time::Duration;
-    let site_uri = Uri::parse(&config::CONFIG.service.site_uri).unwrap();
+    let web_uri = Uri::parse(&config::CONFIG.service.web_uri).unwrap();
     let report_uri = Uri::parse(&config::CONFIG.service.site_uri).unwrap();
 
     let helmet = SpaceHelmet::default()
         .enable(Hsts::default())
-        .enable(Frame::AllowFrom(site_uri))
+        .enable(Frame::AllowFrom(web_uri))
         .enable(XssFilter::EnableReport(report_uri))
         .enable(ExpectCt::Enforce(Duration::weeks(52)))
         .enable(Referrer::NoReferrer);
