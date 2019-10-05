@@ -19,8 +19,8 @@ get the most out of Umpyre.
   someone's inbox and trigger a notification (provided they have notifications
   enabled), make sure you price your messages at or above their RAL.
 - Messages are always end-to-end encrypted, and they're stored on the client
-  side only. In other words: we can't read your messages, and we don't hang on
-  to your messages 30 days. Everything is deleted from our servers.
+  side only after 30 days. Everything is deleted from our servers once
+  delivered.
 - We don't retain any behaviourial data that includes personally identifiable
   information, either about you or the contents of your messages. For
   example, we don't read your messages so we can target you with ads (there
