@@ -286,4 +286,5 @@ pub struct Stats {
     pub most_generous: Vec<AmountByClient>,
     pub clients_by_date: Vec<CountByDate>,
     pub clients_by_ral: Vec<AmountByClient>,
+    pub read_by_date: Vec<CountByDate>,
 }

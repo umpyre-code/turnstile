@@ -1251,6 +1251,17 @@ impl From<rolodex_grpc::proto::CountByDate> for models::CountByDate {
     }
 }
 
+impl From<beancounter_grpc::proto::CountByDate> for models::CountByDate {
+    fn from(data: beancounter_grpc::proto::CountByDate) -> Self {
+        Self {
+            count: data.count,
+            year: data.year,
+            month: data.month,
+            day: data.day,
+        }
+    }
+}
+
 #[get("/stats")]
 pub fn get_stats(
     _ratelimited: guards::RateLimited,
@@ -1318,6 +1329,11 @@ pub fn get_stats(
                 .clients_by_ral
                 .into_iter()
                 .map(models::AmountByClient::from)
+                .collect(),
+            read_by_date: bc_response
+                .read_by_date
+                .into_iter()
+                .map(models::CountByDate::from)
                 .collect(),
         }),
         24 * 3600,
