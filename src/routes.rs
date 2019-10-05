@@ -1376,10 +1376,14 @@ pub fn post_client_verify_phone_new_code(
 
 impl From<Option<rolodex_grpc::proto::Prefs>> for models::ClientPrefs {
     fn from(prefs: Option<rolodex_grpc::proto::Prefs>) -> Self {
-        Self {
-            email_notifications: match prefs {
-                Some(prefs) => prefs.email_notifications,
-                _ => "ral".into(),
+        match prefs {
+            Some(prefs) => Self {
+                email_notifications: prefs.email_notifications,
+                include_in_leaderboard: prefs.include_in_leaderboard,
+            },
+            _ => Self {
+                email_notifications: "ral".into(),
+                include_in_leaderboard: true,
             },
         }
     }
@@ -1447,6 +1451,7 @@ pub fn put_client_prefs(
         client_id: fetch_client_id,
         prefs: Some(rolodex_grpc::proto::Prefs {
             email_notifications: prefs.email_notifications.clone(),
+            include_in_leaderboard: prefs.include_in_leaderboard,
         }),
     })?;
 

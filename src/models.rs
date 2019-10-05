@@ -217,9 +217,14 @@ pub struct SendVerificationCodeResponse {}
 #[derive(Debug, Serialize)]
 pub struct ImageUploadResponse {}
 
+fn default_as_true() -> bool {
+    true
+}
 #[derive(Debug, Deserialize, Serialize)]
 pub struct ClientPrefs {
     pub email_notifications: String,
+    #[serde(default = "default_as_true")]
+    pub include_in_leaderboard: bool,
 }
 
 #[derive(Debug, Serialize)]

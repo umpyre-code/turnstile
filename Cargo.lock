@@ -2241,7 +2241,7 @@ dependencies = [
 [[package]]
 name = "rolodex-grpc"
 version = "0.1.0"
-source = "git+ssh://git@github.com/umpyre-code/rolodex.git#5147a77877f55f32a3a8632e53d9953fbcff35e8"
+source = "git+ssh://git@github.com/umpyre-code/rolodex.git#93c6794a9e94f5455764cc04b43cf318b59618d1"
 dependencies = [
  "bytes 0.4.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "prost 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
