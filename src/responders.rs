@@ -1,6 +1,8 @@
+extern crate unicase;
+
 use std::io::Cursor;
 
-use rocket::http::hyper::header::{CacheControl, CacheDirective};
+use rocket::http::hyper::header::{CacheControl, CacheDirective, Vary};
 use rocket::http::{ContentType, Status};
 use rocket::response::Responder;
 use rocket::{Request, Response};
@@ -69,7 +71,14 @@ impl<T> Cached<T> {
 
 impl<'a, T: Responder<'a>> Responder<'a> for Cached<T> {
     fn respond_to(self, req: &Request) -> rocket::response::Result<'a> {
+        use unicase::UniCase;
+
         Response::build_from(self.value.respond_to(req)?)
+            .header(Vary::Items(vec![
+                UniCase("accept-encoding".to_owned()),
+                UniCase("accept-language".to_owned()),
+                UniCase("origin".to_owned()),
+            ]))
             .header(CacheControl(vec![
                 CacheDirective::Public,
                 CacheDirective::MaxAge(self.age),
