@@ -62,7 +62,7 @@ fn get_cors() -> rocket_cors::Cors {
     use rocket_cors::{AllowedHeaders, AllowedMethods, AllowedOrigins};
     use std::str::FromStr;
 
-    let allowed_methods: AllowedMethods = ["Get", "Post", "Put", "Delete"]
+    let allowed_methods: AllowedMethods = ["Get", "Post", "Put", "Delete", "Options"]
         .iter()
         .map(|s| FromStr::from_str(s).unwrap())
         .collect();
