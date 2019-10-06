@@ -1266,11 +1266,42 @@ impl From<beancounter_grpc::proto::CountByDate> for models::CountByDate {
 pub fn get_stats(
     _ratelimited: guards::RateLimited,
 ) -> Result<Cached<Json<models::Stats>>, ResponseError> {
+    use std::collections::HashSet;
+
     let beancounter_client = beancounter_client::Client::new(&config::CONFIG);
     let bc_response = beancounter_client.get_stats(beancounter_grpc::proto::GetStatsRequest {})?;
 
     let rolodex_client = rolodex_client::Client::new(&config::CONFIG);
     let r_response = rolodex_client.get_stats(rolodex_grpc::proto::GetStatsRequest {})?;
+
+    // filter out clients which have explicitly excluded
+    // themselves from the leaderboard
+    let mut valid_client_ids = HashSet::new();
+
+    for d in bc_response.most_well_read.iter() {
+        valid_client_ids.insert(d.client_id.clone());
+    }
+    for d in bc_response.most_generous.iter() {
+        valid_client_ids.insert(d.client_id.clone());
+    }
+    for d in r_response.clients_by_ral.iter() {
+        valid_client_ids.insert(d.client_id.clone());
+    }
+
+    let valid_client_ids: HashSet<String> = valid_client_ids
+        .into_iter()
+        .filter(|c| {
+            match rolodex_client.get_prefs(rolodex_grpc::proto::GetPrefsRequest {
+                client_id: c.to_string(),
+            }) {
+                Ok(response) => match response.prefs {
+                    Some(prefs) => prefs.include_in_leaderboard,
+                    _ => false,
+                },
+                _ => false,
+            }
+        })
+        .collect();
 
     Ok(Cached::from(
         Json(models::Stats {
@@ -1287,37 +1318,13 @@ pub fn get_stats(
             most_well_read: bc_response
                 .most_well_read
                 .into_iter()
-                .filter(|d| {
-                    // filter out clients which have explicitly excluded
-                    // themselves from the leaderboard
-                    match rolodex_client.get_prefs(rolodex_grpc::proto::GetPrefsRequest {
-                        client_id: d.client_id.clone(),
-                    }) {
-                        Ok(response) => match response.prefs {
-                            Some(prefs) => prefs.include_in_leaderboard,
-                            _ => false,
-                        },
-                        _ => false,
-                    }
-                })
+                .filter(|d| valid_client_ids.contains(&d.client_id))
                 .map(models::AmountByClient::from)
                 .collect(),
             most_generous: bc_response
                 .most_generous
                 .into_iter()
-                .filter(|d| {
-                    // filter out clients which have explicitly excluded
-                    // themselves from the leaderboard
-                    match rolodex_client.get_prefs(rolodex_grpc::proto::GetPrefsRequest {
-                        client_id: d.client_id.clone(),
-                    }) {
-                        Ok(response) => match response.prefs {
-                            Some(prefs) => prefs.include_in_leaderboard,
-                            _ => false,
-                        },
-                        _ => false,
-                    }
-                })
+                .filter(|d| valid_client_ids.contains(&d.client_id))
                 .map(models::AmountByClient::from)
                 .collect(),
             clients_by_date: r_response
@@ -1328,6 +1335,7 @@ pub fn get_stats(
             clients_by_ral: r_response
                 .clients_by_ral
                 .into_iter()
+                .filter(|d| valid_client_ids.contains(&d.client_id))
                 .map(models::AmountByClient::from)
                 .collect(),
             read_by_date: bc_response
