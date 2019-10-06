@@ -295,11 +295,9 @@ pub fn get_client(
 
     if response.is_ok() {
         // if this is the magic '/client/self' endpoint, don't cache it
-        let cache_seconds = if arg_client_id == "self" {
-            0
-        } else {
-            60 * 60 // 1h
-        };
+        let cache_seconds = if arg_client_id == "self" { 0 } else { 
+            60 * 5, // 5m
+             };
         Ok(Cached::from(Json(response.unwrap().into()), cache_seconds))
     } else if calling_client.is_some() && calling_client.unwrap().client_id == fetch_client_id {
         // If the calling client credentials are valid, but this client doesn't
@@ -348,7 +346,7 @@ pub fn get_client_by_handle(
     if response.is_ok() {
         Ok(Cached::from(
             Json(response.unwrap().into()),
-            60 * 60, // 1h
+            60 * 5, // 5m
         ))
     } else {
         Err(ResponseError::NotFound {
