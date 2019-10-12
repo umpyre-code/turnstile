@@ -104,7 +104,7 @@ dependencies = [
 [[package]]
 name = "beancounter-grpc"
 version = "0.1.0"
-source = "git+ssh://git@github.com/umpyre-code/beancounter.git#c3e4eca8d6fdca5b2ee194dde89511ece96cdce4"
+source = "git+ssh://git@github.com/umpyre-code/beancounter.git#5005782087c2a7e9b5ba2f1ae0b1beff883e6e4c"
 dependencies = [
  "bytes 0.4.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "chrono 0.4.9 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2241,7 +2241,7 @@ dependencies = [
 [[package]]
 name = "rolodex-grpc"
 version = "0.1.0"
-source = "git+ssh://git@github.com/umpyre-code/rolodex.git#e8d801a710478963cc26e5189dce084f23849708"
+source = "git+ssh://git@github.com/umpyre-code/rolodex.git#5599d39ef3dce9ac746a608b951ff7c1b3ebda52"
 dependencies = [
  "bytes 0.4.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "prost 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2524,7 +2524,7 @@ dependencies = [
 [[package]]
 name = "switchroom-grpc"
 version = "0.1.0"
-source = "git+ssh://git@github.com/umpyre-code/switchroom.git#8f8b0a0c796e0d170b26de3490dacf6c6e1c8184"
+source = "git+ssh://git@github.com/umpyre-code/switchroom.git#a15ed882ead4daa14b1073a7cf426933bfde3e6c"
 dependencies = [
  "bytes 0.4.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "prost 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2889,7 +2889,7 @@ version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "futures 0.1.29 (registry+https://github.com/rust-lang/crates.io-index)",
- "tower-buffer 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "tower-buffer 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "tower-discover 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "tower-layer 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "tower-limit 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2902,7 +2902,7 @@ dependencies = [
 
 [[package]]
 name = "tower-buffer"
-version = "0.1.1"
+version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "futures 0.1.29 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -3203,7 +3203,7 @@ dependencies = [
  "tokio-connect 0.1.0 (git+https://github.com/carllerche/tokio-connect)",
  "toml 0.5.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "tower 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "tower-buffer 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "tower-buffer 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "tower-http 0.1.0 (git+https://github.com/tower-rs/tower-http)",
  "tower-hyper 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "tower-reconnect 0.1.0 (git+https://github.com/tower-rs/tower)",
@@ -3918,7 +3918,7 @@ dependencies = [
 "checksum toml 0.4.10 (registry+https://github.com/rust-lang/crates.io-index)" = "758664fc71a3a69038656bee8b6be6477d2a6c315a6b81f7081f591bffa4111f"
 "checksum toml 0.5.3 (registry+https://github.com/rust-lang/crates.io-index)" = "c7aabe75941d914b72bf3e5d3932ed92ce0664d49d8432305a8b547c37227724"
 "checksum tower 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)" = "dc72f33b6a72c75c9df0037afce313018bae845f0ec7fdb9201b8768427a917f"
-"checksum tower-buffer 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)" = "0c85c2bb3ca9acdb130fa879c2c7e052a7daa7dbd181f49ef246caf533c096df"
+"checksum tower-buffer 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)" = "3c7b83e1ccf5b23dd109dd6ae2c07b8e2beec7a51a21f29da2dba576317370e0"
 "checksum tower-discover 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "73a7632286f78164d65d18fd0e570307acde9362489aa5c8c53e6315cc2bde47"
 "checksum tower-grpc 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)" = "ddd833a116f724984a09ff25c27ea5d0b9a65d301f48048e366f8f3c6081c2cb"
 "checksum tower-grpc-build 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "8862053a26bc7b901cf52bca8ae7d4c2e041222673e38f81a475aeb6c82481df"
