@@ -550,9 +550,10 @@ pub fn get_ping(_ratelimited: guards::RateLimited) -> String {
     "pong".into()
 }
 
-#[get("/messages?<sketch>")]
+#[get("/messages?<sketch>&<salt>")]
 pub fn get_messages(
     sketch: Option<String>,
+    salt: Option<String>,
     calling_client: guards::Client,
     _ratelimited: guards::RateLimited,
 ) -> Result<Json<Vec<models::Message>>, ResponseError> {
@@ -561,6 +562,7 @@ pub fn get_messages(
     let response = switchroom_client.get_messages(switchroom_grpc::proto::GetMessagesRequest {
         client_id: calling_client.client_id,
         sketch: sketch.unwrap_or_else(|| "".to_owned()),
+        salt: salt.unwrap_or_else(|| "".to_owned()),
     })?;
 
     Ok(Json(
