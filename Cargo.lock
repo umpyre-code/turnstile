@@ -104,7 +104,7 @@ dependencies = [
 [[package]]
 name = "beancounter-grpc"
 version = "0.1.0"
-source = "git+ssh://git@github.com/umpyre-code/beancounter.git#f9f8f42e330a30d25d0e8c60711a50d450bdeb16"
+source = "git+ssh://git@github.com/umpyre-code/beancounter.git#2a7a3c2be57cc4626e4314966ddfc637161b0d9f"
 dependencies = [
  "bytes 0.4.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "chrono 0.4.9 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2240,7 +2240,7 @@ dependencies = [
 [[package]]
 name = "rolodex-grpc"
 version = "0.1.0"
-source = "git+ssh://git@github.com/umpyre-code/rolodex.git#6e96b2fab75e576aa198c81735c64421e3b75c52"
+source = "git+ssh://git@github.com/umpyre-code/rolodex.git#4ab195a834bc32c0c2b40c080da95a78084b3131"
 dependencies = [
  "bytes 0.4.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "prost 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2523,7 +2523,7 @@ dependencies = [
 [[package]]
 name = "switchroom-grpc"
 version = "0.1.0"
-source = "git+ssh://git@github.com/umpyre-code/switchroom.git#c687293d6ead6823c4ae548cfe6104c25f24fec5"
+source = "git+ssh://git@github.com/umpyre-code/switchroom.git#782a1905a5680f5765cb7385d96645b142723be9"
 dependencies = [
  "bytes 0.4.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "prost 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -3209,7 +3209,7 @@ dependencies = [
  "tower-reconnect 0.1.0 (git+https://github.com/tower-rs/tower)",
  "tower-request-modifier 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "unicase 1.4.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "uuid 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "uuid 0.8.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "webpki 0.19.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "woothee 0.10.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "yansi 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -3422,7 +3422,7 @@ dependencies = [
 
 [[package]]
 name = "uuid"
-version = "0.8.0"
+version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "rand 0.7.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -3978,7 +3978,7 @@ dependencies = [
 "checksum usvg 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)" = "c148d1f0066ff41b89a57dfcddd7c14bacfab7746076559d30044ccd3aa27980"
 "checksum uuid 0.6.5 (registry+https://github.com/rust-lang/crates.io-index)" = "e1436e58182935dcd9ce0add9ea0b558e8a87befe01c1a301e6020aeb0876363"
 "checksum uuid 0.7.4 (registry+https://github.com/rust-lang/crates.io-index)" = "90dbc611eb48397705a6b0f6e917da23ae517e4d127123d2cf7674206627d32a"
-"checksum uuid 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)" = "bf1d83e5fa94e6c54ee47351bc92daca1f386aa1529ffbb668d2cee5e8173013"
+"checksum uuid 0.8.1 (registry+https://github.com/rust-lang/crates.io-index)" = "9fde2f6a4bea1d6e007c4ad38c6839fa71cbb63b6dbf5b595aa38dc9b1093c11"
 "checksum vcpkg 0.2.7 (registry+https://github.com/rust-lang/crates.io-index)" = "33dd455d0f96e90a75803cfeb7f948768c08d70a6de9a8d2362461935698bf95"
 "checksum version_check 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)" = "914b1a6776c4c929a602fafd8bc742e06365d4bcbe48c30f9cca5824f70dc9dd"
 "checksum version_check 0.9.1 (registry+https://github.com/rust-lang/crates.io-index)" = "078775d0255232fb988e6fccf26ddc9d1ac274299aaedcedce21c6f72cc533ce"
