@@ -49,7 +49,7 @@ tower-http = { git = "https://github.com/tower-rs/tower-http" }
 tower-hyper = "0.1"
 tower-reconnect = { git = "https://github.com/tower-rs/tower" }
 tower-request-modifier = "0.1"
-uuid = { version = "0.7", features = ["serde", "v4"] }
+uuid = { version = "0.8", features = ["serde", "v4"] }
 unicase = "=1.4.2"
 webpki = "0.19"
 woothee = "0.10"
