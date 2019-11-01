@@ -104,7 +104,7 @@ dependencies = [
 [[package]]
 name = "beancounter-grpc"
 version = "0.1.0"
-source = "git+ssh://git@github.com/umpyre-code/beancounter.git#58559853f32531c02f95b8b0683b03e3b074de2d"
+source = "git+ssh://git@github.com/umpyre-code/beancounter.git#ba5c096b230b3b119bd9e574c82c80640844b52f"
 dependencies = [
  "bytes 0.4.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "chrono 0.4.9 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -3208,7 +3208,7 @@ dependencies = [
  "tower-hyper 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "tower-reconnect 0.1.0 (git+https://github.com/tower-rs/tower)",
  "tower-request-modifier 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "unicase 1.4.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "unicase 2.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "uuid 0.8.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "webpki 0.19.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "woothee 0.10.0 (registry+https://github.com/rust-lang/crates.io-index)",
