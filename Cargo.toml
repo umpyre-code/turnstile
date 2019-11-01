@@ -50,7 +50,7 @@ tower-hyper = "0.1"
 tower-reconnect = { git = "https://github.com/tower-rs/tower" }
 tower-request-modifier = "0.1"
 uuid = { version = "0.8", features = ["serde", "v4"] }
-unicase = "=1.4.2"
+unicase = "=2.5.1"
 webpki = "0.19"
 woothee = "0.10"
 yansi = "0.5"
