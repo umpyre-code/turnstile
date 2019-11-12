@@ -104,7 +104,7 @@ dependencies = [
 [[package]]
 name = "beancounter-grpc"
 version = "0.1.0"
-source = "git+ssh://git@github.com/umpyre-code/beancounter.git#58559853f32531c02f95b8b0683b03e3b074de2d"
+source = "git+ssh://git@github.com/umpyre-code/beancounter.git#ba5c096b230b3b119bd9e574c82c80640844b52f"
 dependencies = [
  "bytes 0.4.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "chrono 0.4.9 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -3040,7 +3040,7 @@ dependencies = [
 [[package]]
 name = "tower-reconnect"
 version = "0.1.0"
-source = "git+https://github.com/tower-rs/tower#e414b2b7d3ce8220aaf321d42af70cf37ec127d0"
+source = "git+https://github.com/tower-rs/tower#2d24d84e7c71aa5e224ebf9d9723ef64b3ca7238"
 dependencies = [
  "futures 0.1.29 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
