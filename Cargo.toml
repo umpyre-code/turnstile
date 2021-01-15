@@ -14,7 +14,7 @@ elastic = { git = "https://github.com/brndnmtthws/elastic.git" }
 elastic_derive = { git = "https://github.com/brndnmtthws/elastic.git" }
 env_logger = { version = "0.7", default-features = false }
 failure = "0.1"
-futures = "0.1"
+futures = "0.3"
 http = "0.1"
 hyper = "0.12"
 image = "0.22"
