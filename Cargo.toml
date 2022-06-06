@@ -40,7 +40,7 @@ syn = "1.0"
 tempfile = "3.1"
 tera = "0.11"
 time = "0.1"
-tokio = "0.1"
+tokio = "1.8"
 tokio-connect = { git = "https://github.com/carllerche/tokio-connect" }
 toml = "0.5"
 tower = "0.1"
